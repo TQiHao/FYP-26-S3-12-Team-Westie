@@ -51,7 +51,7 @@ class ResetPasswordController
             return false;
         }
 
-        $resetLink = "http://localhost/boundary/ResetPasswordPage.php?token=" . $token;
+        $resetLink = "http://localhost/FYP-26-S3-12-Team-Westie/boundary/ResetPasswordPage.php?token=" . $token;
         error_log("Password reset link for $email: $resetLink");
 
         $_SESSION['reset_success'] = "A password reset link has been sent to your email.";
