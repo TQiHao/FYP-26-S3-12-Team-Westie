@@ -2,27 +2,22 @@
 
 class Database
 {
-    private $host = "localhost";
-    private $dbName = "Unibee";
-    private $username = "root";
-    private $password = "";
+    private $host = 'localhost';
+    private $dbname = 'unibee';
+    private $username = 'root';
+    private $password = '';
+    private $pdo;
 
     public function connect()
     {
         try {
-            $connection = new PDO(
-                "mysql:host={$this->host};dbname={$this->dbName};charset=utf8mb4",
+            $this->pdo = new PDO(
+                "mysql:host={$this->host};dbname={$this->dbname}",
                 $this->username,
                 $this->password
             );
-
-            $connection->setAttribute(
-                PDO::ATTR_ERRMODE,
-                PDO::ERRMODE_EXCEPTION
-            );
-
-            return $connection;
-
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            return $this->pdo;
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
         }

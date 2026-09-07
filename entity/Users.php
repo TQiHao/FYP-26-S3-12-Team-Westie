@@ -48,14 +48,14 @@ class Users
         return $this->universityId;
     }
 
-    public function setUniversityId($universityId)
-    {
-        $this->universityId = $universityId;
-    }
-
     public function getEmail()
     {
         return $this->email;
+    }
+
+    public function getPasswordHash()
+    {
+        return $this->passwordHash;
     }
 
     public function getFullName()
@@ -73,10 +73,40 @@ class Users
         return $this->status;
     }
 
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    public function getLastLogin()
+    {
+        return $this->lastLogin;
+    }
+
     // Setters
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    public function setUniversityId($universityId)
+    {
+        $this->universityId = $universityId;
+    }
+
     public function setEmail($email)
     {
         $this->email = $email;
+    }
+
+    public function setPasswordHash($passwordHash)
+    {
+        $this->passwordHash = $passwordHash;
     }
 
     public function setFullName($fullName)
@@ -92,5 +122,20 @@ class Users
     public function setStatus($status)
     {
         $this->status = $status;
+    }
+
+    public function setCreatedAt($createdAt)
+    {
+        $this->createdAt = $createdAt;
+    }
+
+    public function setUpdatedAt($updatedAt)
+    {
+        $this->updatedAt = $updatedAt;
+    }
+
+    public function setLastLogin($lastLogin)
+    {
+        $this->lastLogin = $lastLogin;
     }
 }
