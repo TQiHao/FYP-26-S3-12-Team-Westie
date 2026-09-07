@@ -75,7 +75,7 @@
                         type="text"
                         id="institutionType"
                         name="institutionType"
-                        placeholder="Type of institute"
+                        placeholder="Type of Institute"
                         required
                     >
                 </div>
@@ -101,7 +101,7 @@
                         type="text"
                         id="postalCode"
                         name="postalCode"
-                        placeholder="Postal code"
+                        placeholder="Postal Code"
                         required
                     >
                 </div>
