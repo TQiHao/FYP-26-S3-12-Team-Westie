@@ -1,7 +1,7 @@
 <?php
 
-require_once "../database/Database.php";
-require_once "../entity/Universities.php";
+require_once "../database/database.php";
+require_once "../entity/universities.php";
 
 class UniversityRegistrationController
 {
