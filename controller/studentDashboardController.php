@@ -1,6 +1,6 @@
 <?php
 
-require_once "../entity/User.php";
+require_once "../entity/user.php";
 
 class StudentDashboardController
 {
