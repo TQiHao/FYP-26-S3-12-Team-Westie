@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,14 @@
     <!-- CSS will be added later -->
     <link rel="stylesheet" href="../style.css">
 </head>
+
 <body>
 
     <!-- Header -->
     <header>
-        <div class="logo">UniBee</div>
+        <div class="logo-container">
+            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+        </div>
         <div class="page-title">Log in</div>
     </header>
 
@@ -42,35 +46,18 @@
                 <!-- Email -->
                 <div class="form-group">
                     <label for="email">Email address</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Enter your email"
-                        required
-                    >
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
                 </div>
 
                 <!-- Password -->
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Password"
-                        required
-                    >
+                    <input type="password" id="password" name="password" placeholder="Password" required>
                 </div>
 
                 <!-- Remember Me -->
                 <div class="form-group">
-                    <input
-                        type="checkbox"
-                        id="remember"
-                        name="remember"
-                        value="1"
-                    >
+                    <input type="checkbox" id="remember" name="remember" value="1">
                     <label for="remember">Remember for 30 days</label>
                 </div>
 
@@ -99,5 +86,25 @@
 
     </main>
 
+    <!-- Footer -->
+    <footer>
+        <div class="footer-main">
+            <div class="logo-container">
+                <img src="../images/uniBeeLogo.png" alt="UniBee">
+            </div>
+            <ul class="footer-links">
+                <li><a href="terms.php">Terms & Conditions</a></li>
+                <li><a href="privacy.php">Privacy Policy</a></li>
+                <li><a href="accessibility.php">Accessibility Statement</a></li>
+            </ul>
+        </div>
+        <div class="footer-bottom-bar">
+            &copy; 2026 UniBee. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+
 </body>
+
 </html>
