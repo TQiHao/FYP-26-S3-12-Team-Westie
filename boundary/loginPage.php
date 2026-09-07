@@ -88,16 +88,6 @@
 
     <!-- Footer -->
     <footer>
-        <div class="footer-main">
-            <div class="logo-container">
-                <img src="../images/uniBeeLogo.png" alt="UniBee">
-            </div>
-            <ul class="footer-links">
-                <li><a href="terms.php">Terms & Conditions</a></li>
-                <li><a href="privacy.php">Privacy Policy</a></li>
-                <li><a href="accessibility.php">Accessibility Statement</a></li>
-            </ul>
-        </div>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.
         </div>
