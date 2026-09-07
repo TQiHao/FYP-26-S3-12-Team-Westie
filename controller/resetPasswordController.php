@@ -1,7 +1,7 @@
 <?php
 
-require_once "../database/Database.php";
-require_once "../entity/Users.php";
+require_once "../database/database.php";
+require_once "../entity/users.php";
 
 session_start();
 
@@ -51,7 +51,7 @@ class ResetPasswordController
             return false;
         }
 
-        $resetLink = "http://localhost/FYP-26-S3-12-Team-Westie/boundary/ResetPasswordPage.php?token=" . $token;
+        $resetLink = "http://localhost/FYP-26-S3-12-Team-Westie/boundary/resetPasswordPage.php?token=" . $token;
         error_log("Password reset link for $email: $resetLink");
 
         $_SESSION['reset_success'] = "A password reset link has been sent to your email.";
@@ -136,7 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['request_reset'])) {
     $email = trim($_POST['email']);
     $controller = new ResetPasswordController();
     $controller->requestReset($email);
-    header("Location: ../boundary/ResetPasswordPage.php");
+    header("Location: ../boundary/resetPasswordPage.php");
     exit();
 }
 
@@ -147,7 +147,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['reset_password'])) {
     $confirmPassword = $_POST['confirm_password'];
     $controller = new ResetPasswordController();
     $controller->resetPassword($token, $newPassword, $confirmPassword);
-    header("Location: ../boundary/ResetPasswordPage.php?token=" . urlencode($token));
+    header("Location: ../boundary/resetPasswordPage.php?token=" . urlencode($token));
     exit();
 }
 ?>
