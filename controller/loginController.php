@@ -1,7 +1,7 @@
 <?php
 
-require_once "../database/Database.php";
-require_once "../entity/Users.php";
+require_once "../database/database.php";
+require_once "../entity/users.php";
 
 session_start();
 
@@ -112,22 +112,22 @@ class LoginController
     {
         switch ($role) {
             case 'student':
-                header("Location: ../boundary/StudentDashboardPage.php");
+                header("Location: ../boundary/studentDashboardPage.php");
                 break;
             case 'lecturer':
-                header("Location: ../boundary/LecturerDashboardPage.php");
+                header("Location: ../boundary/lecturerDashboardPage.php");
                 break;
             case 'course_coordinator':
-                header("Location: ../boundary/CourseCoordinatorDashboardPage.php");
+                header("Location: ../boundary/courseCoordinatorDashboardPage.php");
                 break;
             case 'university_admin':
-                header("Location: ../boundary/UniversityAdminDashboardPage.php");
+                header("Location: ../boundary/universityAdminDashboardPage.php");
                 break;
             case 'system_admin':
-                header("Location: ../boundary/SystemAdminDashboardPage.php");
+                header("Location: ../boundary/systemAdminDashboardPage.php");
                 break;
             default:
-                header("Location: ../boundary/DashboardPage.php");
+                header("Location: ../boundary/dashboardPage.php");
                 break;
         }
         exit();
