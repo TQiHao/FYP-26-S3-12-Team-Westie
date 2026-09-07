@@ -37,7 +37,7 @@
             }
             ?>
 
-            <form action="../controller/LoginController.php" method="POST">
+            <form action="../controller/loginController.php" method="POST">
 
                 <!-- Email -->
                 <div class="form-group">
@@ -84,10 +84,10 @@
             <!-- Links -->
             <p class="register-link">
                 Don't have an account?
-                <a href="UniversityRegistrationPage.php">Sign up</a>
+                <a href="universityRegistrationPage.php">Sign up</a>
             </p>
             <p class="reset-link">
-                <a href="ResetPasswordPage.php">Forgot password?</a>
+                <a href="resetPasswordPage.php">Forgot password?</a>
             </p>
 
         </section>
