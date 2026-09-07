@@ -2,7 +2,7 @@
 
 class Database
 {
-    private $host = 'localhost';
+    private $host = 'localhost:3307';
     private $dbname = 'unibee';
     private $username = 'root';
     private $password = '';
