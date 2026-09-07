@@ -27,7 +27,7 @@
 
             <h1>Get Started Now</h1>
 
-            <form action="../controller/UniversityRegistrationController.php" method="POST">
+            <form action="../controller/universityRegistrationController.php" method="POST">
 
                 <!-- Email -->
                 <div class="form-group">
@@ -118,7 +118,7 @@
             <!-- Login Link -->
             <p class="login-link">
                 Already have an account?
-                <a href="LoginPage.php">Log in</a>
+                <a href="loginPage.php">Log in</a>
             </p>
 
         </section>
