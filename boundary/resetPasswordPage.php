@@ -38,7 +38,7 @@
                 }
                 ?>
 
-                <form action="../controller/ResetPasswordController.php" method="POST">
+                <form action="../controller/resetPasswordController.php" method="POST">
 
                     <div class="form-group">
                         <label for="new_password">New Password</label>
@@ -84,7 +84,7 @@
                 </form>
 
                 <p class="login-link">
-                    <a href="LoginPage.php">Back to Login</a>
+                    <a href="loginPage.php">Back to Login</a>
                 </p>
 
                 <?php
