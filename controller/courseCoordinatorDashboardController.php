@@ -1,9 +1,18 @@
 <?php
 
+require_once "../database/database.php";
 require_once "../entity/users.php";
 
-class StudentDashboardController
+class CCDashboardController
 {
+    private $db;
+
+    public function __construct()
+    {
+        $database = new Database();
+        $this->db = $database->connect();
+    }
+
     public function showDashboard($userId)
     {
         // Get user information
