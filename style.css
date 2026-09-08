@@ -25,10 +25,12 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* forces the page body to always match 100% of the screen height */
 }
 
 main {
   flex: 1;
+  /* makes the main login section stretch to fill all available space, pushing the footer down to the very bottom */
 }
 
 /* Sticky Header Navigation */
