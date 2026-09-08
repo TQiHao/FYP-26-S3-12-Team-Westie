@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Sign Up</title>
+    <title>Sign Up - UniBee</title>
 
-    <!-- CSS - External Sheet -->
     <link rel="stylesheet" href="../style.css">
 </head>
 
@@ -18,88 +17,76 @@
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
         </div>
+
         <div class="page-title">Sign up</div>
     </header>
 
-
-    <!-- Registration Section -->
     <main class="registration-container">
 
-        <!-- Registration Form -->
-        <section class="registration-form">
+        <div class="registration-wrapper">
 
-            <h1>Get Started Now</h1>
+            <section class="registration-form">
 
-            <form action="../controller/universityRegistrationController.php" method="POST">
+                <h1>Get Started Now</h1>
+                <p>Create your university account</p>
 
-                <!-- Email -->
-                <div class="form-group">
-                    <label for="email">Email address</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
-                </div>
+                <form action="../controller/universityRegistrationController.php" method="POST">
 
+                    <div class="form-group">
+                        <label for="email">Email address</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="Enter your email" required>
+                    </div>
 
-                <!-- Password -->
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Password" required>
-                </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password"
+                               placeholder="Password" required>
+                    </div>
 
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name"
+                               placeholder="Name" required>
+                    </div>
 
-                <!-- University Name -->
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" placeholder="Name" required>
-                </div>
+                    <div class="form-group">
+                        <label for="institutionType">Type of Institute</label>
+                        <input type="text" id="institutionType" name="institutionType"
+                               placeholder="Type of Institute" required>
+                    </div>
 
+                    <div class="form-group">
+                        <label for="country">Country</label>
+                        <input type="text" id="country" name="country"
+                               placeholder="Country" required>
+                    </div>
 
-                <!-- Institution Type -->
-                <div class="form-group">
-                    <label for="institutionType">Type of Institute</label>
-                    <input type="text" id="institutionType" name="institutionType" placeholder="Type of Institute"
-                        required>
-                </div>
+                    <div class="form-group">
+                        <label for="postalCode">Postal Code</label>
+                        <input type="text" id="postalCode" name="postalCode"
+                               placeholder="Postal Code" required>
+                    </div>
 
+                    <button type="submit">Sign up</button>
 
-                <!-- Country -->
-                <div class="form-group">
-                    <label for="country">Country</label>
-                    <input type="text" id="country" name="country" placeholder="Country" required>
-                </div>
+                </form>
 
+                <p class="login-link">
+                    Already have an account?
+                    <a href="loginPage.php">Log in</a>
+                </p>
 
-                <!-- Postal Code -->
-                <div class="form-group">
-                    <label for="postalCode">Postal Code</label>
-                    <input type="text" id="postalCode" name="postalCode" placeholder="Postal Code" required>
-                </div>
+            </section>
 
+            <section class="registration-image">
+                <img src="../images/loginImage.png" alt="Campus Illustration">
+            </section>
 
-                <!-- Submit Button -->
-                <button type="submit">
-                    Sign up
-                </button>
-
-            </form>
-
-
-            <!-- Login Link -->
-            <p class="login-link">
-                Already have an account?
-                <a href="loginPage.php">Log in</a>
-            </p>
-
-        </section>
-
-
-        <!-- Image -->
-        <section class="registration-image">
-
-            <img src="" alt="">
-
-        </section>
+        </div>
 
     </main>
+
     <!-- Footer -->
     <footer>
         <div class="footer-bottom-bar">
@@ -110,5 +97,4 @@
     <script src="../script.js"></script>
 
 </body>
-
 </html>
