@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -16,7 +17,7 @@ $fullName = $_SESSION['user_name'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Student Dashboard - UniBee</title>
+    <title>Lecturer Dashboard - UniBee</title>
 
     <link rel="stylesheet" href="../style.css">
 </head>
@@ -60,11 +61,10 @@ $fullName = $_SESSION['user_name'];
 
                 <div id="profileMenu" class="dropdown-menu">
 
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="">AI Chatbot</a>
-                    <a href="">Academics</a>
-                    <a href="">Facility Booking</a>
-                    <a href="">University Campus Event</a>
+                    <a href="">Teaching</a>
+                    <a href="">University Campus Events</a>
+                    <a href="">Manage Profile</a>
+                    <a href="">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
 
                 </div>
@@ -75,8 +75,7 @@ $fullName = $_SESSION['user_name'];
 
     </header>
 
-
-    <!-- Student Dashboard -->
+    <!-- Lecturer Dashboard -->
     <main class="dashboard">
 
         <!-- Dashboard Summary -->
@@ -84,35 +83,52 @@ $fullName = $_SESSION['user_name'];
 
             <!-- Next Class -->
             <div class="summary-item">
+
                 <div class="summary-title">
-                    <img src="../images/nextClass.png" alt="Next class" class="summary-icon">
+                    <img src="../images/nextclass.png"
+                         alt="Next class"
+                         class="summary-icon">
+
                     <span>Next class</span>
                 </div>
 
                 <h2>Data Structures, 2:00pm</h2>
                 <p>Room B204</p>
+
             </div>
+
 
             <!-- Notifications -->
             <div class="summary-item">
+
                 <div class="summary-title">
-                    <img src="../images/noti.png" alt="Notifications" class="summary-icon">
+                    <img src="../images/noti.png"
+                         alt="Notifications"
+                         class="summary-icon">
+
                     <span>Notifications</span>
                 </div>
 
                 <h2>3 unread</h2>
                 <p>Exam schedule updated</p>
+
             </div>
+
 
             <!-- Upcoming Event -->
             <div class="summary-item">
+
                 <div class="summary-title">
-                    <img src="../images/upcomingEvent.png" alt="Upcoming event" class="summary-icon">
+                    <img src="../images/upcomingevent.png"
+                         alt="Upcoming event"
+                         class="summary-icon">
+
                     <span>Upcoming event</span>
                 </div>
 
-                <h2>Career fair, Fri 22 Aug</h2>
+                <h2>Faculty Meeting, Fri 16 Apr</h2>
                 <p>Main Hall</p>
+
             </div>
 
         </section>
@@ -125,12 +141,8 @@ $fullName = $_SESSION['user_name'];
 
             <div class="quick-actions">
 
-                <a href="AIChatbotPage.php" class="quick-button">
-                    Ask AI Chatbot
-                </a>
-
-                <a href="FacilitiesBookingPage.php" class="quick-button">
-                    Book Study Room
+                <a href="" class="quick-button">
+                    Event Reminders
                 </a>
 
                 <a href="TimetablePage.php" class="quick-button">
@@ -149,51 +161,33 @@ $fullName = $_SESSION['user_name'];
 
             <div class="dashboard-grid">
 
-                <!-- Academics -->
-                <a href="AcademicsPage.php" class="dashboard-card">
-                    <img src="../images/academic.png" alt="Academics" class="card-icon">
-                    <h2>Academics</h2>
-                    <p>5 Courses Enrolled</p>
-                </a>
+                <!-- Teaching -->
+                <a href="" class="dashboard-card">
 
+                    <img src="../images/academic.png" alt="Teaching" class="card-icon">
+                    <h2>Teaching</h2>
+                    <p>5 Courses Assigned</p>
 
-                <!-- Facilities -->
-                <a href="FacilitiesBookingPage.php" class="dashboard-card">
-                    <img src="../images/facilityBooking.png" alt="Facilities Booking" class="card-icon">
-                    <h2>Facilities Booking</h2>
-                    <p>1 Active Booking</p>
-                </a>
-
-
-                <!-- Study Groups -->
-                <a href="StudyGroupsPage.php" class="dashboard-card">
-                    <img src="../images/studyGrp.png" alt="Study Groups" class="card-icon">
-                    <h2>Study Groups</h2>
-                    <p>2 Groups joined</p>
                 </a>
 
 
                 <!-- Campus Events -->
                 <a href="CampusEventsPage.php" class="dashboard-card">
-                    <img src="../images/campusEvent.png" alt="Campus Events" class="card-icon">
+
+                    <img src="../images/campusevent.png" alt="Campus Events" class="card-icon">
                     <h2>Campus Events</h2>
-                    <p>3 Upcoming</p>
+                    <p>3 Upcomings</p>
+
                 </a>
 
 
-                <!-- AI Chatbot -->
-                <a href="AIChatbotPage.php" class="dashboard-card">
-                    <img src="../images/aiChatbot.png" alt="AI Chatbot" class="card-icon">
-                    <h2>AI Chatbot</h2>
-                    <p>Ask a Question</p>
-                </a>
-
-
-                <!-- Feedback -->
+                <!-- Submit Feedback -->
                 <a href="SubmitFeedbackPage.php" class="dashboard-card">
+
                     <img src="../images/feedback.png" alt="Submit Feedback" class="card-icon">
                     <h2>Submit Feedback</h2>
                     <p>Share your thoughts</p>
+
                 </a>
 
             </div>
@@ -201,7 +195,6 @@ $fullName = $_SESSION['user_name'];
         </section>
 
     </main>
-
 
     <!-- Footer -->
     <footer>
