@@ -924,8 +924,8 @@ footer {
 
 .section-label {
     margin: 0 0 10px;
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: 1.2rem;
+    font-weight: 700;
 }
 
 
@@ -1034,4 +1034,56 @@ footer {
         row-gap: 15px;
     }
 }
+
+/* System Admin dashboard */
+.system-admin-dashboard .section-label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 32px auto 16px auto;   
+    max-width: 900px;             
+}
+
+.system-admin-dashboard .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 900px;
+    margin: 0 auto;
+    gap: 40px;
+}
+
+.system-admin-dashboard .dashboard-card {
+    background-color: #F0F0F0;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    padding: 40px;
+    display: flex;
+    flex-direction: row;        
+    align-items: center;         
+    gap: 16px;                
+    min-height: 200px;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.system-admin-dashboard .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 10px 10px 5px rgba(0, 0, 0, 0.13);
+}
+
+.system-admin-dashboard .card-icon {
+    color: #1a1a1a;
+    width: 50px;
+    height: 50px;
+    stroke-width: 2;
+}
+
+.system-admin-dashboard .dashboard-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.3;
+}
+
 /* ===== END OF DASHBOARD ===== */

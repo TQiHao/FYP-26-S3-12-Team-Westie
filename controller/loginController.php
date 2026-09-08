@@ -25,11 +25,39 @@ class LoginController
     {
         // Check for blank input
         if (empty($email) || empty($password)) {
-            $_SESSION['login_error'] = "Please enter your email and password.";
-            return false;
+           $_SESSION['login_error'] = "Please enter your email and password.";
+          return false;
         }
 
-        // Query user by email
+        //Check if this is a system admin
+        $sql = "SELECT id, email, passwordHash, fullName, status 
+                FROM systemadmins
+                WHERE email = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$email]);
+        $sysadmin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Verify password
+        if ($sysadmin) {
+            if (!password_verify($password, $sysadmin['passwordHash'])) {
+                $_SESSION['login_error'] = "Invalid email or password. Please try again.";
+                return false;
+            }
+
+            // Check if account is suspended
+            if ($sysadmin['status'] === 'suspended') {
+                $_SESSION['login_error'] = "Your account has been suspended. Please contact support.";
+                return false;
+            }
+
+            $sysadmin['role'] = 'system_admin';
+            $sysadmin['universityId'] = null;
+
+            // Login successful - return SA data
+            return $sysadmin;
+        }
+
+        //Query user by email
         $sql = "SELECT id, universityId, email, passwordHash, fullName, role, status 
                 FROM Users 
                 WHERE email = ?";
@@ -79,7 +107,7 @@ class LoginController
         $_SESSION['logged_in'] = true;
 
         // Update last login timestamp
-        $this->updateLastLogin($userData['id']);
+        $this->updateLastLogin($userData['id'], $userData['role'] === 'system_admin');
 
         // Handle "Remember for 30 days"
         if (isset($_POST['remember']) && $_POST['remember'] == 1) {
@@ -96,9 +124,10 @@ class LoginController
      * @param int $userId
      * @return void
      */
-    private function updateLastLogin($userId)
+    private function updateLastLogin($userId, $isSystemAdmin = false)
     {
-        $sql = "UPDATE Users SET lastLogin = NOW() WHERE id = ?";
+        $table = $isSystemAdmin ? "systemadmins" : "Users";
+        $sql = "UPDATE $table SET lastLogin = NOW() WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$userId]);
     }
