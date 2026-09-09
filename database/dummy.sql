@@ -71,3 +71,19 @@ WHERE NOT EXISTS (
     SELECT 1 FROM Users
     WHERE email = 'cc@unibee.com'
 );
+
+-- System Admin (PW: systemadmin123!)
+INSERT INTO systemadmins
+(email, passwordHash, fullName, status, createdAt, updatedAt)
+SELECT
+    1,
+    'sysadmin@unibee.com',
+    '$2y$10$v35y3AhNTMSDRXMbBBD0oOHqRJNYZq8dgWDqrB.YqQpme9NFzM6s.',
+    'James Tan',
+    'active',
+    NOW(),
+    NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM systemadmins
+    WHERE email = 'sysadmin@unibee.com'
+);
