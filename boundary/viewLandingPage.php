@@ -179,19 +179,19 @@ function cleanInput($data)
             <div class="price-card">
                 <p>Ideal for small institutions or trial implementations. Includes full access to all AI campus
                     features, complete setup, and standard annual support.</p>
-                <h3>1 year | SGD xx</h3>
+                <h3>1 year | SGD 20000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
             <div class="price-card">
                 <p>Designed for mid-sized universities seeking operational continuity. Save 10-15% on annual costs with
                     guaranteed feature updates and system maintenance.</p>
-                <h3>2 years | SGD xx</h3>
+                <h3>2 years | SGD 36000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
             <div class="price-card">
                 <p>Our best-value partnership plan for large institutions. Save 20-30% with multi-year budget stability,
                     priority onboarding, and custom feature development.</p>
-                <h3>5 years | SGD xx</h3>
+                <h3>5 years | SGD 80000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
         </div>
