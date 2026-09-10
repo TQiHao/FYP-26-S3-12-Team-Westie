@@ -3,6 +3,7 @@ CREATE TABLE Universities (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     institutionType VARCHAR(100),
+    email VARCHAR(50),
     country VARCHAR(100),
     postalCode VARCHAR(20),
     status VARCHAR(50) DEFAULT 'active',

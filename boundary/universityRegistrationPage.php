@@ -30,6 +30,20 @@
                 <h1>Get Started Now</h1>
                 <p>Create your university account</p>
 
+                <?php
+                    session_start();
+
+                    if (isset($_SESSION['registration_error'])) {
+                        echo '<div class="error-message">' . $_SESSION['registration_error'] . '</div>';
+                        unset($_SESSION['registration_error']);
+                    }
+
+                    if (isset($_SESSION['registration_success'])) {
+                        echo '<div class="success-message">' . $_SESSION['registration_success'] . '</div>';
+                        unset($_SESSION['registration_success']);
+                    }
+                ?>
+
                 <form action="../controller/universityRegistrationController.php" method="POST">
 
                     <div class="form-group">

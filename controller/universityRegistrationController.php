@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 require_once "../database/database.php";
 require_once "../entity/universities.php";
@@ -15,7 +16,18 @@ class UniversityRegistrationController
 
     public function registerUniversity()
     {
-        // Get data from registration form
+        $email = trim($_POST['email']);
+
+        // Check if email already exists
+        $checkSql = "SELECT COUNT(*) FROM Universities WHERE email = ?";
+        $checkStmt = $this->db->prepare($checkSql);
+        $checkStmt->execute([$email]);
+
+        if ($checkStmt->fetchColumn() > 0) {
+            return "duplicate";
+        }
+
+        // Get other data
         $name = $_POST['name'];
         $institutionType = $_POST['institutionType'];
         $country = $_POST['country'];
@@ -35,16 +47,16 @@ class UniversityRegistrationController
             "basic"
         );
 
-        // Insert into database
         $sql = "INSERT INTO Universities
-                (name, institutionType, country, postalCode, status,
-                 suspensionReason, registrationDate, updatedAt, subscriptionPlan)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                (name, email, institutionType, country, postalCode, status,
+                suspensionReason, registrationDate, updatedAt, subscriptionPlan)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $stmt->execute([
             $university->getName(),
+            $email,
             $university->getInstitutionType(),
             $university->getCountry(),
             $university->getPostalCode(),
@@ -54,6 +66,8 @@ class UniversityRegistrationController
             $university->getUpdatedAt(),
             $university->getSubscriptionPlan()
         ]);
+
+        return true;
     }
 }
 
@@ -61,10 +75,19 @@ class UniversityRegistrationController
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $controller = new UniversityRegistrationController();
+    $result = $controller->registerUniversity();
 
-    if ($controller->registerUniversity()) {
-        echo "University registered successfully!";
+    if ($result === true) {
+        $_SESSION['registration_success'] =
+            "University registered successfully!";
+    } elseif ($result === "duplicate") {
+        $_SESSION['registration_error'] =
+            "This university email has already been registered.";
     } else {
-        echo "Registration failed.";
+        $_SESSION['registration_error'] =
+            "Registration failed.";
     }
+
+    header("Location: ../boundary/UniversityRegistrationPage.php");
+    exit();
 }
