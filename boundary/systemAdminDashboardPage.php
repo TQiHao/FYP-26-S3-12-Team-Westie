@@ -40,10 +40,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         <!-- Header Icons -->
         <div class="dashboard-header-right">
 
-            <a href="NotificationPage.php" class="header-icon">
-                <img src="../images/notification.png" alt="Notifications">
-            </a>
-
             <!-- Profile + Dropdown -->
             <div class="profile-dropdown">
 
