@@ -35,21 +35,15 @@ function cleanInput($data)
 
 <body>
 
-    <!-- Header Navigation -->
     <header>
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
         </div>
 
-        <div class="profile-dropdown">
-            <div class="profile-container" onclick="toggleDropdown()">
-                <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
-                <span class="dropdown-arrow">&#9660;</span>
-            </div>
-            <div class="dropdown-menu" id="profileMenu">
-                <a href="loginPage.php">Login</a>
-            </div>
-        </div>
+        <nav class="landing-nav">
+            <a href="loginPage.php">Log In</a>
+            <a href="universityRegistrationPage.php" class="get-started-btn">Get started</a>
+        </nav>
     </header>
 
     <!-- Overview Hero Section -->

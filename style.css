@@ -51,6 +51,44 @@ header {
   display: block;
 }
 
+/* ===== LANDING PAGE NAVIGATION ===== */
+.landing-nav {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.landing-nav a {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.landing-nav a:hover {
+    color: #555;
+    text-decoration: underline;
+}
+
+/* Pill-shaped "Get started" button */
+.landing-nav a.get-started-btn {
+    background-color: #f8ea9b;
+    color: var(--text-dark);
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.landing-nav a.get-started-btn:hover {
+    background-color: #e6c23a;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
 /* Profile Dropdown Menu */
 .profile-dropdown {
   position: relative;
