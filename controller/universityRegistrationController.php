@@ -1,8 +1,8 @@
 <?php
+
 session_start();
 
 require_once "../database/database.php";
-require_once "../entity/universities.php";
 
 class UniversityRegistrationController
 {
@@ -16,60 +16,87 @@ class UniversityRegistrationController
 
     public function registerUniversity()
     {
+        // Get form data
+        $name = trim($_POST['name']);
         $email = trim($_POST['email']);
+        $institutionType = trim($_POST['institutionType']);
+        $country = trim($_POST['country']);
+        $postalCode = trim($_POST['postalCode']);
+        $password = $_POST['password'];
 
-        // Check if email already exists
-        $checkSql = "SELECT COUNT(*) FROM Universities WHERE email = ?";
+        // Check whether the university already exists
+        $checkSql = "SELECT COUNT(*)
+                     FROM Universities
+                     WHERE name = ? OR email = ?";
+
         $checkStmt = $this->db->prepare($checkSql);
-        $checkStmt->execute([$email]);
+        $checkStmt->execute([
+            $name,
+            $email
+        ]);
 
         if ($checkStmt->fetchColumn() > 0) {
-            return "duplicate";
+            return "exists";
         }
 
-        // Get other data
-        $name = $_POST['name'];
-        $institutionType = $_POST['institutionType'];
-        $country = $_POST['country'];
-        $postalCode = $_POST['postalCode'];
+        // Check whether a pending registration already exists
+        $pendingSql = "SELECT COUNT(*)
+               FROM UniversityRegistrations
+               WHERE (applicantName = ? OR applicantEmail = ?)
+               AND status = 'pending'";
 
-        // Create University object
-        $university = new Universities(
-            null,
+        $pendingStmt = $this->db->prepare($pendingSql);
+        $pendingStmt->execute([
             $name,
-            $institutionType,
-            $country,
-            $postalCode,
-            "active",
-            null,
-            date("Y-m-d H:i:s"),
-            date("Y-m-d H:i:s"),
-            "basic"
-        );
+            $email
+        ]);
 
-        $sql = "INSERT INTO Universities
-                (name, email, institutionType, country, postalCode, status,
-                suspensionReason, registrationDate, updatedAt, subscriptionPlan)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        if ($pendingStmt->fetchColumn() > 0) {
+            return "pending";
+        }
+
+        // Hash the future UA password
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
+        // Add into UniversityRegistrations
+        $sql = "INSERT INTO UniversityRegistrations
+                (
+                    universityId,
+                    applicantName,
+                    applicantEmail,
+                    applicantContact,
+                    status,
+                    reviewedBy,
+                    reviewedAt,
+                    rejectionReason,
+                    createdAt,
+                    updatedAt
+                )
+                VALUES
+                (
+                    NULL,
+                    ?,
+                    ?,
+                    NULL,
+                    'pending',
+                    NULL,
+                    NULL,
+                    NULL,
+                    NOW(),
+                    NOW()
+                )";
 
         $stmt = $this->db->prepare($sql);
 
         $stmt->execute([
-            $university->getName(),
-            $email,
-            $university->getInstitutionType(),
-            $university->getCountry(),
-            $university->getPostalCode(),
-            $university->getStatus(),
-            $university->getSuspensionReason(),
-            $university->getRegistrationDate(),
-            $university->getUpdatedAt(),
-            $university->getSubscriptionPlan()
+            $name,
+            $email
         ]);
 
         return true;
     }
 }
+
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -78,14 +105,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $controller->registerUniversity();
 
     if ($result === true) {
+
         $_SESSION['registration_success'] =
-            "University registered successfully!";
-    } elseif ($result === "duplicate") {
+            "University registration request submitted successfully. Please wait for System Admin approval.";
+
+    } elseif ($result === "exists") {
+
         $_SESSION['registration_error'] =
-            "This university email has already been registered.";
+            "This university has already been registered.";
+
+    } elseif ($result === "pending") {
+
+        $_SESSION['registration_error'] =
+            "A registration request for this university is already pending.";
+
     } else {
+
         $_SESSION['registration_error'] =
-            "Registration failed.";
+            "Unable to submit the registration request.";
     }
 
     header("Location: ../boundary/UniversityRegistrationPage.php");
