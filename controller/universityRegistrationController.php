@@ -16,7 +16,6 @@ class UniversityRegistrationController
 
     public function registerUniversity()
     {
-        // Get form data
         $name = trim($_POST['name']);
         $email = trim($_POST['email']);
         $institutionType = trim($_POST['institutionType']);
@@ -24,7 +23,10 @@ class UniversityRegistrationController
         $postalCode = trim($_POST['postalCode']);
         $password = $_POST['password'];
 
-        // Check whether the university already exists
+        if (!preg_match('/^[A-Za-z0-9\s\-]{3,10}$/', $postalCode)) {
+            return "invalid_postal";
+        }
+
         $checkSql = "SELECT COUNT(*)
                      FROM Universities
                      WHERE name = ? OR email = ?";
@@ -39,7 +41,6 @@ class UniversityRegistrationController
             return "exists";
         }
 
-        // Check whether a pending registration already exists
         $pendingSql = "SELECT COUNT(*)
                FROM UniversityRegistrations
                WHERE (applicantName = ? OR applicantEmail = ?)
@@ -55,10 +56,8 @@ class UniversityRegistrationController
             return "pending";
         }
 
-        // Hash the future UA password
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // Add into UniversityRegistrations
         $sql = "INSERT INTO UniversityRegistrations
                 (
                     universityId,
@@ -97,8 +96,6 @@ class UniversityRegistrationController
     }
 }
 
-
-// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $controller = new UniversityRegistrationController();
@@ -118,6 +115,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $_SESSION['registration_error'] =
             "A registration request for this university is already pending.";
+
+    } elseif ($result === "invalid_postal") {
+
+        $_SESSION['registration_error'] =
+            "Please enter a valid postal code (3 to 10 alphanumeric characters).";
 
     } else {
 
