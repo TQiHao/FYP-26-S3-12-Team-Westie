@@ -84,6 +84,7 @@ CREATE TABLE UniversityRegistrations (
     universityName VARCHAR(255) NOT NULL,
     applicantName VARCHAR(255) NOT NULL,
     applicantEmail VARCHAR(255) NOT NULL,
+    passwordHash VARCHAR(255) NOT NULL,
     applicantContact VARCHAR(50),
     institutionType VARCHAR(100) NOT NULL,
     country VARCHAR(100) NOT NULL,
