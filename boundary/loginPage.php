@@ -14,7 +14,9 @@
     <!-- Header -->
     <header>
         <div class="logo-container">
-            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+            <a href="viewLandingPage.php">
+                <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+            </a>
         </div>
         <div class="page-title">Log in</div>
     </header>

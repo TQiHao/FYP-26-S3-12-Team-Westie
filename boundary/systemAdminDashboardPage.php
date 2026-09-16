@@ -52,12 +52,13 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 <div id="profileMenu" class="dropdown-menu">
 
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
+                    <a href="">Profile</a>
                     <a href="">Universities</a>
-                    <a href="">System Operations</a>
                     <a href="">Manage Landing Page</a>
                     <a href="">Update AI Model</a>
-                    <a href="">Profile</a>
+                    <a href="">System Operations</a>
                     <a href="../controller/logoutController.php">Log Out</a>
+
 
                 </div>
 
