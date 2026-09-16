@@ -40,6 +40,10 @@
                     echo '<div class="success-message">' . $_SESSION['login_success'] . '</div>';
                     unset($_SESSION['login_success']);
                 }
+                if (isset($_SESSION['logout_success'])) {
+                    echo '<div class="success-message">' . $_SESSION['logout_success'] . '</div>';
+                    unset($_SESSION['logout_success']);
+                }
                 ?>
 
                 <form action="../controller/loginController.php" method="POST">
