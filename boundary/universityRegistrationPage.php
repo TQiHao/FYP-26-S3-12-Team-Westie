@@ -53,7 +53,7 @@
 
                     <div class="form-group">
                         <label for="representativeName">Representative Name</label>
-                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                        <input type="text" id="representativeName" name="representativeName" placeholder="Enter your name" required>
                     </div>
 
                     <div class="form-group">
@@ -62,8 +62,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="universityname">University Name</label>
-                        <input type="text" id="universityname" name="universityname"
+                        <label for="universityName">University Name</label>
+                        <input type="text" id="universityName" name="universityName"
                             placeholder="e.g. Hong Kong University of Science and Technology" required>
                     </div>
 

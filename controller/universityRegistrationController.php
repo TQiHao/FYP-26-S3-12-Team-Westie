@@ -16,7 +16,7 @@ class UniversityRegistrationController
 
     public function registerUniversity()
     {
-        $universityname = trim($_POST['universityname']);
+        $universityName = trim($_POST['universityName']);
         $representativeName = trim($_POST['representativeName']);
         $applicantContact = trim($_POST['applicantContact']);
         $email = trim($_POST['email']);
@@ -109,7 +109,7 @@ class UniversityRegistrationController
             $universityName,
             $representativeName,
             $email,
-            $applicantContact
+            $applicantContact,
             $institutionType,
             $country,
             $postalCode
