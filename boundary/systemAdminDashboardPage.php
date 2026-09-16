@@ -59,7 +59,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                     <a href="">System Operations</a>
                     <a href="../controller/logoutController.php">Log Out</a>
 
-
                 </div>
 
             </div>
