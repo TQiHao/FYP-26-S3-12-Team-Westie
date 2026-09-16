@@ -81,9 +81,13 @@ CREATE TABLE SystemAdminProfiles (
 CREATE TABLE UniversityRegistrations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     universityId INT,
+    universityName VARCHAR(255) NOT NULL,
     applicantName VARCHAR(255) NOT NULL,
     applicantEmail VARCHAR(255) NOT NULL,
     applicantContact VARCHAR(50),
+    institutionType VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    postalCode VARCHAR(20) NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
     reviewedBy INT NULL,
     reviewedAt DATETIME NULL,

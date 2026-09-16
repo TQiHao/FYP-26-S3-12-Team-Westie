@@ -16,7 +16,6 @@
                 <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
-        <div class="page-title">Sign up</div>
     </header>
 
     <main class="registration-container">
@@ -53,8 +52,18 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" name="name"
+                        <label for="representativeName">Representative Name</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="applicantContact">Contact Number</label>
+                        <input type="tel" id="applicantContact" name="applicantContact" placeholder="Enter your phone number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="universityname">University Name</label>
+                        <input type="text" id="universityname" name="universityname"
                             placeholder="e.g. Hong Kong University of Science and Technology" required>
                     </div>
 
@@ -66,7 +75,7 @@
                             <option value="Private University">Private University</option>
                             <option value="Polytechnic">Polytechnic</option>
                             <option value="College">College</option>
-                            <option value="Institute of Technology">Institute of Technology</option>
+                            <option value="Institute of Technology Education">Institute of Technology Education</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>

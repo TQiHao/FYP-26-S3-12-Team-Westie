@@ -16,13 +16,23 @@ class UniversityRegistrationController
 
     public function registerUniversity()
     {
-        $name = trim($_POST['name']);
+        $universityname = trim($_POST['universityname']);
+        $representativeName = trim($_POST['representativeName']);
+        $applicantContact = trim($_POST['applicantContact']);
         $email = trim($_POST['email']);
         $institutionType = trim($_POST['institutionType']);
         $country = trim($_POST['country']);
         $postalCode = trim($_POST['postalCode']);
         $password = $_POST['password'];
 
+        if (empty($representativeName)) {
+            return "invalid_representative_name";
+        }
+
+        if (empty($applicantContact)) {
+            return "invalid_contact";
+        }
+        
         if (!preg_match('/^[A-Za-z0-9\s\-]{3,10}$/', $postalCode)) {
             return "invalid_postal";
         }
@@ -33,7 +43,7 @@ class UniversityRegistrationController
 
         $checkStmt = $this->db->prepare($checkSql);
         $checkStmt->execute([
-            $name,
+            $universityName,
             $email
         ]);
 
@@ -43,12 +53,12 @@ class UniversityRegistrationController
 
         $pendingSql = "SELECT COUNT(*)
                FROM UniversityRegistrations
-               WHERE (applicantName = ? OR applicantEmail = ?)
+               WHERE (universityName = ? OR applicantEmail = ?)
                AND status = 'pending'";
 
         $pendingStmt = $this->db->prepare($pendingSql);
         $pendingStmt->execute([
-            $name,
+            $universityName,
             $email
         ]);
 
@@ -61,9 +71,13 @@ class UniversityRegistrationController
         $sql = "INSERT INTO UniversityRegistrations
                 (
                     universityId,
+                    universityName,
                     applicantName,
                     applicantEmail,
                     applicantContact,
+                    institutionType,
+                    country,
+                    postalCode,
                     status,
                     reviewedBy,
                     reviewedAt,
@@ -76,7 +90,11 @@ class UniversityRegistrationController
                     NULL,
                     ?,
                     ?,
-                    NULL,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
                     'pending',
                     NULL,
                     NULL,
@@ -88,8 +106,13 @@ class UniversityRegistrationController
         $stmt = $this->db->prepare($sql);
 
         $stmt->execute([
-            $name,
-            $email
+            $universityName,
+            $representativeName,
+            $email,
+            $applicantContact
+            $institutionType,
+            $country,
+            $postalCode
         ]);
 
         return true;
@@ -115,6 +138,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $_SESSION['registration_error'] =
             "A registration request for this university is already pending.";
+
+    } elseif ($result === "invalid_representative_name") {
+
+        $_SESSION['registration_error'] =
+            "Please enter the representative's name.";
+
+    } elseif ($result === "invalid_contact") {
+
+        $_SESSION['registration_error'] =
+            "Please enter a contact number.";
 
     } elseif ($result === "invalid_postal") {
 
