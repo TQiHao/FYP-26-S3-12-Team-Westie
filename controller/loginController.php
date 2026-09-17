@@ -52,15 +52,26 @@ class LoginController
 
             $sysadmin['role'] = 'system_admin';
             $sysadmin['universityId'] = null;
+            $sysadmin['universityName'] = null;
 
             // Login successful - return SA data
             return $sysadmin;
         }
 
         //Query user by email
-        $sql = "SELECT id, universityId, email, passwordHash, fullName, role, status 
-                FROM Users 
-                WHERE email = ?";
+        $sql = "SELECT 
+                Users.id,
+                Users.universityId,
+                Users.email,
+                Users.passwordHash,
+                Users.fullName,
+                Users.role,
+                Users.status,
+                Universities.name AS universityName
+            FROM Users
+            LEFT JOIN Universities
+                ON Users.universityId = Universities.id
+            WHERE Users.email = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -100,6 +111,7 @@ class LoginController
         // Store user data in session
         $_SESSION['user_id'] = $userData['id'];
         $_SESSION['university_id'] = $userData['universityId'];
+        $_SESSION['university_name'] = $userData['universityName'] ?? null;
         $_SESSION['user_email'] = $userData['email'];
         $_SESSION['user_name'] = $userData['fullName'];
         $_SESSION['user_role'] = $userData['role'];
