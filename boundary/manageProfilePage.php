@@ -80,7 +80,11 @@ if (!$user) {
         <?php if ($user): ?>
 
             <div class="profile-header">
+                <!-- Back Button -->
+                <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+
                 <h2 class="section-label">My Profile</h2>
+
                 <a href="UpdateProfilePage.php" class="btn-update">Update</a>
             </div>
 
