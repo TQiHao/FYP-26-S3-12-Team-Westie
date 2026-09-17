@@ -28,7 +28,7 @@ $existingUniversities=$controller->getExistingUniversities();
     <link rel="stylesheet" href="../style.css">
 </head>
 
-<body>
+<body class="system-admin-dashboard">
     <script src="../script.js"></script>
 
     <!-- Header -->
@@ -74,109 +74,111 @@ $existingUniversities=$controller->getExistingUniversities();
     <section class="table-section">
         <h3 class="section-label">Pending University Registrations</h3>
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>SID</th>
-                    <th>University Name</th>
-                    <th>Registration Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <?php if (empty($pendingRegistrations)): ?>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
                     <tr>
-                        <td colspan="6" class="empty-row">No pending registrations.</td>
+                        <th>SID</th>
+                        <th>University Name</th>
+                        <th>Registration Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
-                
-                <?php else: ?>
-                    <?php foreach ($pendingRegistrations as $reg): ?>
+                </thead>
+
+                <tbody>
+
+                    <?php if (empty($pendingRegistrations)): ?>
                         <tr>
-                            <td>UNI-<?php echo str_pad($reg['id'], 4, '0', STR_PAD_LEFT); ?></td>
-                            <td><?php echo htmlspecialchars($reg['applicantName']); ?></td>
-                            <td><?php echo htmlspecialchars($reg['applicantEmail']); ?></td>
-                            <td><?php echo date('d F Y', strtotime($reg['createdAt'])); ?></td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-
-                            <td>
-                                <a href="ReviewRegistrationPage.php?id=<?php echo $reg['id']; ?>" class="action-btn view-btn">View</a>
-                            </td>
+                            <td colspan="5" class="empty-row">No pending registrations.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    
+                    <?php else: ?>
+                        <?php foreach ($pendingRegistrations as $reg): ?>
+                            <tr>
+                                <td>UNI-<?php echo str_pad($reg['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                <td><?php echo htmlspecialchars($reg['universityName']); ?></td>
+                                <td><?php echo date('d F Y', strtotime($reg['createdAt'])); ?></td>
+                                <td><span class="status-badge status-pending">Pending</span></td>
 
+                                <td>
+                                    <a href="ReviewRegistrationPage.php?id=<?php echo $reg['id']; ?>" class="action-btn view-btn">View</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </section>
 
     <!-- Existing Universities -->
     <section class="table-section">
         <h3 class="section-label">Exsting Universities</h3>
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>SID</th>
-                    <th>University Name</th>
-                    <th>Status</th>
-                    <th>License</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <?php if (empty($exsistingUniversities)): ?>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
                     <tr>
-                        <td colspan="5" class="empty-row">No Universities Found.</td>
+                        <th>SID</th>
+                        <th>University Name</th>
+                        <th>Status</th>
+                        <th>License</th>
+                        <th>Actions</th>
                     </tr>
-                
-                <?php else: ?>
-                    <?php foreach ($existingUniversities as $uni): ?>
+                </thead>
+
+                <tbody>
+                    <?php if (empty($existingUniversities)): ?>
                         <tr>
-                            <td>UNI-<?php echo str_pad($uni['id'], 4, 0, STR_PAD_LEFT); ?></td>
-                            <td><?php echo htmlspecialchars($uni['name']); ?></td>
-                            <td>
-                                <?php if ($uni['status'] === 'active'): ?>
-                                    <span class="status-badge status-active">Active</span>
-                                <?php else: ?>
-                                    <span class="status-badge status-suspended">Suspended</span>
-
-                                <?php endif; ?>
-                            </td>
-
-                            <td>
-                                <?php echo $uni['licenseExpiryDate']
-                                    ? date('d F Y', strtotime($uni['licenseExpiryDate'])): 'No license on record'; ?>
-                            </td>
-                            
-                            <td class="action-cell">
-                                <a href="approvalUniversityPage.php?id=<?php echo $uni['id']; ?>" class="action-btn view-btn">View</a>
-                                <?php if ($uni['status'] === 'active'): ?>
-                                    <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
-                                        <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
-                                        <input type="hidden" name="action" value="suspend">
-                                        <button type="submit" class="action-btn suspend-btn" onclick="return confirm('Suspend this university?');">
-                                            Suspend
-                                        </button>
-                                    </form>
-                                <?php else: ?>
-                                    <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
-                                        <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
-                                        <input type="hidden" name="action" value="reactivate">
-                                        <button type="submit" class="action-btn reactivate-btn" onclick="return confirm('Reactivate this university?');">
-                                            Reactivate
-                                        </button>
-                                        </form>
-                                <?php endif; ?>
-                            </td>
+                            <td colspan="5" class="empty-row">No Universities Found.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    
+                    <?php else: ?>
+                        <?php foreach ($existingUniversities as $uni): ?>
+                            <tr>
+                                <td>UNI-<?php echo str_pad($uni['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                <td><?php echo htmlspecialchars($uni['name']); ?></td>
+                                <td>
+                                    <?php if ($uni['status'] === 'active'): ?>
+                                        <span class="status-badge status-active">Active</span>
+                                    <?php else: ?>
+                                        <span class="status-badge status-suspended">Suspended</span>
+
+                                    <?php endif; ?>
+                                </td>
+
+                                <td>
+                                    <?php echo $uni['licenseExpiryDate']
+                                        ? date('d F Y', strtotime($uni['licenseExpiryDate'])): 'No license on record'; ?>
+                                </td>
+                                
+                                <td class="action-cell">
+                                    <a href="approvalUniversityPage.php?id=<?php echo $uni['id']; ?>" class="action-btn view-btn">View</a>
+                                    <?php if ($uni['status'] === 'active'): ?>
+                                        <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
+                                            <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
+                                            <input type="hidden" name="action" value="suspend">
+                                            <button type="submit" class="action-btn suspend-btn" onclick="return confirm('Suspend this university?');">
+                                                Suspend
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
+                                            <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
+                                            <input type="hidden" name="action" value="reactivate">
+                                            <button type="submit" class="action-btn reactivate-btn" onclick="return confirm('Reactivate this university?');">
+                                                Reactivate
+                                            </button>
+                                            </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </section>
     </main>
 

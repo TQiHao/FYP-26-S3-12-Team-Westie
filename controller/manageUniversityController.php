@@ -24,7 +24,7 @@ class ManageUniversityController
     /** Get all pending university registration */
     public function getPendingRegistrations()
     {
-        $sql = "SELECT id, applicantName, applicantEmail, applicantContact, status, createdAt
+        $sql = "SELECT id, universityName, applicantName, applicantEmail, applicantContact, status, createdAt
                 FROM universityregistrations
                 WHERE status = 'pending'
                 ORDER BY createdAt ASC";
