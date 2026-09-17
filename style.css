@@ -1445,3 +1445,148 @@ footer {
     color: #666;
     padding: 60px 20px;
 }
+
+/* ===== UNIVERSITY ADMIN ===== */
+/* ===== MANAGE UNIVERSITY INFORMATION ===== */
+
+.manage-university-information {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 35px 0 60px;
+}
+
+/* Back button */
+.manage-university-information .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.manage-university-information .btn-back {
+    display: inline-block;
+    color: #000;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* University information */
+.university-information-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    margin-bottom: 27px;
+    border-bottom: 1px solid #ccc;
+}
+
+.university-information-icon {
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.university-information-icon img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
+
+.university-information-header h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.university-information-header p {
+    margin: 3px 0 0;
+    font-size: 0.75rem;
+}
+
+/* Management cards */
+.university-management-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    column-gap: 35px !important;
+    row-gap: 18px !important;
+    width: 100%;
+}
+
+.university-management-card {
+    min-height: 115px;
+    padding: 16px;
+    box-sizing: border-box;
+    border: 1px solid #999;
+    border-radius: 3px;
+    background-color: #fff;
+    color: #000 !important;
+    text-decoration: none !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: 0.2s ease;
+}
+
+.university-management-card:hover {
+    background-color: #fff9d9;
+    transform: translateY(-2px);
+}
+
+.management-card-icon {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.management-card-icon img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
+}
+
+.university-management-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.university-management-card p {
+    margin: 4px 0 0;
+    font-size: 0.7rem;
+}
+
+.icon-faculty {
+    transform: scale(1.0);
+}
+
+.icon-facility {
+    transform: scale(0.82);
+}
+
+.icon-course-coordinator {
+    transform: scale(0.95);
+}
+
+.icon-lecturer {
+    transform: scale(1.05);
+}
+
+.icon-student {
+    transform: scale(0.95);
+}
+
+.icon-floor-plan {
+    transform: scale(0.75);
+}
+
+/* ===== END OF DASHBOARD ===== */

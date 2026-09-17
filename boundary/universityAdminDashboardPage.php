@@ -53,8 +53,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
                 <div id="profileMenu" class="dropdown-menu">
 
-                    <a href="ManageClassesPage.php">
-                        Manage Classes
+                    <a href="RenewLicensePage.php">
+                        Renew License
                     </a>
 
                     <a href="AIChatbotPage.php">
@@ -99,7 +99,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 
                 <!-- Manage University Information -->
-                <a href="ManageUniversityInformationPage.php"
+                <a href="manageUniversityInformationPage.php"
                    class="dashboard-card">
 
                     <img src="../images/info.png" alt="Manage University Information" class="card-icon">
