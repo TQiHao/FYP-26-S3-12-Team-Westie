@@ -1,102 +1,78 @@
 <?php
 
-require_once "../database/database.php";
-require_once "../entity/universities.php";
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once "../entity/faculties.php";
 
 class ManageUniversityInformationController
 {
-    private $db;
+    private $faculties;
 
     public function __construct()
     {
-        $database = new Database();
-        $this->db = $database->connect();
+        $this->faculties = new Faculties();
     }
 
-    // Get university information
-    public function getUniversityInformation($universityId)
+    // Upload Faculty CSV
+    public function uploadFacultyList($csvFile, $universityId)
     {
-        $sql = "SELECT *
-                FROM Universities
-                WHERE id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$universityId]);
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            return null;
-        }
-
-        return new Universities(
-            $row['id'],
-            $row['name'],
-            $row['institutionType'],
-            $row['country'],
-            $row['postalCode'],
-            $row['status'],
-            $row['suspensionReason'],
-            $row['registrationDate'],
-            $row['updatedAt'],
-            $row['subscriptionPlan']
+        return $this->faculties->uploadFacultyList(
+            $csvFile,
+            $universityId
         );
-    }
-
-    // Handle selected management option
-    public function processAction($action)
-    {
-        switch ($action) {
-
-            case "faculty":
-                header("Location: ../boundary/UploadFacultyPage.php");
-                exit();
-
-            case "facility":
-                header("Location: ../boundary/UploadFacilityPage.php");
-                exit();
-
-            case "courseCoordinator":
-                header("Location: ../boundary/UploadCourseCoordinatorPage.php");
-                exit();
-
-            case "lecturer":
-                header("Location: ../boundary/UploadLecturerPage.php");
-                exit();
-
-            case "student":
-                header("Location: ../boundary/UploadStudentPage.php");
-                exit();
-
-            case "floorPlan":
-                header("Location: ../boundary/UploadFloorPlanPage.php");
-                exit();
-
-            default:
-                return false;
-        }
     }
 }
 
 
-// Handle selected management option
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+// Handle Faculty upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "faculty"
+) {
 
     $controller = new ManageUniversityInformationController();
 
-    $action = $_POST['action'] ?? '';
+    $csvFile = $_FILES['uploadFile'] ?? null;
+    $universityId = $_SESSION['university_id'] ?? null;
 
-    $result = $controller->processAction($action);
-
-    if ($result === false) {
-
-        $_SESSION['university_information_error'] =
-            "Unable to process the selected option.";
+    if ($universityId === null) {
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
 
         header(
-            "Location: ../boundary/ManageUniversityInformationPage.php"
+            "Location: ../boundary/UploadListPage.php?type=faculty"
         );
-
         exit();
     }
+
+    if ($csvFile === null) {
+        $_SESSION['upload_error'] =
+            "Please select a CSV file.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=faculty"
+        );
+        exit();
+    }
+
+    $result = $controller->uploadFacultyList(
+        $csvFile,
+        $universityId
+    );
+
+    if ($result === true) {
+        $_SESSION['upload_success'] =
+            "Faculty list uploaded successfully.";
+    } else {
+        $_SESSION['upload_error'] =
+            "Invalid Faculty CSV file. Please check the file format.";
+    }
+
+    header(
+        "Location: ../boundary/UploadListPage.php?type=faculty"
+    );
+    exit();
 }

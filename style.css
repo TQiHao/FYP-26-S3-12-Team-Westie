@@ -1741,7 +1741,226 @@ footer {
     transform: scale(0.75);
 }
 
-/* ===== END OF DASHBOARD ===== */
+/* ===== UPLOAD PAGE ===== */
+
+.upload-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 35px 0 70px;
+    box-sizing: border-box;
+}
+
+.upload-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.upload-page-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.upload-page-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.upload-page-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.upload-form {
+    width: 100%;
+}
+
+.upload-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.upload-format {
+    margin-bottom: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-file-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.upload-file-input {
+    width: 250px;
+    padding: 8px;
+    border: 1px solid #999;
+    font-size: 0.75rem;
+    box-sizing: border-box;
+}
+
+.upload-button {
+    margin-top: 30px;
+    padding: 9px 30px;
+    border: 1px solid #000;
+    border-radius: 3px;
+    background-color: var(--bg-yellow);
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.upload-button:hover {
+    background-color: #e6c23a;
+}
+
+.upload-message {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.upload-error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.upload-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+/* ===== UPLOAD FACULTY LIST PAGE ===== */
+
+.faculty-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.faculty-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.faculty-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.faculty-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.faculty-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.faculty-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.faculty-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.faculty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 45px;
+    padding: 0 10px;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.faculty-row span {
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.select-button {
+    padding: 6px 16px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background-color: var(--bg-yellow);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.select-button:hover {
+    background-color: #e6c23a;
+}
+
+.empty-message {
+    padding: 35px 0;
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.upload-faculty-container {
+    width: 100%;
+    display: flex;
+    margin-top: auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.upload-faculty-button {
+    display: inline-block;
+    margin-left: auto !important;
+    padding: 9px 20px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background-color: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-faculty-button:hover {
+    background-color: #e6c23a;
+}
+
+/* ===== END OF UNIVERSIRY ADMIN ===== */
 
 /* === VIEW UNIVERSITY REGISTRATION ==*/
 .system-admin-dashboard .registration-page {

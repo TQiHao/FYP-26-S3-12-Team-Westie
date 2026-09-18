@@ -6,19 +6,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: LoginPage.php");
     exit();
 }
-
-require_once "../controller/manageUniversityInformationController.php";
-
-$controller = new ManageUniversityInformationController();
-
-$university = $controller->getUniversityInformation($_SESSION['user_id']);
-
-if (!$university) {
-    $_SESSION['university_error'] =
-        "Unable to load university information.";
-    header("Location: UniversityAdminDashboardPage.php");
-    exit();
-}
 ?>
 
 <!DOCTYPE html>
@@ -124,7 +111,7 @@ if (!$university) {
         <section class="university-management-grid">
 
             <!-- Faculty -->
-            <a href="#" class="university-management-card">
+            <a href="uploadFacultyListPage.php?type=faculty" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/faculty.png" alt="Faculty" class="icon-faculty">
                 </div>

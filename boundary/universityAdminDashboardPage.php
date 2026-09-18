@@ -15,7 +15,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Course Coordinator Dashboard - UniBee</title>
+    <title>University Admin Dashboard - UniBee</title>
 
     <link rel="stylesheet" href="../style.css">
 </head>
