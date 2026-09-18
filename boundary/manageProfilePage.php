@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: loginPage.php");
+    header("Location: LoginPage.php");
     exit();
 }
 
@@ -15,9 +15,12 @@ if (!$user) {
     $_SESSION['profile_error'] = "Unable to load profile information. Please try again.";
 }
 
-// Determine user role and corresponding dashboard back link
-$userRole = $_SESSION['role'] ?? 'student';
-$backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
+// 1. Resolve role from database model first, then session, default to 'student'
+$rawRole = $user['role'] ?? $_SESSION['role'] ?? 'student';
+$userRole = strtolower(trim($rawRole));
+
+// 2. Set dynamic back link matching exact dashboard filename
+$backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'StudentDashboardPage.php';
 ?>
 
 <!DOCTYPE html>
