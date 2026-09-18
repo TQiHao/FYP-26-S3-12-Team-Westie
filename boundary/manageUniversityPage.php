@@ -15,7 +15,6 @@ $controller=new ManageUniversityController();
 $pendingRegistrations=$controller->getPendingRegistrations();
 $existingUniversities=$controller->getExistingUniversities();
 
-// Approve/Reject on viewRegistrationPage.php redirects back here
 $flashMessage = null;
 if (isset($_SESSION['registration_review_success'])) {
     $flashMessage = $_SESSION['registration_review_success'];
@@ -23,6 +22,12 @@ if (isset($_SESSION['registration_review_success'])) {
 } elseif (isset($_SESSION['registration_review_error'])) {
     $flashMessage = $_SESSION['registration_review_error'];
     unset($_SESSION['registration_review_error']);
+} elseif (isset($_SESSION['university_action_success'])) {
+    $flashMessage = $_SESSION['university_action_success'];
+    unset($_SESSION['university_action_success']);
+} elseif (isset($_SESSION['university_action_error'])) {
+    $flashMessage = $_SESSION['university_action_error'];
+    unset($_SESSION['university_action_error']);
 }
 ?>
 
@@ -91,28 +96,7 @@ if (isset($_SESSION['registration_review_success'])) {
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
-                </thead><?php if ($flashMessage): ?>
-                        <div id="flashModal" class="modal-overlay active">
-                            <div class="modal-box modal-flash">
-                                <button type="button" class="modal-close" onclick="closeModal('flashModal')">&times;</button>
-                                <p class="modal-title"><?php echo htmlspecialchars($flashMessage); ?></p>
-                            </div>
-                        </div>
-                 
-                        <script>
-                            function closeModal(modalId) {
-                                document.getElementById(modalId).classList.remove('active');
-                            }
-                 
-                            document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-                                overlay.addEventListener('click', function (event) {
-                                    if (event.target === overlay) {
-                                        overlay.classList.remove('active');
-                                    }
-                                });
-                            });
-                        </script>
-                    <?php endif; ?>
+                </thead>
 
                 <tbody>
 
@@ -142,7 +126,7 @@ if (isset($_SESSION['registration_review_success'])) {
 
     <!-- Existing Universities -->
     <section class="table-section">
-        <h3 class="section-label">Existing Universities</h3>
+        <h3 class="section-label">Exsting Universities</h3>
 
         <div class="table-wrapper">
             <table class="admin-table">
@@ -182,23 +166,17 @@ if (isset($_SESSION['registration_review_success'])) {
                                 </td>
                                 
                                 <td class="action-cell">
-                                    <a href="approvalUniversityPage.php?id=<?php echo $uni['id']; ?>" class="action-btn view-btn">View</a>
+                                    <a href="viewUniversityPage.php?id=<?php echo $uni['id']; ?>" class="action-btn view-btn">View</a>
                                     <?php if ($uni['status'] === 'active'): ?>
-                                        <form action="../controller/manageUniversityController.php" method="POST" class="inline-form">
-                                            <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
-                                            <input type="hidden" name="action" value="suspend">
-                                            <button type="submit" class="action-btn suspend-btn" onclick="return confirm('Suspend this university?');">
-                                                Suspend
-                                            </button>
-                                        </form>
+                                        <button type="button" class="action-btn suspend-btn"
+                                            onclick="openSuspendModal(<?php echo $uni['id']; ?>, '<?php echo htmlspecialchars($uni['name'], ENT_QUOTES); ?>')">
+                                            Suspend
+                                        </button>
                                     <?php else: ?>
-                                        <form action="../controller/manageUniversityController.php" method="POST" class="inline-form">
-                                            <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
-                                            <input type="hidden" name="action" value="reactivate">
-                                            <button type="submit" class="action-btn reactivate-btn" onclick="return confirm('Reactivate this university?');">
-                                                Reactivate
-                                            </button>
-                                            </form>
+                                        <button type="button" class="action-btn reactivate-btn"
+                                            onclick="openReactivateModal(<?php echo $uni['id']; ?>, '<?php echo htmlspecialchars($uni['name'], ENT_QUOTES); ?>')">
+                                            Reactivate
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -210,6 +188,46 @@ if (isset($_SESSION['registration_review_success'])) {
     </section>
     </main>
 
+    <!-- Suspend confirmation pop up -->
+    <div id="suspendModal" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" class="modal-close" onclick="closeModal('suspendModal')">&times;</button>
+
+            <p class="modal-title" id="suspendModalTitle">Are you sure you want to suspend this university?</p>
+
+            <form action="../controller/manageUniversityController.php" method="POST">
+                <input type="hidden" name="university_id" id="suspendUniversityId" value="">
+                <input type="hidden" name="action" value="suspend">
+
+                <textarea name="reason" class="modal-reason-textarea" placeholder="Enter reason" required></textarea>
+
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-cancel" onclick="closeModal('suspendModal')">Cancel</button>
+                    <button type="submit" class="modal-btn modal-confirm-reject">Suspend</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reactivate confirmation pop up -->
+    <div id="reactivateModal" class="modal-overlay">
+        <div class="modal-box">
+            <button type="button" class="modal-close" onclick="closeModal('reactivateModal')">&times;</button>
+
+            <p class="modal-title" id="reactivateModalTitle">Are you sure you want to reactivate this university?</p>
+
+            <form id="reactivateForm" action="../controller/manageUniversityController.php" method="POST">
+                <input type="hidden" name="university_id" id="reactivateUniversityId" value="">
+                <input type="hidden" name="action" value="reactivate">
+            </form>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-cancel" onclick="closeModal('reactivateModal')">Cancel</button>
+                <button type="button" class="modal-btn modal-confirm-approve" onclick="document.getElementById('reactivateForm').submit();">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <?php if ($flashMessage): ?>
         <div id="flashModal" class="modal-overlay active">
             <div class="modal-box modal-flash">
@@ -217,21 +235,39 @@ if (isset($_SESSION['registration_review_success'])) {
                 <p class="modal-title"><?php echo htmlspecialchars($flashMessage); ?></p>
             </div>
         </div>
- 
-        <script>
-            function closeModal(modalId) {
-                document.getElementById(modalId).classList.remove('active');
-            }
- 
-            document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-                overlay.addEventListener('click', function (event) {
-                    if (event.target === overlay) {
-                        overlay.classList.remove('active');
-                    }
-                });
-            });
-        </script>
     <?php endif; ?>
+
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openSuspendModal(universityId, universityName) {
+            document.getElementById('suspendUniversityId').value = universityId;
+            document.getElementById('suspendModalTitle').textContent =
+                'Are you sure you want to suspend ' + universityName + '?';
+            openModal('suspendModal');
+        }
+
+        function openReactivateModal(universityId, universityName) {
+            document.getElementById('reactivateUniversityId').value = universityId;
+            document.getElementById('reactivateModalTitle').textContent =
+                'Are you sure you want to reactivate ' + universityName + '?';
+            openModal('reactivateModal');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+            overlay.addEventListener('click', function (event) {
+                if (event.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
 
     <footer>
         <div class="footer-bottom-bar">

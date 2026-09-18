@@ -11,7 +11,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-class ManageUniversityController 
+class ViewUniversityController
 {
     private $db;
 
@@ -21,39 +21,55 @@ class ManageUniversityController
         $this->db = $database->connect();
     }
 
-    /** Get all pending university registration */
-    public function getPendingRegistrations()
-    {
-        $sql = "SELECT id, universityName, applicantName, applicantEmail, applicantContact, status, createdAt
-                FROM universityregistrations
-                WHERE status = 'pending'
-                ORDER BY createdAt ASC";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /** Get all existing universities */
-    Public function getExistingUniversities()
+    public function getUniversityDetails($universityId)
     {
         $sql = "SELECT
                     u.id,
                     u.name,
+                    u.registrationDate,
                     u.status,
                     (
+                        SELECT us.fullName
+                        FROM Users us
+                        WHERE us.universityId = u.id AND us.role = 'university_admin'
+                        LIMIT 1
+                    ) AS repName,
+                    (
+                        SELECT us.email
+                        FROM Users us
+                        WHERE us.universityId = u.id AND us.role = 'university_admin'
+                        LIMIT 1
+                    ) AS repEmail,
+                    (
+                        SELECT l.name
+                        FROM UniversityLicenses ul
+                        JOIN Licenses l ON l.id = ul.licenseId
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licensePlan,
+                    (
+                        SELECT ul.startDate
+                        FROM UniversityLicenses ul
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licenseStartDate,
+                    (
                         SELECT ul.expiryDate
-                        FROM universitylicenses ul
-                        WHERE ul.universityID = u.id
+                        FROM UniversityLicenses ul
+                        WHERE ul.universityId = u.id
                         ORDER BY ul.expiryDate DESC
                         LIMIT 1
                     ) AS licenseExpiryDate
                 FROM Universities u
-                WHERE u.status IN ('active', 'suspended')
-                ORDER BY u.id ASC";
+                WHERE u.id = ?";
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([$universityId]);
+        $details = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $details ?: null;
     }
 
     public function suspendUniversity($universityId, $reason)
@@ -77,10 +93,10 @@ class ManageUniversityController
     }
 }
 
-// Handle POST actions (Suspend / Reactivate)
+// Handle POST actions (Suspend / Reactivate) from the View University page
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_POST['university_id'])) {
 
-    $controller = new ManageUniversityController();
+    $controller = new ViewUniversityController();
     $universityId = (int) $_POST['university_id'];
 
     if ($_POST['action'] === 'suspend') {
@@ -107,6 +123,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
         }
     }
 
-    header("Location: ../boundary/manageUniversityPage.php");
+    header("Location: ../boundary/viewUniversityPage.php?id=" . $universityId);
     exit();
 }
