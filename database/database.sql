@@ -1,3 +1,7 @@
+DROP DATABASE IF EXISTS unibee;
+CREATE DATABASE unibee;
+USE unibee;
+
 -- Universities Table
 CREATE TABLE Universities (
     id INT PRIMARY KEY AUTO_INCREMENT,
