@@ -57,8 +57,8 @@ session_start();
 
             <p style="margin-bottom: 20px;">
                 At <strong>UniBee</strong>, we prioritize the privacy and security of our students, lecturers, course
-                coordinators and
-                university administrators. This Privacy Policy outlines how UniBee collects, uses, and protects your
+                coordinators and university administrators. This Privacy Policy outlines how UniBee collects, uses, and
+                protects your
                 personal information across our smart campus services, modules, and mobile platform.
             </p>
 
