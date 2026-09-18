@@ -14,6 +14,10 @@ $user = $controller->getUserById($_SESSION['user_id']);
 if (!$user) {
     $_SESSION['profile_error'] = "Unable to load profile information. Please try again.";
 }
+
+// Determine user role and corresponding dashboard back link
+$userRole = $_SESSION['role'] ?? 'student';
+$backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 ?>
 
 <!DOCTYPE html>
@@ -53,10 +57,18 @@ if (!$user) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="FacilitiesBookingPage.php">Facility Booking</a>
-                    <a href="CampusEventsPage.php">University Campus Event</a>
+
+                    <?php if ($userRole === 'lecturer'): ?>
+                        <a href="TeachingPage.php">Teaching</a>
+                        <a href="CampusEventsPage.php">University Campus Events</a>
+                        <a href="SubmitFeedbackPage.php">Submit Feedback</a>
+                    <?php else: ?>
+                        <a href="AIChatbotPage.php">AI Chatbot</a>
+                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                        <a href="CampusEventsPage.php">University Campus Event</a>
+                    <?php endif; ?>
+
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>
@@ -80,8 +92,8 @@ if (!$user) {
         <?php if ($user): ?>
 
             <div class="profile-header">
-                <!-- Back Button -->
-                <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+                <!-- Dynamic Back Button -->
+                <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
 
                 <h2 class="section-label">My Profile</h2>
 
@@ -141,4 +153,5 @@ if (!$user) {
         </div>
     </footer>
 </body>
+
 </html>
