@@ -44,7 +44,7 @@ class ManageUniversityController
                     (
                         SELECT ul.expiryDate
                         FROM universitylicenses ul
-                        WHERE ul.universityID = u.id
+                        WHERE ul.universityId = u.id
                         ORDER BY ul.expiryDate DESC
                         LIMIT 1
                     ) AS licenseExpiryDate
@@ -76,7 +76,7 @@ class ManageUniversityController
 // Handle POST actions (Suspend / Reactivate)
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_POST['university_id'])) {
  
-    $controller = new UniversityManagementController();
+    $controller = new ManageUniversityController();
     $universityId = (int) $_POST['university_id'];
  
     if ($_POST['action'] === 'suspend') {
@@ -85,6 +85,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
         $controller->reactivateUniversity($universityId);
     }
  
-    header("Location: ../boundary/ManageUniversityPage.php");
+    header("Location: ../boundary/manageUniversityPage.php");
     exit();
 }
