@@ -14,6 +14,16 @@ require_once "../controller/manageUniversityController.php";
 $controller=new ManageUniversityController();
 $pendingRegistrations=$controller->getPendingRegistrations();
 $existingUniversities=$controller->getExistingUniversities();
+
+// Approve/Reject on viewRegistrationPage.php redirects back here
+$flashMessage = null;
+if (isset($_SESSION['registration_review_success'])) {
+    $flashMessage = $_SESSION['registration_review_success'];
+    unset($_SESSION['registration_review_success']);
+} elseif (isset($_SESSION['registration_review_error'])) {
+    $flashMessage = $_SESSION['registration_review_error'];
+    unset($_SESSION['registration_review_error']);
+}
 ?>
 
 <!DOCTYPE html>
@@ -31,17 +41,14 @@ $existingUniversities=$controller->getExistingUniversities();
 <body class="system-admin-dashboard">
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
 
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
         </div>
 
-        <!-- Header Icons -->
         <div class="dashboard-header-right">
 
-            <!-- Profile + Dropdown -->
             <div class="profile-dropdown">
 
                 <div class="profile-container" onclick="toggleDropdown()">
@@ -84,7 +91,28 @@ $existingUniversities=$controller->getExistingUniversities();
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
-                </thead>
+                </thead><?php if ($flashMessage): ?>
+                        <div id="flashModal" class="modal-overlay active">
+                            <div class="modal-box modal-flash">
+                                <button type="button" class="modal-close" onclick="closeModal('flashModal')">&times;</button>
+                                <p class="modal-title"><?php echo htmlspecialchars($flashMessage); ?></p>
+                            </div>
+                        </div>
+                 
+                        <script>
+                            function closeModal(modalId) {
+                                document.getElementById(modalId).classList.remove('active');
+                            }
+                 
+                            document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+                                overlay.addEventListener('click', function (event) {
+                                    if (event.target === overlay) {
+                                        overlay.classList.remove('active');
+                                    }
+                                });
+                            });
+                        </script>
+                    <?php endif; ?>
 
                 <tbody>
 
@@ -102,7 +130,7 @@ $existingUniversities=$controller->getExistingUniversities();
                                 <td><span class="status-badge status-pending">Pending</span></td>
 
                                 <td>
-                                    <a href="ReviewRegistrationPage.php?id=<?php echo $reg['id']; ?>" class="action-btn view-btn">View</a>
+                                    <a href="viewRegistrationPage.php?id=<?php echo $reg['id']; ?>" class="action-btn view-btn">View</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -114,7 +142,7 @@ $existingUniversities=$controller->getExistingUniversities();
 
     <!-- Existing Universities -->
     <section class="table-section">
-        <h3 class="section-label">Exsting Universities</h3>
+        <h3 class="section-label">Existing Universities</h3>
 
         <div class="table-wrapper">
             <table class="admin-table">
@@ -148,7 +176,7 @@ $existingUniversities=$controller->getExistingUniversities();
                                     <?php endif; ?>
                                 </td>
 
-                                <td>
+                                <td class="license-cell">
                                     <?php echo $uni['licenseExpiryDate']
                                         ? date('d F Y', strtotime($uni['licenseExpiryDate'])): 'No license on record'; ?>
                                 </td>
@@ -156,7 +184,7 @@ $existingUniversities=$controller->getExistingUniversities();
                                 <td class="action-cell">
                                     <a href="approvalUniversityPage.php?id=<?php echo $uni['id']; ?>" class="action-btn view-btn">View</a>
                                     <?php if ($uni['status'] === 'active'): ?>
-                                        <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
+                                        <form action="../controller/manageUniversityController.php" method="POST" class="inline-form">
                                             <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
                                             <input type="hidden" name="action" value="suspend">
                                             <button type="submit" class="action-btn suspend-btn" onclick="return confirm('Suspend this university?');">
@@ -164,7 +192,7 @@ $existingUniversities=$controller->getExistingUniversities();
                                             </button>
                                         </form>
                                     <?php else: ?>
-                                        <form action="../controller/universityManagementController.php" method="POST" class="inline-form">
+                                        <form action="../controller/manageUniversityController.php" method="POST" class="inline-form">
                                             <input type="hidden" name="university_id" value="<?php echo $uni['id']; ?>">
                                             <input type="hidden" name="action" value="reactivate">
                                             <button type="submit" class="action-btn reactivate-btn" onclick="return confirm('Reactivate this university?');">
@@ -181,6 +209,29 @@ $existingUniversities=$controller->getExistingUniversities();
         </div>
     </section>
     </main>
+
+    <?php if ($flashMessage): ?>
+        <div id="flashModal" class="modal-overlay active">
+            <div class="modal-box modal-flash">
+                <button type="button" class="modal-close" onclick="closeModal('flashModal')">&times;</button>
+                <p class="modal-title"><?php echo htmlspecialchars($flashMessage); ?></p>
+            </div>
+        </div>
+ 
+        <script>
+            function closeModal(modalId) {
+                document.getElementById(modalId).classList.remove('active');
+            }
+ 
+            document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+                overlay.addEventListener('click', function (event) {
+                    if (event.target === overlay) {
+                        overlay.classList.remove('active');
+                    }
+                });
+            });
+        </script>
+    <?php endif; ?>
 
     <footer>
         <div class="footer-bottom-bar">
