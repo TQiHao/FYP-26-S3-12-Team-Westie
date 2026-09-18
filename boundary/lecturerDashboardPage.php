@@ -49,22 +49,18 @@ $fullName = $_SESSION['user_name'];
 
                 <div class="profile-container" onclick="toggleDropdown()">
 
-                    <img src="../images/profilePic.png"
-                         alt="Profile"
-                         class="profile-icon">
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                    <img src="../images/dropdown.png"
-                         alt="Menu"
-                         class="dropdown-arrow">
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
 
+                    <a href="ManageProfilePage.php">Manage Profile</a>
                     <a href="">Teaching</a>
-                    <a href="">University Campus Events</a>
-                    <a href="">Manage Profile</a>
-                    <a href="">Submit Feedback</a>
+                    <a href="CampusEventsPage.php">University Campus Events</a>
+                    <a href="SubmitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
 
                 </div>
@@ -85,9 +81,7 @@ $fullName = $_SESSION['user_name'];
             <div class="summary-item">
 
                 <div class="summary-title">
-                    <img src="../images/nextclass.png"
-                         alt="Next class"
-                         class="summary-icon">
+                    <img src="../images/nextclass.png" alt="Next class" class="summary-icon">
 
                     <span>Next class</span>
                 </div>
@@ -102,9 +96,7 @@ $fullName = $_SESSION['user_name'];
             <div class="summary-item">
 
                 <div class="summary-title">
-                    <img src="../images/noti.png"
-                         alt="Notifications"
-                         class="summary-icon">
+                    <img src="../images/noti.png" alt="Notifications" class="summary-icon">
 
                     <span>Notifications</span>
                 </div>
@@ -119,9 +111,7 @@ $fullName = $_SESSION['user_name'];
             <div class="summary-item">
 
                 <div class="summary-title">
-                    <img src="../images/upcomingevent.png"
-                         alt="Upcoming event"
-                         class="summary-icon">
+                    <img src="../images/upcomingevent.png" alt="Upcoming event" class="summary-icon">
 
                     <span>Upcoming event</span>
                 </div>
@@ -206,4 +196,5 @@ $fullName = $_SESSION['user_name'];
     </footer>
 
 </body>
+
 </html>
