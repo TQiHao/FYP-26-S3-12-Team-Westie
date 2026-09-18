@@ -218,9 +218,8 @@ function cleanInput($data)
                 <img src="../images/uniBeeLogo.png" alt="UniBee">
             </div>
             <ul class="footer-links">
-                <li><a href="terms.php">Terms & Conditions</a></li>
-                <li><a href="privacy.php">Privacy Policy</a></li>
-                <li><a href="accessibility.php">Accessibility Statement</a></li>
+                <li><a href="termsAndConditions.php">Terms & Conditions</a></li>
+                <li><a href="privacyPolicy.php">Privacy Policy</a></li>
             </ul>
         </div>
         <div class="footer-bottom-bar">
