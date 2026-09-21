@@ -63,7 +63,7 @@ $fullName = $_SESSION['user_name'];
                     <a href="ManageProfilePage.php">Manage Profile</a>
                     <a href="">AI Chatbot</a>
                     <a href="">Academics</a>
-                    <a href="">Facility Booking</a>
+                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
                     <a href="">University Campus Event</a>
                     <a href="../controller/logoutController.php">Log Out</a>
 
@@ -158,7 +158,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Facilities -->
-                <a href="FacilitiesBookingPage.php" class="dashboard-card">
+                <a href="ViewFacilitiesPage.php" class="dashboard-card">
                     <img src="../images/facilityBooking.png" alt="Facilities Booking" class="card-icon">
                     <h2>Facilities Booking</h2>
                     <p>1 Active Booking</p>
