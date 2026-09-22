@@ -1,13 +1,20 @@
 <?php
-
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
+require_once "../controller/teachingController.php";
+
 $fullName = $_SESSION['user_name'];
+$staffId = $_SESSION['user_id'] ?? null;
+
+// Get total assigned course count dynamically
+$teachingController = new TeachingController();
+$teachingData = $teachingController->loadTeachingView($staffId);
+$assignedCount = $teachingData['assignedCount'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -40,7 +47,7 @@ $fullName = $_SESSION['user_name'];
         <!-- Header Icons -->
         <div class="dashboard-header-right">
 
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -57,11 +64,11 @@ $fullName = $_SESSION['user_name'];
 
                 <div id="profileMenu" class="dropdown-menu">
 
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="">Teaching</a>
-                    <a href="CampusEventsPage.php">University Campus Events</a>
-                    <a href="SubmitFeedbackPage.php">Submit Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="teachingPage.php">Teaching</a>
+                    <a href="campusEventsPage.php">University Campus Events</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
 
                 </div>
 
@@ -131,11 +138,11 @@ $fullName = $_SESSION['user_name'];
 
             <div class="quick-actions">
 
-                <a href="" class="quick-button">
+                <a href="notificationPage.php" class="quick-button">
                     Event Reminders
                 </a>
 
-                <a href="TimetablePage.php" class="quick-button">
+                <a href="viewPersonalTimetable.php" class="quick-button">
                     View Timetable
                 </a>
 
@@ -152,11 +159,14 @@ $fullName = $_SESSION['user_name'];
             <div class="dashboard-grid">
 
                 <!-- Teaching -->
-                <a href="" class="dashboard-card">
+                <a href="teachingPage.php" class="dashboard-card">
 
                     <img src="../images/academic.png" alt="Teaching" class="card-icon">
                     <h2>Teaching</h2>
-                    <p>5 Courses Assigned</p>
+                    <p>
+                        <?php echo $assignedCount; ?> Course
+                        <?php echo $assignedCount === 1 ? '' : 's'; ?> Assigned
+                    </p>
 
                 </a>
 
@@ -172,7 +182,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Submit Feedback -->
-                <a href="SubmitFeedbackPage.php" class="dashboard-card">
+                <a href="submitFeedbackPage.php" class="dashboard-card">
 
                     <img src="../images/feedback.png" alt="Submit Feedback" class="card-icon">
                     <h2>Submit Feedback</h2>

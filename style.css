@@ -1087,8 +1087,8 @@ footer {
 }
 
 .system-admin-dashboard .admin-table-page .section-label {
-    margin: 0 0 16px 0;
-    max-width: none;
+  margin: 0 0 16px 0;
+  max-width: none;
 }
 
 .system-admin-dashboard .dashboard-grid {
@@ -1135,1030 +1135,1218 @@ footer {
 
 /* ===== END OF DASHBOARD ===== */
 
+/* ===== TEACHING ===== */
+.teaching-tabs {
+  display: flex;
+  gap: 40px;
+  border-bottom: 2px solid #ddd;
+  margin: 20px 0 30px;
+}
+
+.teaching-tab {
+  padding: 10px 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #888;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.teaching-tab.active {
+  color: #000;
+  border-bottom-color: var(--bg-yellow);
+}
+
+.teaching-tab:hover {
+  color: #000;
+  text-decoration: none;
+}
+
+.teaching-empty-box {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.teaching-empty-box p {
+  color: #555;
+  margin-bottom: 18px;
+}
+
+.modules-meta {
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.assigned-modules-list {
+  list-style: none;
+  padding: 0;
+}
+
+.module-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  padding: 16px 22px;
+  margin-bottom: 14px;
+}
+
+.module-card h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.module-card p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.module-room {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+/* ===== TIMETABLE GRID ===== */
+.timetable-grid {
+  width: 100%;
+  table-layout: fixed;
+  /* Ensures all 8 columns stay equal width */
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #ffffff;
+}
+
+.timetable-grid th,
+.timetable-grid td {
+  width: 12.5%;
+  border: 1px solid #cccccc;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.timetable-grid th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 10px 5px;
+  vertical-align: middle;
+}
+
+.timetable-grid td {
+  height: 60px;
+  padding: 2px;
+  /* Leaves a clean edge inside the cell */
+  vertical-align: top;
+}
+
+/* ===== YELLOW CLASS BOX ===== */
+.timetable-slot {
+  width: 100%;
+  height: 100%;
+  /* Spans full height of the cell / rowspan */
+  box-sizing: border-box;
+  background-color: var(--bg-yellow);
+  border-radius: 4px;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #111111;
+  word-break: break-word;
+  line-height: 1.3;
+
+  /* Flexbox to center text horizontally and vertically inside the box */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.timetable-slot strong {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.timetable-slot span,
+.timetable-slot small {
+  font-size: 11px;
+  font-weight: normal;
+}
+
 /* ===== MANAGE PROFILE ===== */
 .profile-form {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 30px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .profile-form .form-group {
-    margin-bottom: 18px;
+  margin-bottom: 18px;
 }
 
 .profile-form .form-group label {
-    display: block;
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-    color: #333;
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: #333;
 }
 
 .profile-form .form-group input,
 .profile-form .form-group textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background-color: #fafafa;
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background-color: #fafafa;
 }
 
 .profile-form .form-group input:disabled {
-    background-color: #eeeeee;
-    color: #888;
+  background-color: #eeeeee;
+  color: #888;
 }
 
 .profile-form .form-group input:focus,
 .profile-form .form-group textarea:focus {
-    outline: none;
-    border-color: var(--bg-yellow);
-    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+  outline: none;
+  border-color: var(--bg-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
 }
 
 .profile-form .btn-primary {
-    width: 100%;
-    padding: 14px 30px;
-    border: none;
-    border-radius: 30px;
-    background-color: var(--bg-yellow);
-    color: var(--text-dark);
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  width: 100%;
+  padding: 14px 30px;
+  border: none;
+  border-radius: 30px;
+  background-color: var(--bg-yellow);
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .profile-form .btn-primary:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 /* ===== MANAGE PROFILE - VIEW MODE ===== */
 .profile-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 800px;
-    margin: 20px auto 20px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 20px auto 20px auto;
 }
 
 .btn-update {
-    padding: 8px 25px;
-    border: 1px solid #777;
-    border-radius: 20px;
-    background: white;
-    color: #000;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: 0.2s ease;
+  padding: 8px 25px;
+  border: 1px solid #777;
+  border-radius: 20px;
+  background: white;
+  color: #000;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: 0.2s ease;
 }
 
 .btn-update:hover {
-    background-color: #f8ea9b;
+  background-color: #f8ea9b;
 }
 
 .btn-secondary {
-    padding: 8px 25px;
-    border: 1px solid #777;
-    border-radius: 20px;
-    background: white;
-    color: #000;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: 0.2s ease;
+  padding: 8px 25px;
+  border: 1px solid #777;
+  border-radius: 20px;
+  background: white;
+  color: #000;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: 0.2s ease;
 }
 
 .btn-secondary:hover {
-    background-color: #f1f1f1;
+  background-color: #f1f1f1;
 }
 
 .profile-view {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .profile-identity {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 .profile-large-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #000;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #000;
 }
 
 .profile-identity h2 {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0;
 }
 
 .profile-identity p {
-    font-size: 0.9rem;
-    color: #666;
-    margin: 4px 0 0 0;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 4px 0 0 0;
 }
 
 .profile-divider {
-    border: none;
-    border-top: 1px solid #ddd;
-    margin: 20px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 20px 0;
 }
 
 .profile-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
 }
 
 .profile-field label {
-    display: block;
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  display: block;
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .profile-field p {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #222;
-    margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #222;
+  margin: 0;
 }
 
 /* ===== MANAGE PROFILE - EDIT MODE ===== */
 .profile-form {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 30px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .profile-form .form-group {
-    margin-bottom: 18px;
+  margin-bottom: 18px;
 }
 
 .profile-form .form-group label {
-    display: block;
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-    color: #333;
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: #333;
 }
 
 .profile-form .form-group input,
 .profile-form .form-group textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background-color: #fafafa;
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background-color: #fafafa;
 }
 
 .profile-form .form-group input:disabled {
-    background-color: #eeeeee;
-    color: #888;
+  background-color: #eeeeee;
+  color: #888;
 }
 
 .profile-form .form-group input:focus,
 .profile-form .form-group textarea:focus {
-    outline: none;
-    border-color: var(--bg-yellow);
-    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+  outline: none;
+  border-color: var(--bg-yellow);
+  box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
 }
 
 .profile-form .btn-primary {
-    width: 100%;
-    padding: 14px 30px;
-    border: none;
-    border-radius: 30px;
-    background-color: var(--bg-yellow);
-    color: var(--text-dark);
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  width: 100%;
+  padding: 14px 30px;
+  border: none;
+  border-radius: 30px;
+  background-color: var(--bg-yellow);
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .profile-form .btn-primary:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 /* Responsive Profile */
 @media (max-width: 768px) {
-    .profile-details {
-        grid-template-columns: 1fr;
-    }
+  .profile-details {
+    grid-template-columns: 1fr;
+  }
 
-    .profile-header {
-        flex-direction: column;
-        gap: 10px;
-        align-items: flex-start;
-    }
+  .profile-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
 }
 
+<<<<<<< Updated upstream
+=======
+/* ===== BACK BUTTON ===== */
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px;
+  border: 1px solid #777;
+  border-radius: 20px;
+  background: white;
+  color: #000;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: #f8ea9b;
+  text-decoration: none;
+}
+
+>>>>>>> Stashed changes
 /* Update the profile-header to use space-between with three items */
 .profile-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 800px;
-    margin: 20px auto 20px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 20px auto 20px auto;
 }
 
 /* ===== NOTIFICATIONS ===== */
 .notifications-list {
-    max-width: 800px;
-    margin: 0 auto;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .notification-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 18px 0;
-    border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .notification-icon {
-    width: 28px;
-    height: 28px;
-    object-fit: contain;
-    margin-top: 4px;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  margin-top: 4px;
 }
 
 .notification-content {
-    flex: 1;
+  flex: 1;
 }
 
 .notification-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #222;
-    margin: 0 0 4px 0;
-    line-height: 1.3;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
 }
 
 .notification-time {
-    font-size: 0.8rem;
-    color: #888;
-    margin: 0;
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
 }
 
 .no-notifications {
-    text-align: center;
-    font-size: 1.1rem;
-    color: #666;
-    padding: 60px 20px;
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  padding: 60px 20px;
 }
 
 /* ==== Manage University page ======*/
 .system-admin-dashboard .admin-table-page {
-    padding: 24px 32px;
+  padding: 24px 32px;
 }
- 
+
 .system-admin-dashboard .table-section {
-    margin-bottom: 40px;
+  margin-bottom: 40px;
 }
- 
+
 .system-admin-dashboard .table-wrapper {
-    border: 1px solid #000000;
-    border-radius: 8px;
-    overflow: hidden;
-    background-color: #fff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff;
 }
- 
+
 .system-admin-dashboard .admin-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
- 
+
 .system-admin-dashboard .admin-table th {
-    background-color: #F0F0F0;
-    text-align: center;
-    padding: 12px 16px;
-    font-size: 16px;
-    font-weight: 700;
-    color: #1a1a2e;
-    white-space: nowrap;
-    border: 1px solid #000000;
+  background-color: #F0F0F0;
+  text-align: center;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  border: 1px solid #000000;
 }
- 
+
 .system-admin-dashboard .admin-table td {
-    padding: 12px 16px;
-    text-align: center;
-    font-size: 14px;
-    color: #333;
-    white-space: nowrap;
-    border: 1px solid #000000;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  border: 1px solid #000000;
 }
 
 .system-admin-dashboard .admin-table td.license-cell {
-    white-space: normal;
+  white-space: normal;
 }
 
 .system-admin-dashboard .admin-table tbody tr:last-child td {
-    border-bottom: none;
-    border-left: none;
+  border-bottom: none;
+  border-left: none;
 }
 
 .system-admin-dashboard .admin-table tbody tr:first-child td {
-    border-top: none;
+  border-top: none;
 }
 
 .system-admin-dashboard .admin-table thead th {
-    border-top: none;
+  border-top: none;
 }
- 
+
 .system-admin-dashboard .admin-table th:first-child,
 .system-admin-dashboard .admin-table td:first-child {
-    border-left: none;
+  border-left: none;
 }
- 
+
 .system-admin-dashboard .admin-table th:last-child,
 .system-admin-dashboard .admin-table td:last-child {
-    border-right: none;
+  border-right: none;
 }
- 
+
 .system-admin-dashboard .empty-row {
-    text-align: center;
-    color: #888;
-    font-style: italic;
-    padding: 20px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
 }
- 
-.system-admin-dashboard .admin-table th:nth-child(1) { width: 12%; }   /* SID */
-.system-admin-dashboard .admin-table th:nth-child(2) { width: 30%; }   /* University Name */
-.system-admin-dashboard .admin-table th:nth-child(3) { width: 20%; }   /* Registration Date / Status */
-.system-admin-dashboard .admin-table th:nth-child(4) { width: 18%; }   /* Status / License */
-.system-admin-dashboard .admin-table th:nth-child(5) { width: 20%; }   /* Actions */
- 
+
+.system-admin-dashboard .admin-table th:nth-child(1) {
+  width: 12%;
+}
+
+/* SID */
+.system-admin-dashboard .admin-table th:nth-child(2) {
+  width: 30%;
+}
+
+/* University Name */
+.system-admin-dashboard .admin-table th:nth-child(3) {
+  width: 20%;
+}
+
+/* Registration Date / Status */
+.system-admin-dashboard .admin-table th:nth-child(4) {
+  width: 18%;
+}
+
+/* Status / License */
+.system-admin-dashboard .admin-table th:nth-child(5) {
+  width: 20%;
+}
+
+/* Actions */
+
 /* ---- Status badges ---- */
 .system-admin-dashboard .status-badge {
-    display: inline-block;
-    width: 90%;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
+  display: inline-block;
+  width: 90%;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .status-pending {
-    background-color: #F5A623;
+  background-color: #F5A623;
 }
- 
+
 .system-admin-dashboard .status-active {
-    background-color: #2E9E3F;
+  background-color: #2E9E3F;
 }
- 
+
 .system-admin-dashboard .status-suspended {
-    background-color: #D64545;
+  background-color: #D64545;
 }
- 
+
 /* ---- Action buttons ---- */
 .system-admin-dashboard .action-cell {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: center;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
- 
+
 .system-admin-dashboard .inline-form {
-    display: flex;
-    flex: 1;
+  display: flex;
+  flex: 1;
 }
- 
+
 .system-admin-dashboard .action-btn {
-    display: inline-block;
-    flex: 0 0 135px;
-    box-sizing: border-box;
-    padding: 8px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    text-align: center;
-    border: none;
-    cursor: pointer;
+  display: inline-block;
+  flex: 0 0 135px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  border: none;
+  cursor: pointer;
 }
- 
+
 .system-admin-dashboard .view-btn {
-    background-color: #3a2e2e;
-    color: #fff;
+  background-color: #3a2e2e;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .suspend-btn {
-    background-color: #D64545;
-    color: #fff;
+  background-color: #D64545;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .reactivate-btn {
-    background-color: #2E6DD6;
-    color: #fff;
+  background-color: #2E6DD6;
+  color: #fff;
 }
+
 /* ===== UNIVERSITY ADMIN ===== */
 /* ===== MANAGE UNIVERSITY INFORMATION ===== */
 
 .manage-university-information {
-    width: 80%;
-    max-width: 1050px;
-    margin: 0 auto;
-    padding: 35px 0 60px;
+  width: 80%;
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 35px 0 60px;
 }
 
 /* Back button */
 .manage-university-information .profile-header {
-    display: block;
-    margin: 0 0 28px;
-    padding: 0;
+  display: block;
+  margin: 0 0 28px;
+  padding: 0;
 }
 
 .manage-university-information .btn-back {
-    display: inline-block;
-    color: #000;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 700;
+  display: inline-block;
+  color: #000;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 /* University information */
 .university-information-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding-bottom: 15px;
-    margin-bottom: 27px;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 27px;
+  border-bottom: 1px solid #ccc;
 }
 
 .university-information-icon {
-    width: 25px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .university-information-icon img {
-    width: 25px;
-    height: 25px;
-    object-fit: contain;
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
 }
 
 .university-information-header h1 {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1.1;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .university-information-header p {
-    margin: 3px 0 0;
-    font-size: 0.75rem;
+  margin: 3px 0 0;
+  font-size: 0.75rem;
 }
 
 /* Management cards */
 .university-management-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    column-gap: 35px !important;
-    row-gap: 18px !important;
-    width: 100%;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  column-gap: 35px !important;
+  row-gap: 18px !important;
+  width: 100%;
 }
 
 .university-management-card {
-    min-height: 115px;
-    padding: 16px;
-    box-sizing: border-box;
-    border: 1px solid #999;
-    border-radius: 3px;
-    background-color: #fff;
-    color: #000 !important;
-    text-decoration: none !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    transition: 0.2s ease;
+  min-height: 115px;
+  padding: 16px;
+  box-sizing: border-box;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background-color: #fff;
+  color: #000 !important;
+  text-decoration: none !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: 0.2s ease;
 }
 
 .university-management-card:hover {
-    background-color: #fff9d9;
-    transform: translateY(-2px);
+  background-color: #fff9d9;
+  transform: translateY(-2px);
 }
 
 .management-card-icon {
-    width: 30px;
-    height: 30px;
-    margin-bottom: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .management-card-icon img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
 }
 
 .university-management-card h2 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    line-height: 1.1;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .university-management-card p {
-    margin: 4px 0 0;
-    font-size: 0.7rem;
+  margin: 4px 0 0;
+  font-size: 0.7rem;
 }
 
 .icon-faculty {
-    transform: scale(1.0);
+  transform: scale(1.0);
 }
 
 .icon-facility {
-    transform: scale(0.82);
+  transform: scale(0.82);
 }
 
 .icon-course-coordinator {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
 .icon-lecturer {
-    transform: scale(1.05);
+  transform: scale(1.05);
 }
 
 .icon-student {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
 .icon-floor-plan {
-    transform: scale(0.75);
+  transform: scale(0.75);
 }
 
 /* ===== UPLOAD PAGE ===== */
 
 .upload-page {
-    width: 80%;
-    max-width: 1050px;
-    margin: 0 auto;
-    padding: 35px 0 70px;
-    box-sizing: border-box;
+  width: 80%;
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 35px 0 70px;
+  box-sizing: border-box;
 }
 
 .upload-page .profile-header {
-    display: block;
-    margin: 0 0 28px;
-    padding: 0;
+  display: block;
+  margin: 0 0 28px;
+  padding: 0;
 }
 
 .upload-page-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 15px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #ccc;
 }
 
 .upload-page-header img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .upload-page-header h1 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .upload-form {
-    width: 100%;
+  width: 100%;
 }
 
 .upload-form label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .upload-format {
-    margin-bottom: 10px;
-    font-size: 0.7rem;
-    font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .upload-file-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .upload-file-input {
-    width: 250px;
-    padding: 8px;
-    border: 1px solid #999;
-    font-size: 0.75rem;
-    box-sizing: border-box;
+  width: 250px;
+  padding: 8px;
+  border: 1px solid #999;
+  font-size: 0.75rem;
+  box-sizing: border-box;
 }
 
 .upload-button {
-    margin-top: 30px;
-    padding: 9px 30px;
-    border: 1px solid #000;
-    border-radius: 3px;
-    background-color: var(--bg-yellow);
-    color: #000;
-    font-size: 0.7rem;
-    font-weight: 700;
-    cursor: pointer;
+  margin-top: 30px;
+  padding: 9px 30px;
+  border: 1px solid #000;
+  border-radius: 3px;
+  background-color: var(--bg-yellow);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .upload-button:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 .upload-message {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px 12px;
-    margin-bottom: 20px;
-    border-radius: 6px;
-    font-size: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  font-size: 0.75rem;
 }
 
 .upload-error {
-    background-color: #ffebee;
-    color: #c62828;
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 .upload-success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
+  background-color: #e8f5e9;
+  color: #2e7d32;
 }
 
 /* ===== UPLOAD FACULTY LIST PAGE ===== */
 
 .faculty-list-page {
-    width: 80%;
-    max-width: 1050px;
-    margin: 0 auto;
-    min-height: calc(100vh - 150px);
-    padding: 35px 0 0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+  width: 80%;
+  max-width: 1050px;
+  margin: 0 auto;
+  min-height: calc(100vh - 150px);
+  padding: 35px 0 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .faculty-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 15px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #ccc;
 }
 
 .faculty-header img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .faculty-header h1 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .faculty-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .faculty-list-page .profile-header {
-    display: block;
-    margin: 0 0 28px;
-    padding: 0;
+  display: block;
+  margin: 0 0 28px;
+  padding: 0;
 }
 
 .faculty-list-page .btn-back {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .faculty-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 45px;
-    padding: 0 10px;
-    border: 1px solid #bbb;
-    border-radius: 10px;
-    box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 45px;
+  padding: 0 10px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .faculty-row span {
-    font-size: 0.78rem;
-    font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .select-button {
-    padding: 6px 16px;
-    border: 1px solid #000;
-    border-radius: 15px;
-    background-color: var(--bg-yellow);
-    color: #000;
-    font-size: 0.65rem;
-    font-weight: 700;
-    cursor: pointer;
+  padding: 6px 16px;
+  border: 1px solid #000;
+  border-radius: 15px;
+  background-color: var(--bg-yellow);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .select-button:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 .empty-message {
-    padding: 35px 0;
-    text-align: center;
-    color: #666;
-    font-size: 0.8rem;
+  padding: 35px 0;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
 }
 
 .upload-faculty-container {
-    width: 100%;
-    display: flex;
-    margin-top: auto;
-    padding-top: 20px;
-    padding-bottom: 20px;
-    box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  margin-top: auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  box-sizing: border-box;
 }
 
 .upload-faculty-button {
-    display: inline-block;
-    margin-left: auto !important;
-    padding: 9px 20px;
-    border: 1px solid #000;
-    border-radius: 15px;
-    background-color: var(--bg-yellow);
-    color: #000;
-    text-decoration: none;
-    font-size: 0.7rem;
-    font-weight: 700;
+  display: inline-block;
+  margin-left: auto !important;
+  padding: 9px 20px;
+  border: 1px solid #000;
+  border-radius: 15px;
+  background-color: var(--bg-yellow);
+  color: #000;
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .upload-faculty-button:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 /* ===== END OF UNIVERSIRY ADMIN ===== */
 
 /* === VIEW UNIVERSITY REGISTRATION ==*/
 .system-admin-dashboard .registration-page {
-    padding: 24px 32px;
-    width: 100%;
-    max-width: 1100px;
-    margin: 0 auto;
-    box-sizing: border-box;
+  padding: 24px 32px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
- 
+
 .system-admin-dashboard .registration-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin: 0 0 18px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 18px;
 }
- 
+
 .system-admin-dashboard .registration-card {
-    border: 1px solid #000000;
-    border-radius: 8px;
-    background-color: #fff;
-    padding: 28px 32px;
-    width: 100%;
-    box-sizing: border-box;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 28px 32px;
+  width: 100%;
+  box-sizing: border-box;
 }
- 
+
 .system-admin-dashboard .detail-section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin: 0 0 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 14px;
 }
- 
-.system-admin-dashboard .detail-section + .detail-section {
-    margin-top: 22px;
+
+.system-admin-dashboard .detail-section+.detail-section {
+  margin-top: 22px;
 }
- 
+
 .system-admin-dashboard .detail-row {
-    display: flex;
-    padding: 6px 0;
-    font-size: 0.95rem;
+  display: flex;
+  padding: 6px 0;
+  font-size: 0.95rem;
 }
- 
+
 .system-admin-dashboard .detail-label {
-    width: 180px;
-    flex-shrink: 0;
-    color: #333;
+  width: 180px;
+  flex-shrink: 0;
+  color: #333;
 }
- 
+
 .system-admin-dashboard .detail-value {
-    color: #000;
-    font-weight: 500;
+  color: #000;
+  font-weight: 500;
 }
- 
+
 .system-admin-dashboard .registration-status-note {
-    margin: 0 0 20px;
-    font-size: 0.9rem;
-    color: #555;
-    font-style: italic;
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: #555;
+  font-style: italic;
 }
- 
+
 /* Action buttons row at the bottom of the card */
 .system-admin-dashboard .registration-actions {
-    display: flex;
-    gap: 14px;
-    margin-top: 28px;
+  display: flex;
+  gap: 14px;
+  margin-top: 28px;
 }
- 
+
 .system-admin-dashboard .registration-actions form {
-    display: inline;
+  display: inline;
 }
- 
+
 .system-admin-dashboard .btn-large {
-    display: inline-block;
-    padding: 10px 26px;
-    border-radius: 6px;
-    border: none;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
+  display: inline-block;
+  padding: 10px 26px;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
 }
- 
+
 .system-admin-dashboard .btn-large.back-btn {
-    background-color: #3a2e2e;
-    color: #fff;
+  background-color: #3a2e2e;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .btn-large.reject-btn {
-    background-color: #D64545;
-    color: #fff;
+  background-color: #D64545;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .btn-large.approve-btn {
-    background-color: #2E9E3F;
-    color: #fff;
+  background-color: #2E9E3F;
+  color: #fff;
 }
- 
+
 /* Reject reason textarea, hidden until "Reject" is clicked */
 .system-admin-dashboard .reject-reason-box {
-    display: none;
-    margin-top: 16px;
+  display: none;
+  margin-top: 16px;
 }
- 
+
 .system-admin-dashboard .reject-reason-box.visible {
-    display: block;
+  display: block;
 }
- 
+
 .system-admin-dashboard .reject-reason-box textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 10px;
-    border: 1px solid #999;
-    border-radius: 6px;
-    font-family: var(--font-main);
-    font-size: 0.9rem;
-    box-sizing: border-box;
-    resize: vertical;
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid #999;
+  border-radius: 6px;
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  resize: vertical;
 }
- 
+
 .system-admin-dashboard .reject-reason-box .reject-confirm-btn {
-    margin-top: 10px;
+  margin-top: 10px;
 }
- 
+
 /* ==== Confirmation / result modals (Approve, Reject, flash messages) ==== */
 .system-admin-dashboard .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.45);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
 }
- 
+
 .system-admin-dashboard .modal-overlay.active {
-    display: flex;
+  display: flex;
 }
- 
+
 .system-admin-dashboard .modal-box {
-    position: relative;
-    background-color: #eeeeee;
-    border-radius: 8px;
-    padding: 28px 32px;
-    width: 90%;
-    max-width: 420px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  position: relative;
+  background-color: #eeeeee;
+  border-radius: 8px;
+  padding: 28px 32px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
- 
+
 .system-admin-dashboard .modal-close {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    line-height: 1;
-    cursor: pointer;
-    color: #000;
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #000;
 }
- 
+
 .system-admin-dashboard .modal-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin: 0 0 12px;
-    padding-right: 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+  padding-right: 20px;
 }
- 
+
 .system-admin-dashboard .modal-message {
-    font-size: 0.9rem;
-    color: #333;
-    margin: 0 0 18px;
-    line-height: 1.4;
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0 0 18px;
+  line-height: 1.4;
 }
- 
+
 /* Success/error flash modal has no message body, just the title */
 .system-admin-dashboard .modal-box.modal-flash .modal-title {
-    margin-bottom: 0;
-    text-align: center;
+  margin-bottom: 0;
+  text-align: center;
 }
- 
+
 .system-admin-dashboard .modal-reason-textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    background-color: #ddd;
-    font-family: var(--font-main);
-    font-size: 0.9rem;
-    box-sizing: border-box;
-    resize: vertical;
-    margin-bottom: 18px;
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #ddd;
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+  resize: vertical;
+  margin-bottom: 18px;
 }
- 
+
 .system-admin-dashboard .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
- 
+
 .system-admin-dashboard .modal-btn {
-    padding: 9px 22px;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
+  padding: 9px 22px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
 }
- 
+
 .system-admin-dashboard .modal-btn.modal-cancel {
-    background-color: #3a2e2e;
-    color: #fff;
+  background-color: #3a2e2e;
+  color: #fff;
 }
- 
+
 .system-admin-dashboard .modal-btn.modal-confirm-approve {
-    background-color: #7fd99a;
-    color: #073b16;
+  background-color: #7fd99a;
+  color: #073b16;
 }
- 
+
 .system-admin-dashboard .modal-btn.modal-confirm-reject {
+<<<<<<< Updated upstream
     background-color: #D64545;
     color: #fff;
 }
@@ -3013,4 +3201,8 @@ footer {
     .btn-disabled {
         width: 100%;
     }
+=======
+  background-color: #D64545;
+  color: #fff;
+>>>>>>> Stashed changes
 }

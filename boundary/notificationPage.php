@@ -9,7 +9,17 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once "../controller/NotificationController.php";
 
 $controller = new NotificationController();
-$notifications = $controller->getNotification($_SESSION['user_id']);
+$userId = $_SESSION['user_id'] ?? null;
+
+// Determine user role (defaults to 'student' if not set)
+$userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
+$isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
+
+// Dynamic back button destination
+$backDashboard = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
+
+// Fetch user-specific notifications
+$notifications = $controller->getNotification($userId);
 ?>
 
 <!DOCTYPE html>
@@ -33,7 +43,7 @@ $notifications = $controller->getNotification($_SESSION['user_id']);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -49,11 +59,19 @@ $notifications = $controller->getNotification($_SESSION['user_id']);
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="FacilitiesBookingPage.php">Facility Booking</a>
-                    <a href="CampusEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <?php if ($isLecturer): ?>
+                        <!-- Lecturer Menu Items -->
+                        <a href="TeachingPage.php">Teaching</a>
+                        <a href="CampusEventsPage.php">University Campus Events</a>
+                        <a href="SubmitFeedbackPage.php">Submit Feedback</a>
+                    <?php else: ?>
+                        <!-- Student Menu Items -->
+                        <a href="AIChatbotPage.php">AI Chatbot</a>
+                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                        <a href="CampusEventsPage.php">University Campus Event</a>
+                    <?php endif; ?>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -63,29 +81,27 @@ $notifications = $controller->getNotification($_SESSION['user_id']);
     <main class="dashboard">
 
         <div class="profile-header">
-            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+            <!-- Dynamic Back Link based on role -->
+            <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Notifications</h2>
-            <div></div> <!-- spacer to keep title centered -->
+            <div></div> <!-- Spacer for centering title -->
         </div>
 
         <?php if ($notifications === false): ?>
-            <!-- Alt flow: unable to load -->
             <p class="error-message">Unable to load notifications. Please try again later.</p>
 
         <?php elseif (empty($notifications)): ?>
-            <!-- Alt flow: no notifications -->
             <p class="no-notifications">You have no new notifications.</p>
 
         <?php else: ?>
-            <!-- Normal flow: display notifications -->
             <div class="notifications-list">
 
                 <?php foreach ($notifications as $n): ?>
 
                     <?php
                     // Choose icon based on notification type
-                    $icon = '../images/notification.png'; // default
-                    switch ($n['type']) {
+                    $icon = '../images/notification.png';
+                    switch ($n['type'] ?? '') {
                         case 'event':
                             $icon = '../images/upcomingEvent.png';
                             break;
@@ -100,24 +116,23 @@ $notifications = $controller->getNotification($_SESSION['user_id']);
                             $icon = '../images/studyGrp.png';
                             break;
                         case 'system':
+                        default:
                             $icon = '../images/notification.png';
                             break;
                     }
                     ?>
 
                     <div class="notification-item">
-
                         <img src="<?php echo $icon; ?>" alt="Icon" class="notification-icon">
 
                         <div class="notification-content">
                             <p class="notification-title">
-                                <?php echo htmlspecialchars($n['title']); ?>
+                                <?php echo htmlspecialchars($n['title'] ?? ''); ?>
                             </p>
                             <p class="notification-time">
-                                <?php echo htmlspecialchars($n['createdAt']); ?>
+                                <?php echo htmlspecialchars($n['createdAt'] ?? ''); ?>
                             </p>
                         </div>
-
                     </div>
 
                 <?php endforeach; ?>
@@ -134,4 +149,5 @@ $notifications = $controller->getNotification($_SESSION['user_id']);
         </div>
     </footer>
 </body>
+
 </html>
