@@ -174,7 +174,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Campus Events -->
-                <a href="CampusEventsPage.php" class="dashboard-card">
+                <a href="viewEventsPage.php" class="dashboard-card">
                     <img src="../images/campusEvent.png" alt="Campus Events" class="card-icon">
                     <h2>Campus Events</h2>
                     <p>3 Upcoming</p>
