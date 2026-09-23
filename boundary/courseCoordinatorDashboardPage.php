@@ -1,9 +1,8 @@
 <?php
-
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 ?>
@@ -14,9 +13,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Course Coordinator Dashboard - UniBee</title>
-
     <link rel="stylesheet" href="../style.css">
 </head>
 
@@ -44,35 +41,15 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <div class="profile-dropdown">
 
                 <div class="profile-container" onclick="toggleDropdown()">
-
-                    <img src="../images/profilePic.png"
-                         alt="Profile"
-                         class="profile-icon">
-
-                    <img src="../images/dropdown.png"
-                         alt="Menu"
-                         class="dropdown-arrow">
-
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-
-                    <a href="ManageClassesPage.php">
-                        Manage Classes
-                    </a>
-
-                    <a href="AIChatbotPage.php">
-                        AI Chatbot
-                    </a>
-
-                    <a href="SubmitFeedbackPage.php">
-                        Submit Feedback
-                    </a>
-
-                    <a href="../controller/logoutController.php">
-                        Log Out
-                    </a>
-
+                    <a href="manageClassesPage.php">Manage Classes</a>
+                    <a href="">AI Chatbot</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 
             </div>
@@ -80,7 +57,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         </div>
 
     </header>
-
 
     <!-- Course Coordinator Dashboard -->
     <main class="dashboard">
@@ -93,44 +69,24 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <div class="dashboard-grid">
 
                 <!-- Manage Classes -->
-                <a href="ManageClassesPage.php" class="dashboard-card">
-
-                    <img src="../images/academic.png"
-                         alt="Manage Classes"
-                         class="card-icon">
-
+                <a href="manageClassesPage.php" class="dashboard-card">
+                    <img src="../images/academic.png" alt="Manage Classes" class="card-icon">
                     <h2>Manage Classes</h2>
-
                     <p>125 classes are active</p>
-
                 </a>
-
 
                 <!-- AI Chatbot -->
-                <a href="AIChatbotPage.php" class="dashboard-card">
-
-                    <img src="../images/aichatbot.png"
-                         alt="AI Chatbot"
-                         class="card-icon">
-
+                <a href="" class="dashboard-card">
+                    <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
-
                     <p>Ask a Question</p>
-
                 </a>
 
-
                 <!-- Submit Feedback -->
-                <a href="SubmitFeedbackPage.php" class="dashboard-card">
-
-                    <img src="../images/feedback.png"
-                         alt="Submit Feedback"
-                         class="card-icon">
-
+                <a href="submitFeedbackPage.php" class="dashboard-card">
+                    <img src="../images/feedback.png" alt="Submit Feedback" class="card-icon">
                     <h2>Submit Feedback</h2>
-
                     <p>Share your thoughts</p>
-
                 </a>
 
             </div>
@@ -139,14 +95,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
     </main>
 
-
     <!-- Footer -->
     <footer>
-
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.
         </div>
-
     </footer>
 
 </body>
