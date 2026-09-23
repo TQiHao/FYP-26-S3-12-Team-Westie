@@ -5,6 +5,19 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
     exit();
 }
+
+// 2. Role Filter: Allow only Student and Lecturer
+$user_role = $_SESSION['user_role'] ?? $_SESSION['role'] ?? '';
+$allowed_roles = ['Student', 'Lecturer', 'student', 'lecturer'];
+
+if (!in_array($user_role, $allowed_roles)) {
+    header("Location: loginPage.php");
+    exit();
+}
+
+// Determine role-specific dashboard link
+$isLecturer = (strtolower($user_role) === 'lecturer');
+$dashboardPage = $isLecturer ? "lecturerDashboardPage.php" : "studentDashboardPage.php";
 ?>
 
 <!DOCTYPE html>
@@ -23,14 +36,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <!-- Header -->
     <header class="header">
         <div class="logo-container">
-            <a href="studentDashboardPage.php">
-            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+            <a href="<?php echo htmlspecialchars($dashboardPage); ?>">
+                <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -45,10 +58,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
+                    <?php if ($isLecturer): ?>
+                        <a href="TeachingPage.php">Teaching</a>
+                    <?php else: ?>
+                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                        <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <?php endif; ?>
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="FacilitiesBookingPage.php">Facility Booking</a>
                     <a href="CampusEventsPage.php">University Campus Event</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
@@ -60,16 +77,17 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <main class="dashboard">
 
         <div class="profile-header">
-            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+            <a href="<?php echo htmlspecialchars($dashboardPage); ?>" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Submit Feedback</h2>
-            <div></div>
+            <div style="width: 100px;"></div> <!-- Spacer to keep header title perfectly centered -->
         </div>
 
         <form action="../controller/SubmitFeedbackController.php" method="POST" class="feedback-form">
 
             <div class="form-group">
                 <label for="message">Feedback</label>
-                <textarea id="message" name="message" rows="8" placeholder="Write your feedback here..." required></textarea>
+                <textarea id="message" name="message" rows="8" placeholder="Write your feedback here..."
+                    required></textarea>
             </div>
 
             <button type="submit" name="submit_feedback" class="btn-primary">Submit</button>
@@ -108,9 +126,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         function closeModal() {
             var modal = document.getElementById("successModal");
             if (modal) modal.style.display = "none";
-            // Redirect to dashboard after closing
-            window.location.href = "studentDashboardPage.php";
+            window.location.href = "<?php echo htmlspecialchars($dashboardPage); ?>";
         }
     </script>
 </body>
+
 </html>
