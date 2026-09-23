@@ -3206,3 +3206,235 @@ footer {
   color: #fff;
 >>>>>>> Stashed changes
 }
+
+/* ===== CAMPUS EVENTS ===== */
+.event-search-bar {
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+}
+
+.event-search-bar input {
+    width: 100%;
+    padding: 12px 18px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+.event-search-bar input:focus {
+    outline: none;
+    border-color: var(--bg-yellow);
+    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+}
+
+.event-list {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.event-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 18px 25px;
+    transition: 0.2s ease;
+}
+
+.event-item:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* Date badge */
+.event-date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-yellow);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 60px;
+}
+
+.event-month {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #333;
+}
+
+.event-day {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #222;
+    line-height: 1.1;
+}
+
+/* Event info */
+.event-info {
+    flex: 1;
+}
+
+.event-info h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    color: #222;
+}
+
+.event-info p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Event actions */
+.event-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-event-nav,
+.btn-event-register,
+.btn-event-past {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-event-nav {
+    background-color: var(--bg-yellow);
+    color: #222;
+}
+
+.btn-event-nav:hover {
+    background-color: #e6c23a;
+    text-decoration: none;
+}
+
+.btn-event-register {
+    background-color: var(--bg-yellow);
+    color: #222;
+}
+
+.btn-event-register:hover {
+    background-color: #e6c23a;
+    text-decoration: none;
+}
+
+.btn-event-past {
+    background-color: #e0e0e0;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .event-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .event-actions {
+        width: 100%;
+    }
+
+    .btn-event-nav,
+    .btn-event-register,
+    .btn-event-past {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+/* ===== EVENT REGISTER FORM ===== */
+.event-register-form {
+    display: inline;
+}
+
+.event-register-form .btn-event-register {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background-color: var(--bg-yellow);
+    color: #222;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.event-register-form .btn-event-register:hover {
+    background-color: #e6c23a;
+}
+
+/* ===== EVENT SEARCH FORM ===== */
+.event-search-bar {
+    display: flex;
+    gap: 10px;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+}
+
+.event-search-bar input {
+    flex: 1;
+    padding: 12px 18px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+.event-search-bar input:focus {
+    outline: none;
+    border-color: var(--bg-yellow);
+    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+}
+
+.btn-search {
+    padding: 12px 28px;
+    background-color: var(--bg-yellow);
+    color: #222;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-search:hover {
+    background-color: #e6c23a;
+}
+
+.btn-clear {
+    padding: 12px 20px;
+    background-color: #e0e0e0;
+    color: #333;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-clear:hover {
+    background-color: #ccc;
+    text-decoration: none;
+}
