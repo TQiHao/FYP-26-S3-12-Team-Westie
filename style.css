@@ -2125,6 +2125,228 @@ footer {
   background-color: #e6c23a;
 }
 
+/* ===== UPLOAD PROGRAMME LIST PAGE ===== */
+
+.programme-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.programme-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.programme-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-top: 2px;
+}
+
+.programme-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.programme-header p {
+    margin: 8px 0 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.programme-header p strong {
+    font-weight: 700;
+}
+
+.programme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.programme-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.programme-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.programme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 45px;
+    padding: 0 10px;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.programme-row span {
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.empty-programme-message {
+    padding: 35px 0;
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.upload-programme-container {
+    width: 100%;
+    display: flex;
+    margin-top: auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.upload-programme-button {
+    display: inline-block;
+    margin-left: auto !important;
+    padding: 9px 20px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background-color: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-programme-button:hover {
+    background-color: #e6c23a;
+}
+
+/* ===== UPLOAD MODULE LIST PAGE ===== */
+
+.module-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.module-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.module-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.module-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    margin-top: 2px;
+}
+
+.module-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.module-details {
+    margin-top: 6px;
+}
+
+.module-details p {
+    margin: 2px 0;
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+.module-details strong {
+    font-weight: 700;
+}
+
+.module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.module-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 45px;
+    padding: 0 10px;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.module-row span {
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.empty-module-message {
+    padding: 35px 0;
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.upload-module-container {
+    width: 100%;
+    display: flex;
+    margin-top: auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.upload-module-button {
+    display: inline-block;
+    margin-left: auto !important;
+    padding: 9px 20px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background-color: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-module-button:hover {
+    background-color: #e6c23a;
+}
+
 /* ===== END OF UNIVERSIRY ADMIN ===== */
 
 /* === VIEW UNIVERSITY REGISTRATION ==*/

@@ -7,6 +7,42 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+$type = $_GET['type'] ?? '';
+
+$facultyId = isset($_GET['facultyId']) ? (int) $_GET['facultyId'] : null;
+$programmeId = isset($_GET['programmeId']) ? (int) $_GET['programmeId'] : null;
+
+switch ($type) {
+
+    case 'faculty':
+        $title = 'Faculty';
+        $uploadType = 'faculty';
+        $backPage = 'UploadFacultyListPage.php';
+        $buttonText = 'Upload Faculty';
+        break;
+
+    case 'programme':
+        $title = 'Programme';
+        $uploadType = 'programme';
+        $backPage = 'UploadProgrammeListPage.php?facultyId=' . urlencode($facultyId);
+        $buttonText = 'Upload Programme';
+        break;
+
+    case 'module':
+        $title = 'Module';
+        $uploadType = 'module';
+        $backPage = 'UploadModuleListPage.php?facultyId='
+            . urlencode($facultyId)
+            . '&programmeId='
+            . urlencode($programmeId);
+        $buttonText = 'Upload Module';
+        break;
+
+    default:
+        header("Location: ManageUniversityInformationPage.php");
+        exit();
+}
+
 $error = $_SESSION['upload_error'] ?? null;
 $success = $_SESSION['upload_success'] ?? null;
 
@@ -83,9 +119,11 @@ unset($_SESSION['upload_success']);
     <main class="upload-page">
 
         <div class="profile-header">
-            <a href="UploadFacultyListPage.php" class="btn-back">
+
+            <a href="<?php echo htmlspecialchars($backPage); ?>" class="btn-back">
                 &#8592; Back
             </a>
+
         </div>
 
 
@@ -93,13 +131,14 @@ unset($_SESSION['upload_success']);
 
             <img
                 src="../images/faculty.png"
-                alt="Faculty"
+                alt="<?php echo htmlspecialchars($title); ?>"
             >
 
-            <h1>Faculty</h1>
+            <h1>
+                <?php echo htmlspecialchars($title); ?>
+            </h1>
 
         </section>
-
 
         <?php if ($error): ?>
 
@@ -117,7 +156,6 @@ unset($_SESSION['upload_success']);
             </div>
 
         <?php endif; ?>
-
 
         <form
             action="../controller/manageUniversityInformationController.php"
@@ -147,13 +185,32 @@ unset($_SESSION['upload_success']);
 
             </div>
 
-
             <input
                 type="hidden"
                 name="uploadType"
-                value="faculty"
+                value="<?php echo htmlspecialchars($uploadType); ?>"
             >
 
+            <!-- Keep the selected IDs -->
+            <?php if ($facultyId !== null): ?>
+
+                <input
+                    type="hidden"
+                    name="facultyId"
+                    value="<?php echo htmlspecialchars($facultyId); ?>"
+                >
+
+            <?php endif; ?>
+
+            <?php if ($programmeId !== null): ?>
+
+                <input
+                    type="hidden"
+                    name="programmeId"
+                    value="<?php echo htmlspecialchars($programmeId); ?>"
+                >
+
+            <?php endif; ?>
 
             <button
                 type="submit"
@@ -166,7 +223,6 @@ unset($_SESSION['upload_success']);
         </form>
 
     </main>
-
 
     <!-- Footer -->
     <footer>

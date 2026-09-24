@@ -12,12 +12,15 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
  */
 $faculties = [
     [
+        'id' => 1,
         'name' => 'Faculty of Computing'
     ],
     [
+        'id' => 2,
         'name' => 'Faculty of Business'
     ],
     [
+        'id' => 3,
         'name' => 'Faculty of Engineering'
     ]
 ];
@@ -128,12 +131,12 @@ $faculties = [
                             <?php echo htmlspecialchars($faculty['name']); ?>
                         </span>
 
-                        <button
-                            type="button"
+                        <a
+                            href="UploadProgrammeListPage.php?facultyId=<?php echo urlencode($faculty['id']); ?>"
                             class="select-button"
                         >
                             Select
-                        </button>
+                        </a>
 
                     </div>
 
@@ -147,7 +150,7 @@ $faculties = [
         <!-- Upload Faculty -->
         <div class="upload-faculty-container">
 
-            <a href="uploadListPage.php" class="upload-faculty-button">
+            <a href="uploadListPage.php?type=faculty" class="upload-faculty-button">
                 Upload Faculty
             </a>
 
