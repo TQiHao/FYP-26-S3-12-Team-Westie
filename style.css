@@ -3888,3 +3888,140 @@ footer {
   background-color: #ccc;
   text-decoration: none;
 }
+
+/* ===== ENROLLED COURSES ===== */
+.semester-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 10px auto 20px auto;
+    max-width: 900px;
+}
+
+.enrolled-courses-list {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.enrolled-course-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 20px 25px;
+    transition: 0.2s ease;
+}
+
+.enrolled-course-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.course-left h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: #222;
+}
+
+.course-left p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+.course-right {
+    text-align: right;
+}
+
+.course-room {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .enrolled-course-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .course-right {
+        text-align: left;
+    }
+}
+
+/* ===== EXAM SCHEDULE ===== */
+.exam-list {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.exam-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 18px 25px;
+    transition: 0.2s ease;
+}
+
+.exam-item:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.exam-date-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-yellow);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 60px;
+}
+
+.exam-month {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #333;
+}
+
+.exam-day {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #222;
+    line-height: 1.1;
+}
+
+.exam-info h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    color: #222;
+}
+
+.exam-info p {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .exam-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
