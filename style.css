@@ -160,7 +160,7 @@ header {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: #000000;
 }
 
 .hero-content {
@@ -186,7 +186,7 @@ header {
 
 .hero-divider {
   width: 2px;
-  background-color: rgba(255, 255, 255, 0.6);
+  background-color: #ffffff;
   height: 120px;
 }
 
@@ -289,7 +289,7 @@ header {
 }
 
 .dashed-line {
-  border-bottom: 1.5px dashed #444;
+  border-bottom: 1.5px solid #444;
   margin-bottom: 15px;
   width: 100%;
 }
@@ -428,7 +428,7 @@ header {
 
 /* Footer Structure - Custom Yellow & Larger Mascot */
 footer {
-  background-color: var(--footer-yellow);
+  background-color: var(--bg-yellow);
   /* Distinct warmer yellow */
 }
 
@@ -466,13 +466,13 @@ footer {
 }
 
 .footer-bottom-bar {
-  background-color: var(--footer-dark-yellow);
+  background-color: var(--bg-yellow);
   text-align: center;
   padding: 14px 20px;
   font-size: 0.88rem;
   font-weight: 700;
   color: #000;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #cccccc;
 }
 
 /* Responsive Mobile Layout */
@@ -1244,21 +1244,22 @@ footer {
 }
 
 /* ===== YELLOW CLASS BOX ===== */
+
+
+/* Yellow class box */
 .timetable-slot {
   width: 100%;
   height: 100%;
-  /* Spans full height of the cell / rowspan */
+  /* Fills the entire 3-row height */
   box-sizing: border-box;
   background-color: var(--bg-yellow);
+  /* UniBee Yellow (#FFDA48) */
   border-radius: 4px;
   padding: 6px 4px;
   font-size: 12px;
   font-weight: bold;
   color: #111111;
-  word-break: break-word;
-  line-height: 1.3;
 
-  /* Flexbox to center text horizontally and vertically inside the box */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1276,6 +1277,8 @@ footer {
   font-size: 11px;
   font-weight: normal;
 }
+
+
 
 /* ===== MANAGE PROFILE ===== */
 .profile-form {
@@ -2128,223 +2131,223 @@ footer {
 /* ===== UPLOAD PROGRAMME LIST PAGE ===== */
 
 .programme-list-page {
-    width: 80%;
-    max-width: 1050px;
-    margin: 0 auto;
-    min-height: calc(100vh - 150px);
-    padding: 35px 0 0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+  width: 80%;
+  max-width: 1050px;
+  margin: 0 auto;
+  min-height: calc(100vh - 150px);
+  padding: 35px 0 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .programme-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding-bottom: 15px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #ccc;
 }
 
 .programme-header img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    margin-top: 2px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-top: 2px;
 }
 
 .programme-header h1 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .programme-header p {
-    margin: 8px 0 0;
-    font-size: 0.75rem;
-    line-height: 1.4;
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .programme-header p strong {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 .programme-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .programme-list-page .profile-header {
-    display: block;
-    margin: 0 0 28px;
-    padding: 0;
+  display: block;
+  margin: 0 0 28px;
+  padding: 0;
 }
 
 .programme-list-page .btn-back {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .programme-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 45px;
-    padding: 0 10px;
-    border: 1px solid #bbb;
-    border-radius: 10px;
-    box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 45px;
+  padding: 0 10px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .programme-row span {
-    font-size: 0.78rem;
-    font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .empty-programme-message {
-    padding: 35px 0;
-    text-align: center;
-    color: #666;
-    font-size: 0.8rem;
+  padding: 35px 0;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
 }
 
 .upload-programme-container {
-    width: 100%;
-    display: flex;
-    margin-top: auto;
-    padding-top: 20px;
-    padding-bottom: 20px;
-    box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  margin-top: auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  box-sizing: border-box;
 }
 
 .upload-programme-button {
-    display: inline-block;
-    margin-left: auto !important;
-    padding: 9px 20px;
-    border: 1px solid #000;
-    border-radius: 15px;
-    background-color: var(--bg-yellow);
-    color: #000;
-    text-decoration: none;
-    font-size: 0.7rem;
-    font-weight: 700;
+  display: inline-block;
+  margin-left: auto !important;
+  padding: 9px 20px;
+  border: 1px solid #000;
+  border-radius: 15px;
+  background-color: var(--bg-yellow);
+  color: #000;
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .upload-programme-button:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 /* ===== UPLOAD MODULE LIST PAGE ===== */
 
 .module-list-page {
-    width: 80%;
-    max-width: 1050px;
-    margin: 0 auto;
-    min-height: calc(100vh - 150px);
-    padding: 35px 0 0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+  width: 80%;
+  max-width: 1050px;
+  margin: 0 auto;
+  min-height: calc(100vh - 150px);
+  padding: 35px 0 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .module-list-page .profile-header {
-    display: block;
-    margin: 0 0 28px;
-    padding: 0;
+  display: block;
+  margin: 0 0 28px;
+  padding: 0;
 }
 
 .module-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding-bottom: 15px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #ccc;
 }
 
 .module-header img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    margin-top: 2px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-top: 2px;
 }
 
 .module-header h1 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .module-details {
-    margin-top: 6px;
+  margin-top: 6px;
 }
 
 .module-details p {
-    margin: 2px 0;
-    font-size: 0.7rem;
-    line-height: 1.3;
+  margin: 2px 0;
+  font-size: 0.7rem;
+  line-height: 1.3;
 }
 
 .module-details strong {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 .module-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .module-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 45px;
-    padding: 0 10px;
-    border: 1px solid #bbb;
-    border-radius: 10px;
-    box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 45px;
+  padding: 0 10px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .module-row span {
-    font-size: 0.78rem;
-    font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .empty-module-message {
-    padding: 35px 0;
-    text-align: center;
-    color: #666;
-    font-size: 0.8rem;
+  padding: 35px 0;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
 }
 
 .upload-module-container {
-    width: 100%;
-    display: flex;
-    margin-top: auto;
-    padding-top: 20px;
-    padding-bottom: 20px;
-    box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  margin-top: auto;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  box-sizing: border-box;
 }
 
 .upload-module-button {
-    display: inline-block;
-    margin-left: auto !important;
-    padding: 9px 20px;
-    border: 1px solid #000;
-    border-radius: 15px;
-    background-color: var(--bg-yellow);
-    color: #000;
-    text-decoration: none;
-    font-size: 0.7rem;
-    font-weight: 700;
+  display: inline-block;
+  margin-left: auto !important;
+  padding: 9px 20px;
+  border: 1px solid #000;
+  border-radius: 15px;
+  background-color: var(--bg-yellow);
+  color: #000;
+  text-decoration: none;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .upload-module-button:hover {
-    background-color: #e6c23a;
+  background-color: #e6c23a;
 }
 
 /* ===== END OF UNIVERSIRY ADMIN ===== */
@@ -3891,137 +3894,137 @@ footer {
 
 /* ===== ENROLLED COURSES ===== */
 .semester-label {
-    font-size: 0.9rem;
-    color: #666;
-    margin: 10px auto 20px auto;
-    max-width: 900px;
+  font-size: 0.9rem;
+  color: #666;
+  margin: 10px auto 20px auto;
+  max-width: 900px;
 }
 
 .enrolled-courses-list {
-    max-width: 900px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .enrolled-course-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    padding: 20px 25px;
-    transition: 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 20px 25px;
+  transition: 0.2s ease;
 }
 
 .enrolled-course-card:hover {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .course-left h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 6px 0;
-    color: #222;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #222;
 }
 
 .course-left p {
-    font-size: 0.85rem;
-    color: #666;
-    margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
 }
 
 .course-right {
-    text-align: right;
+  text-align: right;
 }
 
 .course-room {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #333;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
 }
 
 @media (max-width: 768px) {
-    .enrolled-course-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
+  .enrolled-course-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-    .course-right {
-        text-align: left;
-    }
+  .course-right {
+    text-align: left;
+  }
 }
 
 /* ===== EXAM SCHEDULE ===== */
 .exam-list {
-    max-width: 900px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .exam-item {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    padding: 18px 25px;
-    transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 18px 25px;
+  transition: 0.2s ease;
 }
 
 .exam-item:hover {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .exam-date-badge {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--bg-yellow);
-    border-radius: 10px;
-    padding: 10px 14px;
-    min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-yellow);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 60px;
 }
 
 .exam-month {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #333;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #333;
 }
 
 .exam-day {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #222;
-    line-height: 1.1;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.1;
 }
 
 .exam-info h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 4px 0;
-    color: #222;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #222;
 }
 
 .exam-info p {
-    font-size: 0.85rem;
-    color: #666;
-    margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .exam-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
+  .exam-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }

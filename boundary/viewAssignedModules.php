@@ -19,6 +19,32 @@ $staffId = $_SESSION['user_id'] ?? null;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assigned Modules - UniBee</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .profile-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 45px;
+            margin: 15px 0 25px 0;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 0;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .profile-header .section-label {
+            position: absolute;
+            left: 70%;
+            transform: translateX(-50%);
+            margin: 0 !important;
+            text-align: center !important;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>

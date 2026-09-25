@@ -11,6 +11,11 @@ require_once "../controller/ManageProfileController.php";
 $controller = new ManageProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
 
+// Sync active session name with the latest database name
+if ($user && !empty($user['fullName'])) {
+    $_SESSION['user_name'] = $user['fullName'];
+}
+
 if (!$user) {
     $_SESSION['profile_error'] = "Unable to load profile information. Please try again.";
 }

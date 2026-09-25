@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
@@ -8,8 +10,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 require_once "../controller/viewEventsController.php";
 
+// Filter user role first to determine proper dashboard and navigation
+$userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
+$isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
+$dashboardPage = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
+
 $controller = new ViewEventsController();
-$events = $controller->getEventList($_SESSION['university_id']);
+$universityId = $_SESSION['university_id'] ?? 1;
+$events = $controller->getEventList($universityId);
 
 // If search results are set, use them; otherwise show all events
 $eventsToDisplay = $_SESSION['search_results'] ?? $events;
@@ -37,18 +45,18 @@ unset($_SESSION['search_keyword']);
     <!-- Header -->
     <header class="header">
         <div class="logo-container">
-            <a href="studentDashboardPage.php">
+            <a href="<?php echo $dashboardPage; ?>">
                 <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? ''); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -59,12 +67,18 @@ unset($_SESSION['search_keyword']);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="viewFacilitiesPage.php">Facility Booking</a>
-                    <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <?php if ($isLecturer): ?>
+                        <a href="teachingPage.php">Teaching</a>
+                        <a href="viewEventsPage.php">University Campus Events</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php else: ?>
+                        <a href="AIChatbotPage.php">AI Chatbot</a>
+                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
+                        <a href="viewEventsPage.php">University Campus Event</a>
+                    <?php endif; ?>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -73,15 +87,18 @@ unset($_SESSION['search_keyword']);
     <!-- Main Content -->
     <main class="dashboard">
 
-        <h2 class="section-label" style="max-width: 900px; margin: 25px auto 15px auto;">Campus Event</h2>
+        <div class="profile-header"
+            style="max-width: 900px; margin: 25px auto 15px auto; display:flex; align-items:center; justify-content:space-between;">
+            <a href="<?php echo $dashboardPage; ?>" class="btn-back">&#8592; Back</a>
+            <h2 class="section-label" style="margin: 0;">Campus Events</h2>
+            <div style="width: 80px;"></div>
+        </div>
 
         <!-- Search Bar (Server-side) -->
         <form action="../controller/searchEventController.php" method="GET" class="event-search-bar">
-            <input type="text"
-                   id="eventSearchInput"
-                   name="keyword"
-                   placeholder="Search events by name, date, or venue..."
-                   value="<?php echo htmlspecialchars($searchKeywordValue); ?>">
+            <input type="text" id="eventSearchInput" name="keyword"
+                placeholder="Search events by name, date, or venue..."
+                value="<?php echo htmlspecialchars($searchKeywordValue); ?>">
             <button type="submit" name="search" class="btn-search">Search</button>
         </form>
 
@@ -118,11 +135,11 @@ unset($_SESSION['search_keyword']);
 
                     <?php
                     $startDate = strtotime($event['startDatetime']);
-                    $endDate   = strtotime($event['endDatetime']);
+                    $endDate = strtotime($event['endDatetime']);
 
                     $month = date('M', $startDate);
-                    $day   = date('d', $startDate);
-                    $time  = date('g:iA', $startDate) . ' - ' . date('g:iA', $endDate);
+                    $day = date('d', $startDate);
+                    $time = date('g:iA', $startDate) . ' - ' . date('g:iA', $endDate);
 
                     // Check if event is past
                     $isPast = $startDate < time();
@@ -146,7 +163,7 @@ unset($_SESSION['search_keyword']);
                         <div class="event-actions">
 
                             <a href="viewEventNavigationPage.php?eventId=<?php echo urlencode($event['id']); ?>"
-                               class="btn-event-nav">
+                                class="btn-event-nav">
                                 Navigate
                             </a>
 
@@ -241,4 +258,5 @@ unset($_SESSION['search_keyword']);
     </script>
 
 </body>
+
 </html>
