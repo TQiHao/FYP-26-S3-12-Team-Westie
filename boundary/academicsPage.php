@@ -7,8 +7,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 
 require_once "../controller/academicsController.php";
+require_once "../controller/viewEventsController.php";
 
 $controller = new AcademicsController();
+$eventController = new ViewEventsController();
 $studentId = $_SESSION['user_id'] ?? null;
 
 // Tab logic — allow 4 tabs
@@ -35,9 +37,9 @@ if (isset($_GET['date']) && !empty($_GET['date'])) {
 
 $dayOfWeekNum = (int) $refDate->format('N');
 $monday = clone $refDate;
-$monday->modify('-' . ($dayOfWeekNum - 1) . ' days');
+$monday->modify('-' . ($dayOfWeekNum - 1) . ' days')->setTime(0, 0, 0);
 $sunday = clone $monday;
-$sunday->modify('+6 days');
+$sunday->modify('+6 days')->setTime(23, 59, 59);
 
 $prevMonday = clone $monday;
 $prevMonday->modify('-1 week');
@@ -53,10 +55,16 @@ $semStart = new DateTime('2026-09-01');
 $semEnd = new DateTime('2026-11-30');
 $isWithinSemester = ($sunday >= $semStart && $monday <= $semEnd);
 
+// Fetch class timetable entries
 $entries = null;
 if ($activeTab === 'timetable' && $isWithinSemester) {
     $entries = $controller->getTimetable($studentId);
 }
+
+// Fetch registered campus events for this student
+$registeredEvents = method_exists($eventController, 'getUserRegisteredEvents')
+    ? $eventController->getUserRegisteredEvents($studentId)
+    : [];
 
 $keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 $weekDates = [];
@@ -75,20 +83,18 @@ $grid = [
     'fri' => [], 'sat' => [], 'sun' => []
 ];
 
+// 1. Load class timetable entries into grid (each slot is an array)
 if (is_array($entries)) {
     foreach ($entries as $e) {
         $day = strtolower($e->getDayOfWeek());
 
-        // Parse directly from "HH:MM:SS" — no timezone issues
         $startParts = explode(':', $e->getStartTime());
         $endParts   = explode(':', $e->getEndTime());
 
-        $startHour   = (int) $startParts[0];
-        $startMinute = (int) ($startParts[1] ?? 0);
-        $endHour     = (int) $endParts[0];
-        $endMinute   = (int) ($endParts[1] ?? 0);
+        $startHour = (int) $startParts[0];
+        $endHour   = (int) $endParts[0];
+        $endMinute = (int) ($endParts[1] ?? 0);
 
-        // Calculate duration in hours (round up if there are leftover minutes)
         $duration = $endHour - $startHour;
         if ($endMinute > 0) {
             $duration += 1;
@@ -96,10 +102,38 @@ if (is_array($entries)) {
         $duration = max(1, $duration);
 
         if (isset($grid[$day])) {
-            $grid[$day][$startHour] = [
-                'entry' => $e,
+            $grid[$day][$startHour][] = [
+                'title'    => $e->getTitle(),
+                'location' => 'Room ' . $e->getLocation(),
+                'time'     => date('g:ia', strtotime($e->getStartTime())) . ' - ' . date('g:ia', strtotime($e->getEndTime())),
+                'type'     => 'class',
                 'duration' => $duration
             ];
+        }
+    }
+}
+
+// 2. Load registered campus events for the current week (each slot is an array)
+if (is_array($registeredEvents)) {
+    foreach ($registeredEvents as $evt) {
+        $startDt = new DateTime($evt['startDatetime'] ?? '');
+        $endDt   = new DateTime($evt['endDatetime'] ?? '');
+
+        if ($startDt >= $monday && $startDt <= $sunday) {
+            $day = strtolower($startDt->format('D'));
+            $startHour = (int) $startDt->format('G');
+            $endHour   = (int) $endDt->format('G');
+            $duration  = max(1, $endHour - $startHour);
+
+            if (isset($grid[$day])) {
+                $grid[$day][$startHour][] = [
+                    'title'    => $evt['title'] ?? 'Registered Event',
+                    'location' => $evt['location'] ?? 'Campus',
+                    'time'     => $startDt->format('g:ia') . ' - ' . $endDt->format('g:ia'),
+                    'type'     => 'event',
+                    'duration' => $duration
+                ];
+            }
         }
     }
 }
@@ -167,6 +201,44 @@ $hours = range(8, 22);
 
         .date-input:focus {
             border-color: #ffd84d;
+        }
+
+        /* ===== STACKED CELL FOR OVERLAPPING SLOTS ===== */
+        .timetable-cell-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            height: 100%;
+        }
+
+        .timetable-cell-stack .timetable-slot,
+        .timetable-cell-stack .event-slot {
+            flex: 1;
+            min-height: 40px;
+            padding: 6px 4px;
+            font-size: 11px;
+            line-height: 1.2;
+            border-radius: 4px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* Yellow class slot */
+        .timetable-slot {
+            background-color: #FFD84D;
+            color: #111;
+            font-weight: bold;
+        }
+
+        /* Blue event slot */
+        .timetable-slot.event-slot {
+            background-color: #BAE6FD;
+            color: #111;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -257,7 +329,7 @@ $hours = range(8, 22);
                     Week &rarr;</a>
             </div>
 
-            <?php if (!$isWithinSemester): ?>
+            <?php if (!$isWithinSemester && empty($registeredEvents)): ?>
                 <p class="no-notifications">No classes scheduled for this week. (Semester 1 active from Sept 2026 to Nov 2026)</p>
             <?php elseif ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>
@@ -283,7 +355,7 @@ $hours = range(8, 22);
 
                         foreach ($hours as $h): ?>
                             <tr>
-                                <th><?php echo date('g:i A', mktime($h, 0, 0)) . ' – ' . date('g:i A', mktime($h + 1, 0, 0)); ?></th>
+                                <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
                                 <?php foreach ($keys as $k): ?>
                                     <?php
                                     if (!empty($skipCell[$k][$h])) {
@@ -291,22 +363,32 @@ $hours = range(8, 22);
                                     }
 
                                     if (isset($grid[$k][$h])):
-                                        $item = $grid[$k][$h];
-                                        $e = $item['entry'];
-                                        $duration = $item['duration'];
+                                        $items = $grid[$k][$h];
 
-                                        for ($d = 1; $d < $duration; $d++) {
+                                        // Determine the longest duration among stacked items
+                                        $maxDuration = 1;
+                                        foreach ($items as $it) {
+                                            if ($it['duration'] > $maxDuration) {
+                                                $maxDuration = $it['duration'];
+                                            }
+                                        }
+
+                                        for ($d = 1; $d < $maxDuration; $d++) {
                                             $skipCell[$k][$h + $d] = true;
                                         }
 
-                                        $rowspanAttr = $duration > 1 ? ' rowspan="' . $duration . '"' : '';
+                                        $rowspanAttr = $maxDuration > 1 ? ' rowspan="' . $maxDuration . '"' : '';
+                                        $hasClash = count($items) > 1;
                                         ?>
                                         <td<?php echo $rowspanAttr; ?>>
-                                            <div class="timetable-slot">
-                                                <strong><?php echo htmlspecialchars($e->getTitle()); ?></strong><br>
-                                                <span> <?php echo htmlspecialchars($e->getLocation()); ?></span><br>
-                                                <small><?php echo date('g:ia', strtotime($e->getStartTime())); ?> -
-                                                    <?php echo date('g:ia', strtotime($e->getEndTime())); ?></small>
+                                            <div class="timetable-cell-stack<?php echo $hasClash ? ' has-clash' : ''; ?>">
+                                                <?php foreach ($items as $item): ?>
+                                                    <div class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
+                                                        <strong><?php echo htmlspecialchars($item['title']); ?></strong>
+                                                        <span><?php echo htmlspecialchars($item['location']); ?></span>
+                                                        <small><?php echo htmlspecialchars($item['time']); ?></small>
+                                                    </div>
+                                                <?php endforeach; ?>
                                             </div>
                                         </td>
                                     <?php else: ?>

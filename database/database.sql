@@ -374,6 +374,7 @@ CREATE TABLE Feedback (
     universityId INT NOT NULL,
     category ENUM('general', 'bug', 'feature_request', 'complaint') DEFAULT 'general',
     message TEXT,
+      rating TINYINT NOT NULL DEFAULT 5 CHECK (rating BETWEEN 1 AND 5),
     status ENUM('new', 'in_review', 'resolved') DEFAULT 'new',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

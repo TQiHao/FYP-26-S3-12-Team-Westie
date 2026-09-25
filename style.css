@@ -1233,7 +1233,7 @@ footer {
   font-weight: bold;
   font-size: 14px;
   padding: 10px 5px;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .timetable-grid td {
@@ -4027,4 +4027,91 @@ footer {
     align-items: flex-start;
     gap: 10px;
   }
+}
+
+/* ===== STAR RATING ===== */
+.star-rating {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 5px;
+    margin: 10px 0 20px 0;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 2rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    user-select: none;
+}
+
+/* Highlight hovered stars and all stars before them */
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label {
+    color: #FFD84D;
+}
+
+/* Subtle scale on hover */
+.star-rating label:hover {
+    transform: scale(1.1);
+}
+
+.event-slot {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background-color: #BAE6FD;
+    border-radius: 4px;
+    padding: 6px 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #111111;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* ===== STACKED CELL FOR OVERLAPPING SLOTS ===== */
+.timetable-cell-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+}
+
+.timetable-cell-stack .timetable-slot,
+.timetable-cell-stack .event-slot {
+    flex: 1;
+    min-height: 40px;
+    padding: 6px 4px;
+    font-size: 11px;
+    line-height: 1.2;
+    border-radius: 4px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+/* Keep existing colours */
+.timetable-slot {
+    background-color: #FFD84D; /* yellow for class */
+    color: #111;
+    font-weight: bold;
+}
+
+.timetable-slot.event-slot {
+    background-color: #BAE6FD; /* blue for event */
+    color: #111;
+    font-weight: bold;
 }
