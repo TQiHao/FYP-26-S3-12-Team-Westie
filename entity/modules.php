@@ -154,7 +154,7 @@ class Modules
 
 
     // Verify and insert module into database
-    public function insertModuleList($rows, $programmeId)
+    public function uploadModuleList($rows, $programmeId)
     {
         $database = new Database();
         $db = $database->connect();

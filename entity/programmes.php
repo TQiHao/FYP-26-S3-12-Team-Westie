@@ -54,7 +54,7 @@ class Programmes
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function insertProgrammeList($rows, $facultyId)
+    public function uploadProgrammeList($rows, $facultyId)
     {
         $database = new Database();
         $db = $database->connect();

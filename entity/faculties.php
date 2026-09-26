@@ -98,7 +98,7 @@ class Faculties
     }
 
     // Insert verified Faculty data into database
-    public function insertFacultyList($rows, $universityId)
+    public function uploadFacultyList($rows, $universityId)
     {
         $database = new Database();
         $db = $database->connect();

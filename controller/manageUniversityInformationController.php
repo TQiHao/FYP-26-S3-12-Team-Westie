@@ -172,7 +172,7 @@ class ManageUniversityInformationController
         }
 
         // Insert verified data
-        $result = $this->faculties->insertFacultyList(
+        $result = $this->faculties->uploadFacultyList(
             $validatedRows,
             $universityId
         );
@@ -357,7 +357,7 @@ class ManageUniversityInformationController
         }
 
         // Insert verified data
-        $result = $this->programmes->insertProgrammeList(
+        $result = $this->programmes->uploadProgrammeList(
             $validatedRows,
             $facultyId
         );
@@ -536,7 +536,7 @@ class ManageUniversityInformationController
             return $validatedRows;
         }
 
-        $result = $this->modules->insertModuleList(
+        $result = $this->modules->uploadModuleList(
             $validatedRows,
             $programmeId
         );
