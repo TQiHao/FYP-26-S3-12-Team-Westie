@@ -245,6 +245,24 @@ $hours = range(8, 22);
             color: #111;
             font-weight: bold;
         }
+
+        .profile-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 45px;
+            margin: 15px 0 25px 0;
+        }
+
+        .profile-header .section-label {
+            position: absolute;
+            left: 70%;
+            transform: translateX(-50%);
+            margin: 0 !important;
+            text-align: center !important;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
