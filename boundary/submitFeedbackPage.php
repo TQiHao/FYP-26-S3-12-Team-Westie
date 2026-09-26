@@ -43,6 +43,86 @@ switch ($user_role) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Feedback - UniBee</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Profile Header matched to Feedback Box Width */
+        .profile-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            /* Matches feedback form width */
+            margin: 15px auto 25px auto;
+            min-height: 40px;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 0;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .profile-header .section-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0 !important;
+            text-align: center !important;
+            white-space: nowrap;
+        }
+
+        /* Friendly Reminder Box */
+        .feedback-notice-box {
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            border-left: 5px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            color: #1e293b;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .notice-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #b45309;
+            margin-bottom: 8px;
+        }
+
+        .notice-text {
+            margin: 0 0 12px 0;
+            color: #334155;
+        }
+
+        .notice-contacts {
+            background-color: #ffffff;
+            border: 1px solid #fef08a;
+            border-radius: 6px;
+            padding: 10px 14px;
+        }
+
+        .notice-contacts p {
+            margin: 4px 0;
+            font-size: 13.5px;
+            color: #0f172a;
+        }
+
+        .notice-contacts a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .notice-contacts a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 
 <body>
@@ -100,13 +180,30 @@ switch ($user_role) {
     <!-- Submit Feedback Section -->
     <main class="dashboard">
 
+        <!-- Top Header Aligned with Feedback Box Width -->
         <div class="profile-header">
             <a href="<?php echo htmlspecialchars($dashboardPage); ?>" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Submit Feedback</h2>
-            <div style="width: 100px;"></div>
         </div>
 
         <form action="../controller/SubmitFeedbackController.php" method="POST" class="feedback-form">
+
+            <!-- ===== FRIENDLY REMINDER NOTICE ===== -->
+            <div class="feedback-notice-box">
+                <div class="notice-header">
+                    <span>💡</span> Friendly Reminder
+                </div>
+                <p class="notice-text">
+                    Feedback is limited to <strong>UniBee application-related matters</strong>. For course, lecturer,
+                    administrative, or other university-related issues, please contact the relevant university
+                    department.
+                </p>
+                <div class="notice-contacts">
+                    <p><strong>University Support Email:</strong> <a
+                            href="mailto:support@university.edu.sg">support@university.edu.sg</a></p>
+                    <p><strong>Student Service Hotline:</strong> +65 6767 8888</p>
+                </div>
+            </div>
 
             <!-- ===== STAR RATING ===== -->
             <div class="form-group">
