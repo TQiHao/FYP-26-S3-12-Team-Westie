@@ -317,7 +317,7 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
             </div>
 
             <?php if (!$isWithinSemester && empty($registeredEvents)): ?>
-                <p class="no-notifications">No classes scheduled for this week. (Semester 1 active from Sept 2026 to Nov 2026)
+                <p class="no-notifications">No classes scheduled for this week.
                 </p>
             <?php elseif ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>

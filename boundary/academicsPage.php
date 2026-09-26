@@ -79,8 +79,13 @@ for ($i = 0; $i < 7; $i++) {
 }
 
 $grid = [
-    'mon' => [], 'tue' => [], 'wed' => [], 'thu' => [],
-    'fri' => [], 'sat' => [], 'sun' => []
+    'mon' => [],
+    'tue' => [],
+    'wed' => [],
+    'thu' => [],
+    'fri' => [],
+    'sat' => [],
+    'sun' => []
 ];
 
 // 1. Load class timetable entries into grid (each slot is an array)
@@ -89,10 +94,10 @@ if (is_array($entries)) {
         $day = strtolower($e->getDayOfWeek());
 
         $startParts = explode(':', $e->getStartTime());
-        $endParts   = explode(':', $e->getEndTime());
+        $endParts = explode(':', $e->getEndTime());
 
         $startHour = (int) $startParts[0];
-        $endHour   = (int) $endParts[0];
+        $endHour = (int) $endParts[0];
         $endMinute = (int) ($endParts[1] ?? 0);
 
         $duration = $endHour - $startHour;
@@ -103,10 +108,10 @@ if (is_array($entries)) {
 
         if (isset($grid[$day])) {
             $grid[$day][$startHour][] = [
-                'title'    => $e->getTitle(),
+                'title' => $e->getTitle(),
                 'location' => 'Room ' . $e->getLocation(),
-                'time'     => date('g:ia', strtotime($e->getStartTime())) . ' - ' . date('g:ia', strtotime($e->getEndTime())),
-                'type'     => 'class',
+                'time' => date('g:ia', strtotime($e->getStartTime())) . ' - ' . date('g:ia', strtotime($e->getEndTime())),
+                'type' => 'class',
                 'duration' => $duration
             ];
         }
@@ -117,20 +122,20 @@ if (is_array($entries)) {
 if (is_array($registeredEvents)) {
     foreach ($registeredEvents as $evt) {
         $startDt = new DateTime($evt['startDatetime'] ?? '');
-        $endDt   = new DateTime($evt['endDatetime'] ?? '');
+        $endDt = new DateTime($evt['endDatetime'] ?? '');
 
         if ($startDt >= $monday && $startDt <= $sunday) {
             $day = strtolower($startDt->format('D'));
             $startHour = (int) $startDt->format('G');
-            $endHour   = (int) $endDt->format('G');
-            $duration  = max(1, $endHour - $startHour);
+            $endHour = (int) $endDt->format('G');
+            $duration = max(1, $endHour - $startHour);
 
             if (isset($grid[$day])) {
                 $grid[$day][$startHour][] = [
-                    'title'    => $evt['title'] ?? 'Registered Event',
+                    'title' => $evt['title'] ?? 'Registered Event',
                     'location' => $evt['location'] ?? 'Campus',
-                    'time'     => $startDt->format('g:ia') . ' - ' . $endDt->format('g:ia'),
-                    'type'     => 'event',
+                    'time' => $startDt->format('g:ia') . ' - ' . $endDt->format('g:ia'),
+                    'type' => 'event',
                     'duration' => $duration
                 ];
             }
@@ -292,22 +297,22 @@ $hours = range(8, 22);
         <!-- Tabs -->
         <div class="teaching-tabs">
             <a href="academicsPage.php?tab=timetable"
-               class="teaching-tab <?php echo $activeTab === 'timetable' ? 'active' : ''; ?>">
+                class="teaching-tab <?php echo $activeTab === 'timetable' ? 'active' : ''; ?>">
                 Personal Timetable
             </a>
 
             <a href="academicsPage.php?tab=courses"
-               class="teaching-tab <?php echo $activeTab === 'courses' ? 'active' : ''; ?>">
+                class="teaching-tab <?php echo $activeTab === 'courses' ? 'active' : ''; ?>">
                 Enrolled Courses
             </a>
 
             <a href="academicsPage.php?tab=exams"
-               class="teaching-tab <?php echo $activeTab === 'exams' ? 'active' : ''; ?>">
+                class="teaching-tab <?php echo $activeTab === 'exams' ? 'active' : ''; ?>">
                 Exam Schedule
             </a>
 
             <a href="academicsPage.php?tab=interaction"
-               class="teaching-tab <?php echo $activeTab === 'interaction' ? 'active' : ''; ?>">
+                class="teaching-tab <?php echo $activeTab === 'interaction' ? 'active' : ''; ?>">
                 Student Interaction
             </a>
         </div>
@@ -316,13 +321,14 @@ $hours = range(8, 22);
 
             <!-- ===== PERSONAL TIMETABLE ===== -->
             <div class="timetable-controls">
-                <a href="academicsPage.php?tab=timetable&date=<?php echo $prevDateParam; ?>" class="timetable-nav-btn">&larr;
+                <a href="academicsPage.php?tab=timetable&date=<?php echo $prevDateParam; ?>"
+                    class="timetable-nav-btn">&larr;
                     Previous Week</a>
 
                 <div class="date-picker-wrapper">
                     <span class="week-range-title"><?php echo htmlspecialchars($weekRangeText); ?></span>
                     <input type="date" class="date-input" value="<?php echo $selectedDateValue; ?>"
-                           onchange="jumpToWeek(this.value)">
+                        onchange="jumpToWeek(this.value)">
                 </div>
 
                 <a href="academicsPage.php?tab=timetable&date=<?php echo $nextDateParam; ?>" class="timetable-nav-btn">Next
@@ -330,7 +336,7 @@ $hours = range(8, 22);
             </div>
 
             <?php if (!$isWithinSemester && empty($registeredEvents)): ?>
-                <p class="no-notifications">No classes scheduled for this week. (Semester 1 active from Sept 2026 to Nov 2026)</p>
+                <p class="no-notifications">No classes scheduled for this week. </p>
             <?php elseif ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>
             <?php else: ?>
@@ -341,7 +347,8 @@ $hours = range(8, 22);
                             <?php foreach ($keys as $k): ?>
                                 <th>
                                     <?php echo $weekDates[$k]['dayName']; ?><br>
-                                    <small style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
+                                    <small
+                                        style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
                                 </th>
                             <?php endforeach; ?>
                         </tr>
@@ -349,8 +356,13 @@ $hours = range(8, 22);
                     <tbody>
                         <?php
                         $skipCell = [
-                            'mon' => [], 'tue' => [], 'wed' => [], 'thu' => [],
-                            'fri' => [], 'sat' => [], 'sun' => []
+                            'mon' => [],
+                            'tue' => [],
+                            'wed' => [],
+                            'thu' => [],
+                            'fri' => [],
+                            'sat' => [],
+                            'sun' => []
                         ];
 
                         foreach ($hours as $h): ?>
@@ -383,18 +395,19 @@ $hours = range(8, 22);
                                         <td<?php echo $rowspanAttr; ?>>
                                             <div class="timetable-cell-stack<?php echo $hasClash ? ' has-clash' : ''; ?>">
                                                 <?php foreach ($items as $item): ?>
-                                                    <div class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
-                                                        <strong><?php echo htmlspecialchars($item['title']); ?></strong>
-                                                        <span><?php echo htmlspecialchars($item['location']); ?></span>
+                                                    <div
+                                                        class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
+                                                        <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
+                                                        <span><?php echo htmlspecialchars($item['location']); ?></span><br>
                                                         <small><?php echo htmlspecialchars($item['time']); ?></small>
                                                     </div>
                                                 <?php endforeach; ?>
                                             </div>
-                                        </td>
-                                    <?php else: ?>
-                                        <td></td>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
+                                            </td>
+                                        <?php else: ?>
+                                            <td></td>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -473,8 +486,8 @@ $hours = range(8, 22);
                         <?php
                         $examDate = strtotime($exam['examDate']);
                         $month = date('M', $examDate);
-                        $day   = date('d', $examDate);
-                        $time  = date('g:iA', strtotime($exam['startTime'])) . ' - ' . date('g:iA', strtotime($exam['endTime']));
+                        $day = date('d', $examDate);
+                        $time = date('g:iA', strtotime($exam['startTime'])) . ' - ' . date('g:iA', strtotime($exam['endTime']));
                         ?>
                         <div class="exam-item">
                             <div class="exam-date-badge">
@@ -496,9 +509,9 @@ $hours = range(8, 22);
             <?php endif; ?>
 
             <!-- ===== STUDENT INTERACTION ===== -->
-            <?php elseif ($activeTab === 'interaction'): ?>
+        <?php elseif ($activeTab === 'interaction'): ?>
 
-                <!-- ===== STUDENT INTERACTION ===== -->
+            <!-- ===== STUDENT INTERACTION ===== -->
             <?php
             require_once "../controller/studentInteractionController.php";
             $interactionController = new StudentInteractionController();
@@ -522,124 +535,138 @@ $hours = range(8, 22);
             }
             ?>
 
-                <!-- Search + Create Bar -->
-                <form action="academicsPage.php?tab=interaction" method="GET" class="student-interaction-bar">
-                    <input type="hidden" name="tab" value="interaction">
-                    <input type="text" name="keyword" placeholder="Search by group name, course, keyword..."
-                        value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
-                    <button type="submit" class="btn-search-group">Search</button>
-                    <a href="createStudyGroupPage.php" class="btn-create-group">+ Create Group</a>
-                </form>
+            <!-- Search + Create Bar -->
+            <form action="academicsPage.php?tab=interaction" method="GET" class="student-interaction-bar">
+                <input type="hidden" name="tab" value="interaction">
+                <input type="text" name="keyword" placeholder="Search by group name, course, keyword..."
+                    value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
+                <button type="submit" class="btn-search-group">Search</button>
+                <a href="createStudyGroupPage.php" class="btn-create-group">+ Create Group</a>
+            </form>
 
-                    <?php if ($searchActive): ?>
+            <?php if ($searchActive): ?>
 
-        <!-- SEARCH RESULTS -->
-        <h3 class="section-label" style="margin-top: 25px;">
-            Search Results for "<?php echo htmlspecialchars($searchKeyword); ?>"
-        </h3>
+                <!-- SEARCH RESULTS -->
+                <h3 class="section-label" style="margin-top: 25px;">
+                    Search Results for "<?php echo htmlspecialchars($searchKeyword); ?>"
+                </h3>
 
-        <?php if ($searchResults === false): ?>
-            <p class="error-message">Unable to search study groups. Please try again later.</p>
+                <?php if ($searchResults === false): ?>
+                    <p class="error-message">Unable to search study groups. Please try again later.</p>
 
-        <?php elseif (empty($searchResults)): ?>
-            <p class="no-notifications">No study group found matching your search criteria.</p>
+                <?php elseif (empty($searchResults)): ?>
+                    <p class="no-notifications">No study group found matching your search criteria.</p>
 
-        <?php else: ?>
-            <div class="group-grid">
-                <?php foreach ($searchResults as $row): ?>
-                    <div class="group-card">
-                        <div class="group-card-header">
-                            <h4><?php echo htmlspecialchars($row['name']); ?></h4>
-                        </div>
-                        <p class="group-meta">
-                            <?php echo htmlspecialchars($row['moduleCode']); ?>
-                            · <?php echo htmlspecialchars($row['currentMembers']); ?>/<?php echo htmlspecialchars($row['maxMembers']); ?> members
-                        </p>
-                        <?php if (!empty($row['userRole'])): ?>
-                            <p class="group-role"><?php echo htmlspecialchars(ucfirst($row['userRole'])); ?></p>
-                        <?php endif; ?>
-                        <div class="group-actions">
-                            <?php if (($row['userRole'] ?? '') === 'admin'): ?>
-                                <a href="updateStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-update">Update</a>
-                                <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-view">View</a>
-                                <a href="suspendStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-suspend">Suspend</a>
-                            <?php else: ?>
-                                <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-view">View</a>
-                            <?php endif; ?>
-                        </div>
+                <?php else: ?>
+                    <div class="group-grid">
+                        <?php foreach ($searchResults as $row): ?>
+                            <div class="group-card">
+                                <div class="group-card-header">
+                                    <h4><?php echo htmlspecialchars($row['name']); ?></h4>
+                                </div>
+                                <p class="group-meta">
+                                    <?php echo htmlspecialchars($row['moduleCode']); ?>
+                                    ·
+                                    <?php echo htmlspecialchars($row['currentMembers']); ?>/<?php echo htmlspecialchars($row['maxMembers']); ?>
+                                    members
+                                </p>
+                                <?php if (!empty($row['userRole'])): ?>
+                                    <p class="group-role"><?php echo htmlspecialchars(ucfirst($row['userRole'])); ?></p>
+                                <?php endif; ?>
+                                <div class="group-actions">
+                                    <?php if (($row['userRole'] ?? '') === 'admin'): ?>
+                                        <a href="updateStudyGroupPage.php?groupId=<?php echo $row['id']; ?>"
+                                            class="btn-group-action btn-update">Update</a>
+                                        <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>"
+                                            class="btn-group-action btn-view">View</a>
+                                        <a href="suspendStudyGroupPage.php?groupId=<?php echo $row['id']; ?>"
+                                            class="btn-group-action btn-suspend">Suspend</a>
+                                    <?php else: ?>
+                                        <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>"
+                                            class="btn-group-action btn-view">View</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                <?php endif; ?>
 
-    <?php else: ?>
+            <?php else: ?>
 
-        <!-- MY GROUPS -->
-        <h3 class="section-label" style="margin-top: 25px;">My Groups</h3>
+                <!-- MY GROUPS -->
+                <h3 class="section-label" style="margin-top: 25px;">My Groups</h3>
 
-        <?php if (empty($myGroups)): ?>
-            <p class="no-notifications">You have not joined any study groups yet.</p>
-        <?php else: ?>
-            <div class="group-grid">
-                <?php foreach ($myGroups as $group): ?>
-                    <div class="group-card">
-                        <div class="group-card-header">
-                            <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
-                        </div>
-                        <p class="group-meta">
-                            <?php echo htmlspecialchars($group->getModuleCode()); ?>
-                            · <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?> members
-                        </p>
-                        <p class="group-role">
-                            <?php echo htmlspecialchars(ucfirst($group->getUserRole())); ?>
-                        </p>
-                        <div class="group-actions">
-                            <?php if ($group->getUserRole() === 'admin'): ?>
-                                <a href="updateStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-update">Update</a>
-                                <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
-                                <button type="button" class="btn-group-action btn-suspend"
-                                    onclick="confirmSuspend(<?php echo $group->getId(); ?>, '<?php echo htmlspecialchars(addslashes($group->getName())); ?>')">Suspend</button>
-                            <?php else: ?>
-                                <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
-                            <?php endif; ?>
-                        </div>
+                <?php if (empty($myGroups)): ?>
+                    <p class="no-notifications">You have not joined any study groups yet.</p>
+                <?php else: ?>
+                    <div class="group-grid">
+                        <?php foreach ($myGroups as $group): ?>
+                            <div class="group-card">
+                                <div class="group-card-header">
+                                    <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
+                                </div>
+                                <p class="group-meta">
+                                    <?php echo htmlspecialchars($group->getModuleCode()); ?>
+                                    ·
+                                    <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?>
+                                    members
+                                </p>
+                                <p class="group-role">
+                                    <?php echo htmlspecialchars(ucfirst($group->getUserRole())); ?>
+                                </p>
+                                <div class="group-actions">
+                                    <?php if ($group->getUserRole() === 'admin'): ?>
+                                        <a href="updateStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>"
+                                            class="btn-group-action btn-update">Update</a>
+                                        <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>"
+                                            class="btn-group-action btn-view">View</a>
+                                        <button type="button" class="btn-group-action btn-suspend"
+                                            onclick="confirmSuspend(<?php echo $group->getId(); ?>, '<?php echo htmlspecialchars(addslashes($group->getName())); ?>')">Suspend</button>
+                                    <?php else: ?>
+                                        <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>"
+                                            class="btn-group-action btn-view">View</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                <?php endif; ?>
 
-        <!-- AVAILABLE TO JOIN -->
-        <h3 class="section-label" style="margin-top: 35px;">Available to join</h3>
+                <!-- AVAILABLE TO JOIN -->
+                <h3 class="section-label" style="margin-top: 35px;">Available to join</h3>
 
-        <?php if (empty($availableGroups)): ?>
-            <p class="no-notifications">No groups available to join right now.</p>
-        <?php else: ?>
-            <div class="group-grid">
-                <?php foreach ($availableGroups as $group): ?>
-                    <div class="group-card">
-                        <div class="group-card-header">
-                            <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
-                        </div>
-                        <p class="group-meta">
-                            <?php echo htmlspecialchars($group->getModuleCode()); ?>
-                            · <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?> members
-                        </p>
-                        <div class="group-actions">
-                            <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
-                        </div>
+                <?php if (empty($availableGroups)): ?>
+                    <p class="no-notifications">No groups available to join right now.</p>
+                <?php else: ?>
+                    <div class="group-grid">
+                        <?php foreach ($availableGroups as $group): ?>
+                            <div class="group-card">
+                                <div class="group-card-header">
+                                    <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
+                                </div>
+                                <p class="group-meta">
+                                    <?php echo htmlspecialchars($group->getModuleCode()); ?>
+                                    ·
+                                    <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?>
+                                    members
+                                </p>
+                                <div class="group-actions">
+                                    <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>"
+                                        class="btn-group-action btn-view">View</a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                <?php endif; ?>
 
-    <?php endif; ?>
+            <?php endif; ?>
 
 
         <?php endif; ?>
 
     </main>
 
-        <!-- Confirmation Modal -->
+    <!-- Confirmation Modal -->
     <div class="modal-overlay" id="suspendConfirmModal" style="display:none;">
         <div class="modal-box">
             <span class="modal-close" onclick="closeSuspendModal()">&times;</span>
