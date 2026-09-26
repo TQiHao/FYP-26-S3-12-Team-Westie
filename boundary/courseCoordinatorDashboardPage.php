@@ -5,6 +5,12 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
     exit();
 }
+
+require_once "../controller/ManageClassController.php";
+
+$controller = new ManageClassController();
+$activeClasses = $controller->getClasses('', '', '', 'active');
+$activeClassCount = is_array($activeClasses) ? count($activeClasses) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -46,8 +52,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="manageClassesPage.php">Manage Classes</a>
-                    <a href="">AI Chatbot</a>
+                    <a href="manageClassPage.php">Manage Classes</a>
+                    <a href="AIChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
@@ -69,14 +75,15 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <div class="dashboard-grid">
 
                 <!-- Manage Classes -->
-                <a href="manageClassesPage.php" class="dashboard-card">
+                <a href="manageClassPage.php" class="dashboard-card">
                     <img src="../images/academic.png" alt="Manage Classes" class="card-icon">
                     <h2>Manage Classes</h2>
-                    <p>125 classes are active</p>
+                    <p><?php echo $activeClassCount . ' class' . ($activeClassCount === 1 ? ' is' : 'es are') . ' active'; ?>
+                    </p>
                 </a>
 
                 <!-- AI Chatbot -->
-                <a href="" class="dashboard-card">
+                <a href="AIChatbotPage.php" class="dashboard-card">
                     <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>
