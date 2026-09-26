@@ -4115,3 +4115,373 @@ footer {
     color: #111;
     font-weight: bold;
 }
+
+/* ===== STUDENT INTERACTION ===== */
+.student-interaction-bar {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    max-width: 900px;
+    margin: 15px auto 25px auto;
+}
+
+.student-interaction-bar input {
+    flex: 1;
+    padding: 12px 18px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+.student-interaction-bar input:focus {
+    outline: none;
+    border-color: var(--bg-yellow);
+    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+}
+
+.btn-create-group {
+    background-color: var(--bg-yellow);
+    color: #222;
+    padding: 12px 22px;
+    border-radius: 25px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: 0.2s ease;
+}
+
+.btn-create-group:hover {
+    background-color: #e6c23a;
+    text-decoration: none;
+}
+
+/* Group cards */
+.group-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.group-card {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 18px 22px;
+    transition: 0.2s ease;
+}
+
+.group-card:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.group-card-header h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #222;
+}
+
+.group-meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0 0 4px 0;
+}
+
+.group-role {
+    font-size: 0.8rem;
+    color: #888;
+    margin: 0 0 12px 0;
+    font-weight: 600;
+}
+
+.group-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-group-action {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-view {
+    background-color: var(--bg-yellow);
+    color: #222;
+}
+.btn-view:hover { background-color: #e6c23a; text-decoration: none; }
+
+.btn-update {
+    background-color: #c8f7c5;
+    color: #1e7e34;
+}
+.btn-update:hover { background-color: #a5e8a0; text-decoration: none; }
+
+.btn-suspend {
+    background-color: #ffb3b3;
+    color: #b30000;
+}
+.btn-suspend:hover { background-color: #ff9494; text-decoration: none; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .group-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .student-interaction-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ===== CREATE STUDY GROUP FORM ===== */
+.create-group-form {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.create-group-form .form-group {
+    margin-bottom: 18px;
+}
+
+.create-group-form .form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.create-group-form .form-group input,
+.create-group-form .form-group select,
+.create-group-form .form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #fafafa;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.create-group-form .form-group input:focus,
+.create-group-form .form-group select:focus,
+.create-group-form .form-group textarea:focus {
+    outline: none;
+    border-color: var(--bg-yellow);
+    box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+}
+
+.create-group-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn-create {
+    padding: 12px 35px;
+    background-color: #c8f7c5;
+    color: #1e7e34;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-create:hover {
+    background-color: #a5e8a0;
+}
+
+.btn-cancel-create {
+    padding: 12px 35px;
+    background-color: #ffb3b3;
+    color: #b30000;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: 0.2s ease;
+}
+
+.btn-cancel-create:hover {
+    background-color: #ff9494;
+    text-decoration: none;
+}
+
+/* ===== VIEW STUDY GROUP ===== */
+.group-view-container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 0 10px;
+}
+
+.group-view-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    color: #222;
+}
+
+.group-view-meta {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 25px 0;
+}
+
+.group-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 25px 0 10px 0;
+    color: #222;
+}
+
+.group-view-description {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.group-members-row {
+    display: flex;
+    align-items: center;
+    gap: -10px;
+}
+
+.group-member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid white;
+    margin-right: -10px;
+    background-color: #eee;
+    object-fit: cover;
+}
+
+.group-member-overflow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid white;
+    background-color: #e0e0e0;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #333;
+    margin-left: 15px;
+}
+
+.group-join-form {
+    margin-top: 30px;
+}
+
+.btn-join-group {
+    padding: 12px 35px;
+    background-color: var(--bg-yellow);
+    color: #222;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-join-group:hover {
+    background-color: #e6c23a;
+}
+
+.join-note {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 10px;
+}
+
+.group-member-note {
+    margin-top: 25px;
+    font-size: 0.95rem;
+    color: #1e7e34;
+    font-weight: 600;
+}
+
+/* Search button in Student Interaction */
+.btn-search-group {
+    background-color: var(--bg-yellow);
+    color: #222;
+    padding: 12px 22px;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-search-group:hover {
+    background-color: #e6c23a;
+}
+
+/* ===== SUSPEND MODAL ===== */
+.suspend-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn-suspend-cancel {
+    padding: 10px 30px;
+    background-color: #8B3A1A;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-suspend-cancel:hover {
+    background-color: #6f2c11;
+}
+
+.btn-suspend-confirm {
+    padding: 10px 30px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.btn-suspend-confirm:hover {
+    background-color: #b02a37;
+}

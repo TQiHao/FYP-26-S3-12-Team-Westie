@@ -495,14 +495,186 @@ $hours = range(8, 22);
 
             <?php endif; ?>
 
-        <?php elseif ($activeTab === 'interaction'): ?>
-
             <!-- ===== STUDENT INTERACTION ===== -->
-            <p class="no-notifications">Student Interaction — to be coded next.</p>
+            <?php elseif ($activeTab === 'interaction'): ?>
+
+                <!-- ===== STUDENT INTERACTION ===== -->
+            <?php
+            require_once "../controller/studentInteractionController.php";
+            $interactionController = new StudentInteractionController();
+
+            $searchKeyword = trim($_GET['keyword'] ?? '');
+            $searchActive = $searchKeyword !== '';
+            $searchResults = null;
+
+            if ($searchActive) {
+                // Server-side search — returns matching groups (with isMember flag)
+                $searchResults = $interactionController->searchStudyGroups(
+                    $studentId,
+                    $_SESSION['university_id'],
+                    $searchKeyword
+                );
+            } else {
+                // Normal view — my groups + available groups
+                $groupsData = $interactionController->getMyGroupsAndAvailableGroups($studentId);
+                $myGroups = $groupsData['myGroups'];
+                $availableGroups = $groupsData['availableGroups'];
+            }
+            ?>
+
+                <!-- Search + Create Bar -->
+                <form action="academicsPage.php?tab=interaction" method="GET" class="student-interaction-bar">
+                    <input type="hidden" name="tab" value="interaction">
+                    <input type="text" name="keyword" placeholder="Search by group name, course, keyword..."
+                        value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
+                    <button type="submit" class="btn-search-group">Search</button>
+                    <a href="createStudyGroupPage.php" class="btn-create-group">+ Create Group</a>
+                </form>
+
+                    <?php if ($searchActive): ?>
+
+        <!-- SEARCH RESULTS -->
+        <h3 class="section-label" style="margin-top: 25px;">
+            Search Results for "<?php echo htmlspecialchars($searchKeyword); ?>"
+        </h3>
+
+        <?php if ($searchResults === false): ?>
+            <p class="error-message">Unable to search study groups. Please try again later.</p>
+
+        <?php elseif (empty($searchResults)): ?>
+            <p class="no-notifications">No study group found matching your search criteria.</p>
+
+        <?php else: ?>
+            <div class="group-grid">
+                <?php foreach ($searchResults as $row): ?>
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <h4><?php echo htmlspecialchars($row['name']); ?></h4>
+                        </div>
+                        <p class="group-meta">
+                            <?php echo htmlspecialchars($row['moduleCode']); ?>
+                            · <?php echo htmlspecialchars($row['currentMembers']); ?>/<?php echo htmlspecialchars($row['maxMembers']); ?> members
+                        </p>
+                        <?php if (!empty($row['userRole'])): ?>
+                            <p class="group-role"><?php echo htmlspecialchars(ucfirst($row['userRole'])); ?></p>
+                        <?php endif; ?>
+                        <div class="group-actions">
+                            <?php if (($row['userRole'] ?? '') === 'admin'): ?>
+                                <a href="updateStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-update">Update</a>
+                                <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-view">View</a>
+                                <a href="suspendStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-suspend">Suspend</a>
+                            <?php else: ?>
+                                <a href="viewStudyGroupPage.php?groupId=<?php echo $row['id']; ?>" class="btn-group-action btn-view">View</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+    <?php else: ?>
+
+        <!-- MY GROUPS -->
+        <h3 class="section-label" style="margin-top: 25px;">My Groups</h3>
+
+        <?php if (empty($myGroups)): ?>
+            <p class="no-notifications">You have not joined any study groups yet.</p>
+        <?php else: ?>
+            <div class="group-grid">
+                <?php foreach ($myGroups as $group): ?>
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
+                        </div>
+                        <p class="group-meta">
+                            <?php echo htmlspecialchars($group->getModuleCode()); ?>
+                            · <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?> members
+                        </p>
+                        <p class="group-role">
+                            <?php echo htmlspecialchars(ucfirst($group->getUserRole())); ?>
+                        </p>
+                        <div class="group-actions">
+                            <?php if ($group->getUserRole() === 'admin'): ?>
+                                <a href="updateStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-update">Update</a>
+                                <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
+                                <button type="button" class="btn-group-action btn-suspend"
+                                    onclick="confirmSuspend(<?php echo $group->getId(); ?>, '<?php echo htmlspecialchars(addslashes($group->getName())); ?>')">Suspend</button>
+                            <?php else: ?>
+                                <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- AVAILABLE TO JOIN -->
+        <h3 class="section-label" style="margin-top: 35px;">Available to join</h3>
+
+        <?php if (empty($availableGroups)): ?>
+            <p class="no-notifications">No groups available to join right now.</p>
+        <?php else: ?>
+            <div class="group-grid">
+                <?php foreach ($availableGroups as $group): ?>
+                    <div class="group-card">
+                        <div class="group-card-header">
+                            <h4><?php echo htmlspecialchars($group->getName()); ?></h4>
+                        </div>
+                        <p class="group-meta">
+                            <?php echo htmlspecialchars($group->getModuleCode()); ?>
+                            · <?php echo htmlspecialchars($group->getCurrentMembers()); ?>/<?php echo htmlspecialchars($group->getMaxMembers()); ?> members
+                        </p>
+                        <div class="group-actions">
+                            <a href="viewStudyGroupPage.php?groupId=<?php echo $group->getId(); ?>" class="btn-group-action btn-view">View</a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+
+    <?php endif; ?>
+
 
         <?php endif; ?>
 
     </main>
+
+        <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="suspendConfirmModal" style="display:none;">
+        <div class="modal-box">
+            <span class="modal-close" onclick="closeSuspendModal()">&times;</span>
+            <p class="modal-message" id="suspendConfirmText"></p>
+            <div class="suspend-actions">
+                <button type="button" class="btn-suspend-cancel" onclick="closeSuspendModal()">Cancel</button>
+                <form id="suspendForm" action="suspendStudyGroupPage.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="groupId" id="suspendGroupId">
+                    <button type="submit" name="suspend_group" class="btn-suspend-confirm">Suspend</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Success Modal -->
+    <?php if (isset($_SESSION['group_success'])): ?>
+        <div class="modal-overlay" id="groupSuccessModal">
+            <div class="modal-box">
+                <span class="modal-close" onclick="closeGroupModal()">&times;</span>
+                <p class="modal-message"><?php echo htmlspecialchars($_SESSION['group_success']); ?></p>
+            </div>
+        </div>
+        <?php unset($_SESSION['group_success']); ?>
+    <?php endif; ?>
+
+    <!-- Group Error Modal -->
+    <?php if (isset($_SESSION['group_error'])): ?>
+        <div class="modal-overlay" id="groupErrorModal">
+            <div class="modal-box">
+                <span class="modal-close" onclick="closeGroupErrorModal()">&times;</span>
+                <p class="modal-message"><?php echo htmlspecialchars($_SESSION['group_error']); ?></p>
+            </div>
+        </div>
+        <?php unset($_SESSION['group_error']); ?>
+    <?php endif; ?>
 
     <footer>
         <div class="footer-bottom-bar">
@@ -515,6 +687,29 @@ $hours = range(8, 22);
             if (selectedDate) {
                 window.location.href = 'academicsPage.php?tab=timetable&date=' + selectedDate;
             }
+        }
+    </script>
+    <script>
+        function confirmSuspend(groupId, groupName) {
+            document.getElementById("suspendGroupId").value = groupId;
+            document.getElementById("suspendConfirmText").innerText =
+                "Are you sure you want to suspend " + groupName + "?";
+            document.getElementById("suspendConfirmModal").style.display = "flex";
+        }
+
+        function closeSuspendModal() {
+            document.getElementById("suspendConfirmModal").style.display = "none";
+        }
+
+        function closeGroupModal() {
+            var modal = document.getElementById("groupSuccessModal");
+            if (modal) modal.style.display = "none";
+            window.location.reload();
+        }
+
+        function closeGroupErrorModal() {
+            var modal = document.getElementById("groupErrorModal");
+            if (modal) modal.style.display = "none";
         }
     </script>
 </body>
