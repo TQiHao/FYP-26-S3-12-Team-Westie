@@ -7,59 +7,74 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-
-/*
- * Get selected programme ID and faculty ID from URL.
- */
-$programmeId = isset($_GET['programmeId']) ? (int) $_GET['programmeId'] : 0;
-$facultyId = isset($_GET['facultyId']) ? (int) $_GET['facultyId'] : 0;
+require_once "../controller/manageUniversityInformationController.php";
 
 
-/*
- * Temporary programme data.
- * Later, retrieve this from the database.
- */
-$programmes = [
-    1 => [
-        'name' => 'Bachelor of Computer Science',
-        'faculty' => 'Faculty of Computing',
-        'duration' => '3 Years',
-        'description' => 'A programme focusing on computer science and software development'
-    ],
-    2 => [
-        'name' => 'Bachelor of Information Technology',
-        'faculty' => 'Faculty of Computing',
-        'duration' => '3 Years',
-        'description' => 'A programme focusing on information technology and systems'
-    ]
-];
+// Get the programme id and faculty id
+$programmeId = isset($_GET['programmeId'])
+    ? (int) $_GET['programmeId']
+    : 0;
 
+$facultyId = isset($_GET['facultyId'])
+    ? (int) $_GET['facultyId']
+    : 0;
 
-/*
- * Check whether the selected programme exists.
- */
-if (!isset($programmes[$programmeId])) {
-    header("Location: UploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
+// Get current university ID
+$universityId = $_SESSION['university_id'] ?? null;
+
+if (
+    $programmeId <= 0 ||
+    $facultyId <= 0 ||
+    $universityId === null
+) {
+    header("Location: UploadFacultyListPage.php");
     exit();
 }
 
-$programme = $programmes[$programmeId];
+$controller = new ManageUniversityInformationController();
 
+// Get selected programme from database
+$programme = $controller->getProgrammeById(
+    $programmeId,
+    $facultyId,
+    $universityId
+);
 
-/*
- * Temporary module data.
- * Later, retrieve this from the database.
- */
-$modules = [
-    [
-        'id' => 1,
-        'name' => 'Introduction to Programming'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Database Systems'
-    ]
-];
+// Check whether programme exists
+if ($programme === false) {
+    header(
+        "Location: UploadProgrammeListPage.php?facultyId="
+        . urlencode($facultyId)
+    );
+    exit();
+}
+
+// Get selected faculty from database
+$faculty = $controller->getFacultyById(
+    $facultyId,
+    $universityId
+);
+
+// Check whether faculty exists
+if ($faculty === false) {
+    header(
+        "Location: UploadFacultyListPage.php"
+    );
+    exit();
+}
+
+// Get modules under selected programme
+$modules = $controller->getModulesByProgramme(
+    $programmeId
+);
+
+// Get upload messages
+$success = $_SESSION['upload_success'] ?? null;
+$error = $_SESSION['upload_error'] ?? null;
+
+// Clear messages after reading
+unset($_SESSION['upload_success']);
+unset($_SESSION['upload_error']);
 
 ?>
 
@@ -173,12 +188,12 @@ $modules = [
 
                     <p>
                         <strong>Faculty:</strong>
-                        <?php echo htmlspecialchars($programme['faculty']); ?>
+                        <?php echo htmlspecialchars($faculty['name']); ?>
                     </p>
 
                     <p>
                         <strong>Duration:</strong>
-                        <?php echo htmlspecialchars($programme['duration']); ?>
+                        <?php echo htmlspecialchars($programme['durationYears']); ?> Years
                     </p>
 
                     <p>
@@ -192,6 +207,21 @@ $modules = [
 
         </section>
 
+       <?php if ($success): ?>
+
+            <div class="upload-message upload-success">
+                <?php echo htmlspecialchars($success); ?>
+            </div>
+
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+
+            <div class="upload-message upload-error">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+
+        <?php endif; ?>
 
         <!-- Module List -->
         <?php if (empty($modules)): ?>

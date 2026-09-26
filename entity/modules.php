@@ -2,33 +2,40 @@
 
 require_once "../database/database.php";
 
-class Faculties
+class Modules
 {
     private $id;
-    private $universityId;
+    private $programmeId;
     private $name;
     private $code;
+    private $credits;
+    private $semester;
     private $description;
     private $createdAt;
     private $updatedAt;
 
     public function __construct(
         $id = null,
-        $universityId = null,
+        $programmeId = null,
         $name = null,
         $code = null,
+        $credits = null,
+        $semester = null,
         $description = null,
         $createdAt = null,
         $updatedAt = null
     ) {
         $this->id = $id;
-        $this->universityId = $universityId;
+        $this->programmeId = $programmeId;
         $this->name = $name;
         $this->code = $code;
+        $this->credits = $credits;
+        $this->semester = $semester;
         $this->description = $description;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
     }
+
 
     // Getters
     public function getId()
@@ -36,9 +43,9 @@ class Faculties
         return $this->id;
     }
 
-    public function getUniversityId()
+    public function getProgrammeId()
     {
-        return $this->universityId;
+        return $this->programmeId;
     }
 
     public function getName()
@@ -49,6 +56,16 @@ class Faculties
     public function getCode()
     {
         return $this->code;
+    }
+
+    public function getCredits()
+    {
+        return $this->credits;
+    }
+
+    public function getSemester()
+    {
+        return $this->semester;
     }
 
     public function getDescription()
@@ -66,10 +83,11 @@ class Faculties
         return $this->updatedAt;
     }
 
+
     // Setters
-    public function setUniversityId($universityId)
+    public function setProgrammeId($programmeId)
     {
-        $this->universityId = $universityId;
+        $this->programmeId = $programmeId;
     }
 
     public function setName($name)
@@ -80,6 +98,16 @@ class Faculties
     public function setCode($code)
     {
         $this->code = $code;
+    }
+
+    public function setCredits($credits)
+    {
+        $this->credits = $credits;
+    }
+
+    public function setSemester($semester)
+    {
+        $this->semester = $semester;
     }
 
     public function setDescription($description)
@@ -97,8 +125,36 @@ class Faculties
         $this->updatedAt = $updatedAt;
     }
 
-    // Insert verified Faculty data into database
-    public function insertFacultyList($rows, $universityId)
+
+    // Get modules by programme
+    public function getModulesByProgramme($programmeId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        $sql = "SELECT
+                    id,
+                    programmeId,
+                    name,
+                    code,
+                    credits,
+                    semester,
+                    description,
+                    createdAt,
+                    updatedAt
+                FROM Modules
+                WHERE programmeId = ?
+                ORDER BY id ASC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$programmeId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+
+    // Verify and insert module into database
+    public function insertModuleList($rows, $programmeId)
     {
         $database = new Database();
         $db = $database->connect();
@@ -107,33 +163,39 @@ class Faculties
 
             $db->beginTransaction();
 
-            $sql = "INSERT INTO Faculties
-                (
-                    universityId,
-                    name,
-                    code,
-                    description,
-                    createdAt,
-                    updatedAt
-                )
-                VALUES
-                (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    NOW(),
-                    NOW()
-                )";
+            $sql = "INSERT INTO Modules
+                    (
+                        programmeId,
+                        name,
+                        code,
+                        credits,
+                        semester,
+                        description,
+                        createdAt,
+                        updatedAt
+                    )
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        NOW(),
+                        NOW()
+                    )";
 
             $stmt = $db->prepare($sql);
 
             foreach ($rows as $row) {
 
                 $stmt->execute([
-                    $universityId,
+                    $programmeId,
                     $row['name'],
                     $row['code'],
+                    $row['credits'],
+                    $row['semester'],
                     $row['description']
                 ]);
             }
@@ -152,64 +214,14 @@ class Faculties
         }
     }
 
-    public function getFacultiesByUniversity($universityId)
-    {
-        $database = new Database();
-        $db = $database->connect();
-
-        $sql = "SELECT
-                id,
-                universityId,
-                name,
-                code,
-                description,
-                createdAt,
-                updatedAt
-            FROM Faculties
-            WHERE universityId = ?
-            ORDER BY id ASC";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$universityId]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function getFacultyById($facultyId, $universityId)
-    {
-        $database = new Database();
-        $db = $database->connect();
-
-        $sql = "SELECT
-                id,
-                universityId,
-                name,
-                code,
-                description,
-                createdAt,
-                updatedAt
-            FROM Faculties
-            WHERE id = ?
-            AND universityId = ?";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute([
-            $facultyId,
-            $universityId
-        ]);
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    // Check whether Faculty already exists
-    public function facultyExists($universityId, $name, $code)
+    public function moduleExists($programmeId, $name, $code)
     {
         $database = new Database();
         $db = $database->connect();
 
         $sql = "SELECT id
-            FROM Faculties
-            WHERE universityId = ?
+            FROM Modules
+            WHERE programmeId = ?
             AND (
                 name = ?
                 OR code = ?
@@ -217,9 +229,8 @@ class Faculties
             LIMIT 1";
 
         $stmt = $db->prepare($sql);
-
         $stmt->execute([
-            $universityId,
+            $programmeId,
             $name,
             $code
         ]);
@@ -227,4 +238,3 @@ class Faculties
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 }
-

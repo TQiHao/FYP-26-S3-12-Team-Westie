@@ -44,10 +44,8 @@ switch ($type) {
 }
 
 $error = $_SESSION['upload_error'] ?? null;
-$success = $_SESSION['upload_success'] ?? null;
 
 unset($_SESSION['upload_error']);
-unset($_SESSION['upload_success']);
 
 ?>
 
@@ -144,15 +142,6 @@ unset($_SESSION['upload_success']);
 
             <div class="upload-message upload-error">
                 <?php echo htmlspecialchars($error); ?>
-            </div>
-
-        <?php endif; ?>
-
-
-        <?php if ($success): ?>
-
-            <div class="upload-message upload-success">
-                <?php echo htmlspecialchars($success); ?>
             </div>
 
         <?php endif; ?>

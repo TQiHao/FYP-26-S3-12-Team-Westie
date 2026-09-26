@@ -7,56 +7,52 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-/*
- * Get the selected faculty ID from the URL.
- * Example:
- * UploadProgrammeListPage.php?facultyId=1
- */
+require_once "../controller/manageUniversityInformationController.php";
+
+
+// Get selected faculty ID from URL
 $facultyId = isset($_GET['facultyId']) ? (int) $_GET['facultyId'] : 0;
 
-/*
- * Temporary faculty data.
- * Later, retrieve this from the Faculties table.
- */
-$faculties = [
-    1 => [
-        'name' => 'Faculty of Computing',
-        'description' => 'Offers computing and technology-related programmes'
-    ],
-    2 => [
-        'name' => 'Faculty of Business',
-        'description' => 'Offers business and management-related programmes'
-    ],
-    3 => [
-        'name' => 'Faculty of Engineering',
-        'description' => 'Offers engineering-related programmes'
-    ]
-];
 
-/*
- * Check whether the selected faculty exists.
- */
-if (!isset($faculties[$facultyId])) {
+//Get current university ID from session
+$universityId = $_SESSION['university_id'] ?? null;
+
+
+// Check required information
+if ($facultyId <= 0 || $universityId === null) {
     header("Location: UploadFacultyListPage.php");
     exit();
 }
 
-$faculty = $faculties[$facultyId];
 
-/*
- * Later, retrieve the programme list from the database
- * using the selected faculty ID.
- */
-$programmes = [
-    [
-        'id' => 1,
-        'name' => 'Bachelor of Computer Science'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Bachelor of Information Technology'
-    ]
-];
+// Create controller
+$controller = new ManageUniversityInformationController();
+
+
+// Retrieve selected faculty from database
+$faculty = $controller->getFacultyById(
+    $facultyId,
+    $universityId
+);
+
+
+// Check whether faculty exists
+if ($faculty === false) {
+    header("Location: UploadFacultyListPage.php");
+    exit();
+}
+
+
+// Retrieve programmes belonging to selected faculty
+$programmes = $controller->getProgrammesByFaculty(
+    $facultyId
+);
+
+$success = $_SESSION['upload_success'] ?? null;
+$error = $_SESSION['upload_error'] ?? null;
+
+unset($_SESSION['upload_success']);
+unset($_SESSION['upload_error']);
 
 ?>
 
@@ -133,7 +129,6 @@ $programmes = [
 
     </header>
 
-
     <!-- Main -->
     <main class="programme-list-page">
 
@@ -173,6 +168,21 @@ $programmes = [
 
         </section>
 
+         <?php if ($success): ?>
+
+            <div class="upload-message upload-success">
+                <?php echo htmlspecialchars($success); ?>
+            </div>
+
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+
+            <div class="upload-message upload-error">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+
+        <?php endif; ?>
 
         <!-- Programme List -->
         <?php if (empty($programmes)): ?>
@@ -191,6 +201,7 @@ $programmes = [
 
                         <span>
                             <?php echo htmlspecialchars($programme['name']); ?>
+                            (<?php echo htmlspecialchars($programme['durationYears']); ?> Years)
                         </span>
 
                         <a href="UploadModuleListPage.php?programmeId=<?php echo urlencode($programme['id']); ?>&facultyId=<?php echo urlencode($facultyId); ?>" class="select-button">

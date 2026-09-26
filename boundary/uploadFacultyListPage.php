@@ -7,23 +7,23 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-/*
- * Later, retrieve the faculty list from the database.
- */
-$faculties = [
-    [
-        'id' => 1,
-        'name' => 'Faculty of Computing'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Faculty of Business'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Faculty of Engineering'
-    ]
-];
+require_once "../controller/manageUniversityInformationController.php";
+
+$success = $_SESSION['upload_success'] ?? null;
+$error = $_SESSION['upload_error'] ?? null;
+
+unset($_SESSION['upload_success']);
+unset($_SESSION['upload_error']);
+
+$universityId = $_SESSION['university_id'] ?? null;
+
+$faculties = [];
+
+if ($universityId !== null) {
+    $controller = new ManageUniversityInformationController();
+    $faculties = $controller->getFacultyList($universityId);
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -112,6 +112,22 @@ $faculties = [
 
         </section>
 
+        <?php if ($success): ?>
+
+            <div class="upload-message upload-success">
+                <?php echo htmlspecialchars($success); ?>
+            </div>
+
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+
+            <div class="upload-message upload-error">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+
+        <?php endif; ?>
+
 
         <?php if (empty($faculties)): ?>
 
@@ -157,7 +173,6 @@ $faculties = [
         </div>
 
     </main>
-
 
     <!-- Footer -->
     <footer>
