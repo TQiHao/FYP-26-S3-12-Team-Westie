@@ -680,10 +680,10 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                                         <td class="col-actions">
                                             <div class="action-cell-btns">
                                                 <button type="button" class="action-btn-sm btn-view"
-                                                    onclick='openViewModal(<?php echo json_encode($cls); ?>)'>View</button>
+                                                    onclick='openViewModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>View</button>
 
                                                 <button type="button" class="action-btn-sm btn-edit"
-                                                    onclick='openEditModal(<?php echo json_encode($cls); ?>)'>Edit</button>
+                                                    onclick='openEditModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>Edit</button>
 
                                                 <?php if (strtolower($cls['status']) === 'active'): ?>
                                                     <button type="button" class="action-btn-sm btn-suspend"
