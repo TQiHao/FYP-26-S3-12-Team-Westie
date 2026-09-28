@@ -61,7 +61,7 @@ $fullName = $_SESSION['user_name'];
                 <div id="profileMenu" class="dropdown-menu">
 
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="">AI Chatbot</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="academicsPage.php">Academics</a>
                     <a href="ViewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
@@ -166,7 +166,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Study Groups -->
-                <a href="StudyGroupsPage.php" class="dashboard-card">
+                <a href="academicsPage.php?tab=interaction" class="dashboard-card">
                     <img src="../images/studyGrp.png" alt="Study Groups" class="card-icon">
                     <h2>Study Groups</h2>
                     <p>2 Groups joined</p>

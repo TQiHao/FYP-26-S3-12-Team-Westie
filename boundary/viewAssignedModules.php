@@ -75,7 +75,7 @@ $staffId = $_SESSION['user_id'] ?? null;
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
-                    <a href="campusEventsPage.php">University Campus Events</a>
+                    <a href="viewEventsPage.php">University Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>

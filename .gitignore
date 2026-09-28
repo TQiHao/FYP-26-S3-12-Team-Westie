@@ -1,1 +1,14 @@
+# Large model files
+models/
+*.gguf
+
+# Python server + caches
+python/phi3_server.py
+python/__pycache__/
+python/venv/
+
+# Local database config
+database/database.php
+
+# VS Code
 .vs/

@@ -68,13 +68,13 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
 
                     <?php if ($userRole === 'lecturer'): ?>
                         <a href="TeachingPage.php">Teaching</a>
-                        <a href="CampusEventsPage.php">University Campus Events</a>
+                        <a href="viewEventsPage.php">University Campus Events</a>
                         <a href="SubmitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
                         <a href="AIChatbotPage.php">AI Chatbot</a>
                         <a href="AcademicsPage.php">Academics</a>
                         <a href="FacilitiesBookingPage.php">Facility Booking</a>
-                        <a href="CampusEventsPage.php">University Campus Event</a>
+                        <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
                     <a href="../controller/logoutController.php">Log Out</a>

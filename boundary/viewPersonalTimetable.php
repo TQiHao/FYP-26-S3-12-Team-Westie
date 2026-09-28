@@ -71,7 +71,7 @@ $hours = range(8, 22); // 8am to 10pm
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
-                    <a href="campusEventsPage.php">University Campus Events</a>
+                    <a href="viewEventsPage.php">University Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>

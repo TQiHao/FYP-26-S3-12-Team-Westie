@@ -72,7 +72,7 @@ function getDetailPage($type) {
                     <a href="AIChatbotPage.php">AI Chatbot</a>
                     <a href="AcademicsPage.php">Academics</a>
                     <a href="ViewFacilitiesPage.php">Facility Booking</a>
-                    <a href="CampusEventsPage.php">University Campus Event</a>
+                    <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>

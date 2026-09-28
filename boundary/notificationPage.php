@@ -62,14 +62,14 @@ $notifications = $controller->getNotification($userId);
                     <?php if ($isLecturer): ?>
                         <!-- Lecturer Menu Items -->
                         <a href="TeachingPage.php">Teaching</a>
-                        <a href="CampusEventsPage.php">University Campus Events</a>
+                        <a href="viewEventsPage.php">University Campus Events</a>
                         <a href="SubmitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
                         <!-- Student Menu Items -->
                         <a href="AIChatbotPage.php">AI Chatbot</a>
                         <a href="AcademicsPage.php">Academics</a>
                         <a href="FacilitiesBookingPage.php">Facility Booking</a>
-                        <a href="CampusEventsPage.php">University Campus Event</a>
+                        <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>

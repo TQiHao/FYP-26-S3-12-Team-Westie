@@ -477,6 +477,17 @@ CREATE TABLE AIModelVersions (
     FOREIGN KEY (updatedBy) REFERENCES SystemAdmins(id) ON DELETE SET NULL
 );
 
+CREATE TABLE ChatHistory (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL,
+    sessionId INT NULL,
+    question TEXT NOT NULL,
+    answer TEXT,
+    source ENUM('faq', 'tfidf', 'phi3') DEFAULT 'faq',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+);
+
 -- ============================================
 -- SYSTEM TABLES
 -- ============================================
