@@ -19,6 +19,7 @@ switch ($type) {
         $uploadType = 'faculty';
         $backPage = 'UploadFacultyListPage.php';
         $buttonText = 'Upload Faculty';
+        $icon = 'faculty.png';
         break;
 
     case 'programme':
@@ -26,6 +27,7 @@ switch ($type) {
         $uploadType = 'programme';
         $backPage = 'UploadProgrammeListPage.php?facultyId=' . urlencode($facultyId);
         $buttonText = 'Upload Programme';
+        $icon = 'faculty.png';
         break;
 
     case 'module':
@@ -36,11 +38,52 @@ switch ($type) {
             . '&programmeId='
             . urlencode($programmeId);
         $buttonText = 'Upload Module';
+        $icon = 'faculty.png';
+        break;
+
+    case 'facility':
+        $title = 'Facility';
+        $uploadType = 'facility';
+        $backPage = 'UploadFacilityListPage.php';
+        $buttonText = 'Upload Facility';
+        $icon = 'facilityBooking.png';
+        break;
+
+    case 'courseCoordinator':
+        $title = 'Course Coordinator';
+        $uploadType = 'courseCoordinator';
+        $backPage = 'uploadCourseCoordinatorPage.php';
+        $buttonText = 'Upload Course Coordinator';
+        $icon = 'courseCoordinator.png';
+        break;
+
+    case 'lecturer':
+        $title = 'Lecturer';
+        $uploadType = 'lecturer';
+        $backPage = 'uploadLecturerPage.php';
+        $buttonText = 'Upload Lecturer';
+        $icon = 'faculty.png';
+        break;
+
+    case 'floorPlan':
+        $title = 'Campus Floor Plan';
+        $uploadType = 'floorPlan';
+        $backPage = 'uploadFloorPlanPage.php';
+        $buttonText = 'Upload Floor Plan';
+        $icon = 'floorPlan.png';
         break;
 
     default:
         header("Location: ManageUniversityInformationPage.php");
         exit();
+}
+
+$acceptTypes = '.csv';
+$formatText = 'CSV file only';
+
+if ($type === 'floorPlan') {
+    $acceptTypes = '.png,.jpg,.jpeg';
+    $formatText = 'PNG, JPG, or JPEG image';
 }
 
 $error = $_SESSION['upload_error'] ?? null;
@@ -128,7 +171,7 @@ unset($_SESSION['upload_error']);
         <section class="upload-page-header">
 
             <img
-                src="../images/faculty.png"
+                src="../images/<?php echo htmlspecialchars($icon); ?>"
                 alt="<?php echo htmlspecialchars($title); ?>"
             >
 
@@ -154,21 +197,25 @@ unset($_SESSION['upload_error']);
         >
 
             <label for="uploadFile">
-                Attach CSV file to upload
+                <?php
+                    echo $type === 'floorPlan'
+                        ? 'Attach Floor Plan to Upload'
+                        : 'Attach CSV File to Upload';
+                ?>
             </label>
 
             <div class="upload-format">
-                Supported Format: csv
+                Supported Format: 
+                <?php echo htmlspecialchars($formatText); ?>
             </div>
 
             <div class="upload-file-row">
 
-                <input
+               <input
                     type="file"
-                    id="uploadFile"
                     name="uploadFile"
                     class="upload-file-input"
-                    accept=".csv"
+                    accept="<?php echo htmlspecialchars($acceptTypes); ?>"
                     required
                 >
 

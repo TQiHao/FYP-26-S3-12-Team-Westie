@@ -1,0 +1,9 @@
+name,type,description,location,blockFloor,capacity
+Central Study Room,study room,Quiet study room with individual desks,Block A,Level 2,30
+Innovation Lab,lab,Computer and innovation laboratory,Block B,Level 3,40
+Main Gym,gym,University fitness and exercise facility,Block C,Level 1,50
+Lecture Hall 1,lecture hall,Large lecture hall for classes and events,Block A,Level 4,120
+Group Study Room 1,study room,Group discussion and study room,Block A,Level 2,12
+Computer Lab 1,lab,Computer laboratory for practical lessons,Block B,Level 2,35
+Lecture Hall 2,lecture hall,Medium lecture hall for teaching sessions,Block C,Level 3,80
+Group Study Room 2,study room,Small study room for group discussions,Block A,Level 2,10

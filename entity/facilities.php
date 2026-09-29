@@ -52,5 +52,135 @@ class Facilities
     public function getStatus() { return $this->status; }
     public function getCreatedAt() { return $this->createdAt; }
     public function getUpdatedAt() { return $this->updatedAt; }
+
+    // Setters
+    public function setUniversityId($universityId) { $this->universityId = $universityId; }
+    public function setName($name) { $this->name = $name; }
+    public function setType($type) { $this->type = $type; }
+    public function setDescription($description) { $this->description = $description; }
+    public function setLocation($location) { $this->location = $location; }
+    public function setBlockFloor($blockFloor) { $this->blockFloor = $blockFloor; }
+    public function setCapacity($capacity) { $this->capacity = $capacity; }
+    public function setStatus($status) { $this->status = $status; }
+    public function setCreatedAt($createdAt) { $this->createdAt = $createdAt; }
+    public function setUpdatedAt($updatedAt) { $this->updatedAt = $updatedAt; }
+
+    // Upload verified Facility data into database
+    public function uploadFacilityList($rows, $universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $db->beginTransaction();
+
+            $sql = "INSERT INTO Facilities
+                    (
+                        universityId,
+                        name,
+                        type,
+                        description,
+                        location,
+                        blockFloor,
+                        capacity,
+                        status,
+                        createdAt,
+                        updatedAt
+                    )
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        'active',
+                        NOW(),
+                        NOW()
+                    )";
+
+            $stmt = $db->prepare($sql);
+
+            foreach ($rows as $row) {
+
+                $stmt->execute([
+                    $universityId,
+                    $row['name'],
+                    $row['type'],
+                    $row['description'],
+                    $row['location'],
+                    $row['blockFloor'],
+                    $row['capacity']
+                ]);
+            }
+
+            $db->commit();
+
+            return true;
+
+        } catch (PDOException $e) {
+
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            return false;
+        }
+    }
+
+    // Get all Facilities for a University
+    public function getFacilitiesByUniversity($universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        $sql = "SELECT
+                    id,
+                    universityId,
+                    name,
+                    type,
+                    description,
+                    location,
+                    blockFloor,
+                    capacity,
+                    status,
+                    createdAt,
+                    updatedAt
+                FROM Facilities
+                WHERE universityId = ?
+                ORDER BY id ASC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$universityId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Check whether Facility already exists
+    public function facilityExists($universityId, $name, $location)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        $sql = "SELECT id
+                FROM Facilities
+                WHERE universityId = ?
+                AND name = ?
+                AND location = ?
+                LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->execute([
+            $universityId,
+            $name,
+            $location
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
 }
 ?>

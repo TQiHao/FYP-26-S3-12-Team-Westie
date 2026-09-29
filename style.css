@@ -2350,6 +2350,532 @@ footer {
   background-color: #e6c23a;
 }
 
+/* ===== FACILITY LIST PAGE ===== */
+
+.facility-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.facility-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.facility-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.facility-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.facility-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.facility-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.facility-list {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.facility-row {
+    width: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 70px;
+    padding: 10px 12px;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.facility-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.facility-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.facility-type {
+    display: inline-block;
+    width: fit-content;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background-color: #f8ea9b;
+    color: #555;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.facility-details {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    margin-top: 8px;
+    padding-top: 7px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 0.7rem;
+    color: #555;
+}
+
+.facility-details span {
+    font-size: 0.7rem;
+}
+
+.empty-facility-message {
+    font-size: 0.8rem;
+    margin-top: 10px;
+}
+
+.upload-facility-container {
+    margin-top: auto;
+    padding-top: 30px;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload-facility-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border: 1px solid #000;
+    border-radius: 4px;
+    background: #f8df5c;
+    color: #000;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.upload-facility-button:hover {
+    background: #f4d84a;
+    text-decoration: none;
+}
+
+.facility-list-page .facility-list {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+.facility-list-page .facility-row {
+    width: 100%;
+    margin: 0;
+}
+
+/* ===== COURSE COORDINATOR LIST PAGE ===== */
+
+.course-coordinator-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.course-coordinator-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.course-coordinator-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.course-coordinator-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.course-coordinator-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.course-coordinator-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.course-coordinator-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.course-coordinator-row {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.course-coordinator-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.course-coordinator-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.course-coordinator-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.course-coordinator-id {
+    font-size: 0.68rem;
+    color: #666;
+}
+
+.course-coordinator-email {
+    font-size: 0.68rem;
+}
+
+.course-coordinator-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.upload-course-coordinator-container {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 30px;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload-course-coordinator-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-course-coordinator-button:hover {
+    background: #e6c23a;
+    text-decoration: none;
+}
+
+/* ===== LECTURER LIST PAGE ===== */
+
+.lecturer-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.lecturer-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.lecturer-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lecturer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.lecturer-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.lecturer-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.lecturer-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lecturer-row {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.lecturer-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lecturer-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.lecturer-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lecturer-id {
+    font-size: 0.68rem;
+    color: #666;
+}
+
+.lecturer-email {
+    font-size: 0.72rem;
+}
+
+.lecturer-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.upload-lecturer-container {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 30px;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload-lecturer-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-lecturer-button:hover {
+    background: #e6c23a;
+    text-decoration: none;
+}
+
+/* ===== CAMPUS FLOOR PLAN PAGE ===== */
+
+.floor-plan-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.floor-plan-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.floor-plan-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.floor-plan-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.floor-plan-header img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+
+.floor-plan-header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.floor-plan-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0 20px;
+    box-sizing: border-box;
+}
+
+.floor-plan-image {
+    display: block;
+    max-width: 75%;
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.empty-floor-plan-message {
+    width: 100%;
+    padding: 80px 0;
+    text-align: center;
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.upload-floor-plan-container {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 20px;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload-floor-plan-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border: 1px solid #000;
+    border-radius: 4px;
+    background: #f8df5c;
+    color: #000;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.upload-floor-plan-button:hover {
+    background: #f4d84a;
+    text-decoration: none;
+}
+
 /* ===== END OF UNIVERSIRY ADMIN ===== */
 
 /* === VIEW UNIVERSITY REGISTRATION ==*/

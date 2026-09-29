@@ -7,18 +7,27 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once "../entity/faculties.php";
 require_once "../entity/programmes.php";
 require_once "../entity/modules.php";
+require_once "../entity/facilities.php";
+require_once "../entity/users.php";
+require_once "../entity/floorPlans.php";
 
 class ManageUniversityInformationController
 {
     private $faculties;
     private $programmes;
     private $modules;
+    private $facilities;
+    private $users;
+    private $floorPlans;
 
     public function __construct()
     {
         $this->faculties = new Faculties();
         $this->programmes = new Programmes();
         $this->modules = new Modules();
+        $this->facilities = new Facilities();
+        $this->users = new Users();
+        $this->floorPlans = new FloorPlans();
     }
 
     // Validate Faculty CSV
@@ -547,6 +556,832 @@ class ManageUniversityInformationController
 
         return "Unable to add module data to the database.";
     }
+
+    public function getFacilityList($universityId)
+    {
+        return $this->facilities->getFacilitiesByUniversity(
+            $universityId
+        );
+    }
+
+    // Validate Facility CSV
+    private function validateFacilityCsv($csvFile, $universityId)
+    {
+        if (!isset($csvFile) || $csvFile['error'] !== UPLOAD_ERR_OK) {
+            return "Please select a CSV file.";
+        }
+
+        $extension = strtolower(
+            pathinfo($csvFile['name'], PATHINFO_EXTENSION)
+        );
+
+        if ($extension !== 'csv') {
+            return "Only CSV files are supported.";
+        }
+
+        $handle = fopen($csvFile['tmp_name'], 'r');
+
+        if ($handle === false) {
+            return "Unable to read the CSV file.";
+        }
+
+        $headers = fgetcsv($handle);
+
+        if ($headers === false) {
+            fclose($handle);
+            return "The CSV file is empty.";
+        }
+
+        $headers = array_map('trim', $headers);
+
+        $expectedHeaders = [
+            'name',
+            'type',
+            'description',
+            'location',
+            'blockFloor',
+            'capacity'
+        ];
+
+        if ($headers !== $expectedHeaders) {
+            fclose($handle);
+
+            return "Invalid CSV header. Expected: name, type, description, location, blockFloor, capacity.";
+        }
+
+        $rows = [];
+        $facilityKeys = [];
+        $rowNumber = 1;
+
+        $validTypes = [
+            'study room',
+            'gym',
+            'lecture hall',
+            'lab'
+        ];
+
+        while (($row = fgetcsv($handle)) !== false) {
+
+            $rowNumber++;
+
+            // Skip empty rows
+            if (
+                count($row) === 1 &&
+                trim($row[0]) === ''
+            ) {
+                continue;
+            }
+
+            // Check column count
+            if (count($row) !== 6) {
+                fclose($handle);
+
+                return "Row {$rowNumber} must contain exactly 6 columns.";
+            }
+
+            $name = trim($row[0]);
+            $type = strtolower(trim($row[1]));
+            $description = trim($row[2]);
+            $location = trim($row[3]);
+            $blockFloor = trim($row[4]);
+            $capacity = trim($row[5]);
+
+            // Check facility name
+            if ($name === '') {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Facility name is required.";
+            }
+
+            // Check facility type
+            if (!in_array($type, $validTypes)) {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Invalid facility type.";
+            }
+
+            // Check capacity
+            if (
+                $capacity === '' ||
+                !is_numeric($capacity) ||
+                (int) $capacity <= 0
+            ) {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Capacity must be a positive number.";
+            }
+
+            // Check duplicate inside CSV
+            $facilityKey = strtolower(
+                $name . '|' . $location
+            );
+
+            if (in_array($facilityKey, $facilityKeys)) {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Duplicate facility name and location.";
+            }
+
+            $facilityKeys[] = $facilityKey;
+
+            // Check duplicate in database
+            if (
+                $this->facilities->facilityExists(
+                    $universityId,
+                    $name,
+                    $location
+                )
+            ) {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Facility already exists.";
+            }
+
+            // Store verified row
+            $rows[] = [
+                'name' => $name,
+                'type' => $type,
+                'description' => $description,
+                'location' => $location,
+                'blockFloor' => $blockFloor,
+                'capacity' => (int) $capacity
+            ];
+        }
+
+        fclose($handle);
+
+        if (empty($rows)) {
+            return "The CSV file contains no facility data.";
+        }
+
+        return $rows;
+    }
+
+    // insert into database
+    public function uploadFacilityList($csvFile, $universityId)
+    {
+        // Verify CSV
+        $validatedRows = $this->validateFacilityCsv(
+            $csvFile,
+            $universityId
+        );
+
+        // Validation failed
+        if (!is_array($validatedRows)) {
+            return $validatedRows;
+        }
+
+        // Insert verified data
+        $result = $this->facilities->uploadFacilityList(
+            $validatedRows,
+            $universityId
+        );
+
+        if ($result === true) {
+            return true;
+        }
+
+        return "Unable to add facility data to the database.";
+    }
+
+    public function getCourseCoordinatorList($universityId)
+    {
+        return $this->users->getCourseCoordinatorsByUniversity(
+            $universityId
+        );
+    }
+
+    private function validateCourseCoordinatorCsv(
+        $csvFile,
+        $universityId
+    ) {
+        // Check file exists
+        if (
+            !isset($csvFile) ||
+            $csvFile['error'] !== UPLOAD_ERR_OK
+        ) {
+
+            return "Please select a CSV file.";
+        }
+
+
+        // Check extension
+        $extension = strtolower(
+            pathinfo(
+                $csvFile['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        if ($extension !== 'csv') {
+
+            return "Only CSV files are supported.";
+        }
+
+
+        // Open CSV
+        $handle = fopen(
+            $csvFile['tmp_name'],
+            'r'
+        );
+
+        if ($handle === false) {
+
+            return "Unable to read the CSV file.";
+        }
+
+
+        // Read header
+        $headers = fgetcsv($handle);
+
+        if ($headers === false) {
+
+            fclose($handle);
+
+            return "The CSV file is empty.";
+        }
+
+
+        // Remove spaces
+        $headers = array_map(
+            'trim',
+            $headers
+        );
+
+
+        // Expected CSV headers
+        $expectedHeaders = [
+            'fullName',
+            'email',
+            'password'
+        ];
+
+
+        // Verify header
+        if ($headers !== $expectedHeaders) {
+
+            fclose($handle);
+
+            return "Invalid CSV header. Expected: fullName, email, password.";
+        }
+
+        $rows = [];
+
+        $emails = [];
+
+        $rowNumber = 1;
+
+        // Read each row
+        while (($row = fgetcsv($handle)) !== false) {
+
+            $rowNumber++;
+
+
+            // Skip empty rows
+            if (
+                count($row) === 1 &&
+                trim($row[0]) === ''
+            ) {
+
+                continue;
+            }
+
+
+            // Check column count
+            if (count($row) !== 3) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber} must contain exactly 3 columns.";
+            }
+
+            $fullName = trim($row[0]);
+            $email = trim($row[1]);
+            $password = $row[2];
+
+            // Check name
+            if ($fullName === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Full name is required.";
+            }
+
+            // Check email
+            if ($email === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Email is required.";
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Invalid email address.";
+            }
+
+            // Check password
+            if ($password === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Password is required.";
+            }
+
+            // Password strength
+            if (
+                strlen($password) < 8 ||
+                !preg_match('/[A-Z]/', $password) ||
+                !preg_match('/[a-z]/', $password) ||
+                !preg_match('/[0-9]/', $password) ||
+                !preg_match('/[^A-Za-z0-9]/', $password)
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Password must contain at least 8 characters, including uppercase, lowercase, number and special character.";
+            }
+
+            // Duplicate email inside CSV
+            if (in_array($email, $emails)) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Duplicate email '{$email}'.";
+            }
+
+            $emails[] = $email;
+
+            // Check database duplicate
+            if (
+                $this->users->courseCoordinatorExists(
+                    $email
+                )
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Email '{$email}' already exists.";
+            }
+
+            // Store verified row
+            $rows[] = [
+                'fullName' => $fullName,
+                'email' => $email,
+                'password' => $password
+            ];
+        }
+
+        fclose($handle);
+
+        // No data
+        if (empty($rows)) {
+
+            return
+                "The CSV file contains no course coordinator data.";
+        }
+
+        return $rows;
+    }
+
+    public function uploadCourseCoordinatorList(
+        $csvFile,
+        $universityId
+    ) {
+        $validatedRows =
+            $this->validateCourseCoordinatorCsv(
+                $csvFile,
+                $universityId
+            );
+
+        // Validation failed
+        if (!is_array($validatedRows)) {
+
+            return $validatedRows;
+        }
+
+        // Insert verified data
+        $result =
+            $this->users->uploadCourseCoordinatorList(
+                $validatedRows,
+                $universityId
+            );
+
+        if ($result === true) {
+
+            return true;
+        }
+
+        return
+            "Unable to add course coordinator data to the database.";
+    }
+
+    public function getLecturerList($universityId)
+    {
+        return $this->users->getLecturersByUniversity(
+            $universityId
+        );
+    }
+
+    private function validateLecturerCsv(
+        $csvFile,
+        $universityId
+    ) {
+        // Check file exists
+        if (
+            !isset($csvFile) ||
+            $csvFile['error'] !== UPLOAD_ERR_OK
+        ) {
+
+            return "Please select a CSV file.";
+        }
+
+
+        // Check extension
+        $extension = strtolower(
+            pathinfo(
+                $csvFile['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        if ($extension !== 'csv') {
+
+            return "Only CSV files are supported.";
+        }
+
+
+        // Open CSV
+        $handle = fopen(
+            $csvFile['tmp_name'],
+            'r'
+        );
+
+        if ($handle === false) {
+
+            return "Unable to read the CSV file.";
+        }
+
+
+        // Read header
+        $headers = fgetcsv($handle);
+
+        if ($headers === false) {
+
+            fclose($handle);
+
+            return "The CSV file is empty.";
+        }
+
+
+        // Remove spaces
+        $headers = array_map(
+            'trim',
+            $headers
+        );
+
+
+        // Expected headers
+        $expectedHeaders = [
+            'fullName',
+            'email',
+            'password'
+        ];
+
+
+        // Verify header
+        if ($headers !== $expectedHeaders) {
+
+            fclose($handle);
+
+            return "Invalid CSV header. Expected: fullName, email, password.";
+        }
+
+        $rows = [];
+
+        $emails = [];
+
+        $rowNumber = 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+
+            $rowNumber++;
+
+            // Skip empty rows
+            if (
+                count($row) === 1 &&
+                trim($row[0]) === ''
+            ) {
+
+                continue;
+            }
+
+            // Check column count
+            if (count($row) !== 3) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber} must contain exactly 3 columns.";
+            }
+
+            $fullName = trim($row[0]);
+            $email = trim($row[1]);
+            $password = $row[2];
+
+            // Check name
+            if ($fullName === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Full name is required.";
+            }
+
+            // Check email
+            if ($email === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Email is required.";
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Invalid email address.";
+            }
+
+            // Check password
+            if ($password === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Password is required.";
+            }
+
+            if (
+                strlen($password) < 8 ||
+                !preg_match('/[A-Z]/', $password) ||
+                !preg_match('/[a-z]/', $password) ||
+                !preg_match('/[0-9]/', $password) ||
+                !preg_match('/[^A-Za-z0-9]/', $password)
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Password must contain at least 8 characters, including uppercase, lowercase, number and special character.";
+            }
+
+            // Duplicate inside CSV
+            if (in_array($email, $emails)) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Duplicate email '{$email}'.";
+            }
+
+            $emails[] = $email;
+
+            // Duplicate in database
+            if (
+                $this->users->lecturerExists(
+                    $email
+                )
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Email '{$email}' already exists.";
+            }
+
+
+            $rows[] = [
+                'fullName' => $fullName,
+                'email' => $email,
+                'password' => $password
+            ];
+        }
+
+        fclose($handle);
+
+        if (empty($rows)) {
+
+            return
+                "The CSV file contains no lecturer data.";
+        }
+
+        return $rows;
+    }
+
+    public function uploadLecturerList(
+        $csvFile,
+        $universityId
+    ) {
+        $validatedRows =
+            $this->validateLecturerCsv(
+                $csvFile,
+                $universityId
+            );
+
+        if (!is_array($validatedRows)) {
+
+            return $validatedRows;
+        }
+
+        $result =
+            $this->users->uploadLecturerList(
+                $validatedRows,
+                $universityId
+            );
+
+        if ($result === true) {
+
+            return true;
+        }
+
+        return
+            "Unable to add lecturer data to the database.";
+    }
+
+    public function getLatestFloorPlan($universityId)
+    {
+        return $this->floorPlans->getLatestFloorPlan(
+            $universityId
+        );
+    }
+
+    private function validateFloorPlan($file) 
+    {
+        // Check whether a file was uploaded
+        if (
+            !isset($file) ||
+            $file['error'] !== UPLOAD_ERR_OK
+        ) {
+            return "Please select a floor plan.";
+        }
+
+        // Check file extension
+        $extension = strtolower(
+            pathinfo(
+                $file['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        $allowedExtensions = [
+            'png',
+            'jpg',
+            'jpeg'
+        ];
+
+        if (
+            !in_array(
+                $extension,
+                $allowedExtensions
+            )
+        ) {
+            return "Invalid file format. Please upload a PNG, JPG, or JPEG file.";
+        }
+
+        // Check MIME type
+        $allowedMimeTypes = [
+            'image/png',
+            'image/jpeg'
+        ];
+
+        $mimeType = mime_content_type(
+            $file['tmp_name']
+        );
+
+        if (
+            !in_array(
+                $mimeType,
+                $allowedMimeTypes
+            )
+        ) {
+            return "Invalid floor plan image.";
+        }
+
+        // Check file size
+        $maxFileSize = 10 * 1024 * 1024;
+
+        if ($file['size'] > $maxFileSize) {
+            return "Floor plan file size must not exceed 10 MB.";
+        }
+
+        return true;
+    }
+
+    public function uploadFloorPlan($file, $universityId, $uploadedBy) 
+    {
+        // Validate file
+        $validationResult =
+            $this->validateFloorPlan($file);
+
+        if ($validationResult !== true) {
+            return $validationResult;
+        }
+
+        // Create upload directory
+        $uploadDirectory =
+            "../uploads/floorplans/";
+
+        if (!is_dir($uploadDirectory)) {
+
+            if (
+                !mkdir(
+                    $uploadDirectory,
+                    0777,
+                    true
+                )
+            ) {
+                return "Unable to create the floor plan upload directory.";
+            }
+        }
+
+        // Get extension
+        $extension = strtolower(
+            pathinfo(
+                $file['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        // Generate unique file name
+        $newFileName =
+            "floorplan_" .
+            $universityId .
+            "_" .
+            time() .
+            "_" .
+            uniqid() .
+            "." .
+            $extension;
+
+        // Full server path
+        $destination =
+            $uploadDirectory .
+            $newFileName;
+
+        // Move uploaded file
+        if (
+            !move_uploaded_file(
+                $file['tmp_name'],
+                $destination
+            )
+        ) {
+            return "Unable to save the floor plan file.";
+        }
+
+        // Path stored in database
+        $filePath =
+            "uploads/floorplans/" .
+            $newFileName;
+
+        // Original file name
+        $originalFileName =
+            basename($file['name']);
+
+        // Insert database record
+        $result =
+            $this->floorPlans->uploadFloorPlan(
+                $universityId,
+                null,
+                $originalFileName,
+                $filePath,
+                $uploadedBy
+            );
+
+        if ($result === true) {
+            return true;
+        }
+
+        // Delete uploaded file if database insertion fails
+        if (file_exists($destination)) {
+            unlink($destination);
+        }
+        return "Unable to save floor plan information to the database.";
+    }
+
+
 }
 
 // Handle Faculty upload
@@ -621,7 +1456,6 @@ if (
         ? (int) $_POST['facultyId']
         : null;
 
-
     // Check university
     if ($universityId === null) {
 
@@ -636,7 +1470,6 @@ if (
         exit();
     }
 
-
     // Check faculty ID
     if ($facultyId === null || $facultyId <= 0) {
 
@@ -649,7 +1482,6 @@ if (
 
         exit();
     }
-
 
     // Verify faculty belongs to current university
     $faculty = $controller->getFacultyById(
@@ -669,13 +1501,11 @@ if (
         exit();
     }
 
-
     // Verify CSV and upload
     $result = $controller->uploadProgrammeList(
         $csvFile,
         $facultyId
     );
-
 
     // Success
     if ($result === true) {
@@ -724,7 +1554,6 @@ if (
         ? (int) $_POST['programmeId']
         : null;
 
-
     // Check university
     if ($universityId === null) {
 
@@ -741,7 +1570,6 @@ if (
         exit();
     }
 
-
     // Check Faculty ID
     if ($facultyId === null || $facultyId <= 0) {
 
@@ -754,7 +1582,6 @@ if (
 
         exit();
     }
-
 
     // Check Programme ID
     if ($programmeId === null || $programmeId <= 0) {
@@ -769,7 +1596,6 @@ if (
 
         exit();
     }
-
 
     // Verify programme belongs to selected Faculty and University
     $programme = $controller->getProgrammeById(
@@ -791,13 +1617,11 @@ if (
         exit();
     }
 
-
     // Verify CSV and upload
     $result = $controller->uploadModuleList(
         $csvFile,
         $programmeId
     );
-
 
     // Success
     if ($result === true) {
@@ -823,6 +1647,267 @@ if (
             . urlencode($facultyId)
             . "&programmeId="
             . urlencode($programmeId)
+        );
+
+        exit();
+    }
+}
+
+// Handle Facility upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "facility"
+) {
+
+    $controller = new ManageUniversityInformationController();
+
+    $csvFile = $_FILES['uploadFile'] ?? null;
+
+    $universityId = $_SESSION['university_id'] ?? null;
+
+    // Check university
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=facility"
+        );
+
+        exit();
+    }
+
+    // Verify CSV and upload
+    $result = $controller->uploadFacilityList(
+        $csvFile,
+        $universityId
+    );
+
+    // Success
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Facility list uploaded successfully.";
+
+        header(
+            "Location: ../boundary/UploadFacilityListPage.php"
+        );
+
+        exit();
+
+    } else {
+
+        $_SESSION['upload_error'] = $result;
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=facility"
+        );
+
+        exit();
+    }
+}
+
+// Handle Course Coordinator upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "courseCoordinator"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $csvFile =
+        $_FILES['uploadFile'] ?? null;
+
+    $universityId =
+        $_SESSION['university_id'] ?? null;
+
+
+    // Check university
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=courseCoordinator"
+        );
+
+        exit();
+    }
+
+
+    // Verify and upload
+    $result =
+        $controller->uploadCourseCoordinatorList(
+            $csvFile,
+            $universityId
+        );
+
+
+    // Success
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Course coordinator list uploaded successfully.";
+
+        header(
+            "Location: ../boundary/uploadCourseCoordinatorPage.php"
+        );
+
+        exit();
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            $result;
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=courseCoordinator"
+        );
+
+        exit();
+    }
+}
+
+// Handle Lecturer upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "lecturer"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $csvFile =
+        $_FILES['uploadFile'] ?? null;
+
+    $universityId =
+        $_SESSION['university_id'] ?? null;
+
+
+    // Check university
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=lecturer"
+        );
+
+        exit();
+    }
+
+
+    $result =
+        $controller->uploadLecturerList(
+            $csvFile,
+            $universityId
+        );
+
+
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Lecturer list uploaded successfully.";
+
+        header(
+            "Location: ../boundary/uploadLecturerPage.php"
+        );
+
+        exit();
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            $result;
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=lecturer"
+        );
+
+        exit();
+    }
+}
+
+// Handle Floor Plan upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "floorPlan"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $file =
+        $_FILES['uploadFile'] ?? null;
+
+    $universityId =
+        $_SESSION['university_id'] ?? null;
+
+    $uploadedBy =
+        $_SESSION['user_id'] ?? null;
+
+
+    // Check university
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=floorPlan"
+        );
+
+        exit();
+    }
+
+    // Check user
+    if ($uploadedBy === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify the current user.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=floorPlan"
+        );
+
+        exit();
+    }
+
+    // Upload
+    $result =
+        $controller->uploadFloorPlan(
+            $file,
+            $universityId,
+            $uploadedBy
+        );
+
+    // Success
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Floor plan uploaded successfully.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            $result;
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=floorPlan"
         );
 
         exit();

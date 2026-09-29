@@ -121,7 +121,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </a>
 
             <!-- Facility -->
-            <a href="#" class="university-management-card">
+            <a href="uploadFacilityListPage.php?type=facility" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/facilityBooking.png" alt="Facility" class="icon-facility">
                 </div>
@@ -131,7 +131,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </a>
 
             <!-- Course Coordinator -->
-            <a href="#" class="university-management-card">
+            <a href="uploadCourseCoordinatorPage.php?type=courseCoordinator" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/courseCoordinator.png"
                          alt="Course Coordinator"
@@ -143,7 +143,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </a>
 
             <!-- Lecturer -->
-            <a href="#" class="university-management-card">
+            <a href="uploadLecturerPage.php?type=lecturer" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/lecturer.png" alt="Lecturer" class="icon-lecturer">
                 </div>
@@ -163,7 +163,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </a>
 
             <!-- Floor Plan -->
-            <a href="#" class="university-management-card">
+            <a href="uploadFloorPlanPage.php?type=floorPlan" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/floorPlan.png" alt="Floor Plan" class="icon-floor-plan">
                 </div>
