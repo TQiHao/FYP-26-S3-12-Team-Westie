@@ -2012,6 +2012,87 @@ footer {
   color: #2e7d32;
 }
 
+/* ===== UPLOAD GUIDE ===== */
+
+.csv-guide {
+    width: 100%;
+    margin-top: 25px;
+    padding: 20px 22px;
+    border: 1px solid #d5d5d5;
+    border-radius: 10px;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+/* Guide title */
+.csv-guide h3 {
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #000;
+}
+
+/* Section text */
+.csv-guide p {
+    margin: 12px 0 6px;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: #555;
+}
+
+.csv-guide p strong {
+    color: #333;
+    font-weight: 700;
+}
+
+/* Code / filename boxes */
+.csv-guide pre {
+    margin: 6px 0 14px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.68rem;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
+/* Lists */
+.csv-guide ul {
+    margin: 6px 0 15px;
+    padding-left: 20px;
+}
+
+.csv-guide li {
+    margin-bottom: 6px;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: #555;
+}
+
+/* Slight separation between sections */
+.csv-guide p + pre {
+    margin-top: 6px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .csv-guide {
+        padding: 16px 18px;
+    }
+
+    .csv-guide pre {
+        font-size: 0.65rem;
+    }
+}
+
 /* ===== UPLOAD FACULTY LIST PAGE ===== */
 
 .faculty-list-page {
@@ -2776,6 +2857,196 @@ footer {
 .upload-lecturer-button:hover {
     background: #e6c23a;
     text-decoration: none;
+}
+
+
+/* ===== STUDENT LIST PAGE ===== */
+
+.student-list-page {
+    width: 80%;
+    max-width: 1050px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+    padding: 35px 0 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.student-list-page .profile-header {
+    display: block;
+    margin: 0 0 28px;
+    padding: 0;
+}
+
+.student-list-page .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #ccc;
+}
+
+.student-header img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.student-header h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.student-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.student-row {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #bbb;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.student-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.student-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.student-id {
+    font-size: 0.68rem;
+    color: #666;
+}
+
+.student-email {
+    font-size: 0.72rem;
+}
+
+.student-academic-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 2px;
+}
+
+.student-academic-info span {
+    font-size: 0.68rem;
+    color: #666;
+}
+
+.student-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Empty message */
+.empty-message {
+    width: 100%;
+    padding: 20px 0;
+    text-align: center;
+    color: #777;
+    font-size: 0.75rem;
+}
+
+/* Upload button */
+.upload-student-container {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 30px;
+    padding-bottom: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.upload-student-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border: 1px solid #000;
+    border-radius: 15px;
+    background: var(--bg-yellow);
+    color: #000;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.upload-student-button:hover {
+    background: #e6c23a;
+    text-decoration: none;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    .student-list-page {
+        width: 90%;
+    }
+
+    .student-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .student-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .student-academic-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .student-status {
+        align-self: flex-start;
+    }
 }
 
 /* ===== CAMPUS FLOOR PLAN PAGE ===== */

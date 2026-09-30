@@ -9,6 +9,7 @@ require_once "../entity/programmes.php";
 require_once "../entity/modules.php";
 require_once "../entity/facilities.php";
 require_once "../entity/users.php";
+require_once "../entity/students.php";
 require_once "../entity/floorPlans.php";
 
 class ManageUniversityInformationController
@@ -18,6 +19,7 @@ class ManageUniversityInformationController
     private $modules;
     private $facilities;
     private $users;
+    private $students;
     private $floorPlans;
 
     public function __construct()
@@ -27,6 +29,7 @@ class ManageUniversityInformationController
         $this->modules = new Modules();
         $this->facilities = new Facilities();
         $this->users = new Users();
+        $this->students = new Students();
         $this->floorPlans = new FloorPlans();
     }
 
@@ -1221,6 +1224,401 @@ class ManageUniversityInformationController
             "Unable to add lecturer data to the database.";
     }
 
+    public function getStudentList($universityId)
+    {
+        return $this->students->getStudentsByUniversity(
+            $universityId
+        );
+    }
+
+    private function validateStudentCsv(
+        $csvFile,
+        $universityId
+    ) {
+        // Check file exists
+        if (
+            !isset($csvFile) ||
+            $csvFile['error'] !== UPLOAD_ERR_OK
+        ) {
+            return "Please select a CSV file.";
+        }
+
+
+        // Check extension
+        $extension = strtolower(
+            pathinfo(
+                $csvFile['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+        if ($extension !== 'csv') {
+            return "Only CSV files are supported.";
+        }
+
+
+        // Validate filename
+        $fileName = pathinfo(
+            $csvFile['name'],
+            PATHINFO_FILENAME
+        );
+
+        $pattern =
+            '/^(U\d+)_'
+            . '([A-Za-z0-9]+)_'
+            . '(\d{4}-\d{4})_'
+            . '(S\d+|SpecialTerm)_'
+            . 'StudentList$/i';
+
+        if (
+            !preg_match(
+                $pattern,
+                $fileName,
+                $matches
+            )
+        ) {
+            return
+                "Invalid file name. Use "
+                . "U01_BSCS_2026-2027_S1_StudentList.csv";
+        }
+
+
+        // Extract filename information
+        $universityCode = strtoupper(
+            $matches[1]
+        );
+
+        $programmeCode = strtoupper(
+            $matches[2]
+        );
+
+        $academicYear = $matches[3];
+
+        $semester =
+            strtolower($matches[4]) === 'specialterm'
+            ? 'SpecialTerm'
+            : strtoupper($matches[4]);
+
+
+        // Build expected university code
+        $expectedUniversityCode =
+            'U' .
+            str_pad(
+                (string) $universityId,
+                2,
+                '0',
+                STR_PAD_LEFT
+            );
+
+
+        // Check university code
+        if (
+            $universityCode !==
+            $expectedUniversityCode
+        ) {
+            return
+                "The university code in the file name "
+                . "does not match your university.";
+        }
+
+
+        // Find programme
+        $programme =
+            $this->programmes
+                ->getProgrammeByCodeAndUniversity(
+                    $programmeCode,
+                    $universityId
+                );
+
+        if ($programme === false) {
+            return
+                "Programme code '{$programmeCode}' "
+                . "does not exist for your university.";
+        }
+
+
+        // Open CSV
+        $handle = fopen(
+            $csvFile['tmp_name'],
+            'r'
+        );
+
+        if ($handle === false) {
+            return "Unable to read the CSV file.";
+        }
+
+
+        // Read header
+        $headers = fgetcsv($handle);
+
+        if ($headers === false) {
+            fclose($handle);
+
+            return "The CSV file is empty.";
+        }
+
+        $headers = array_map(
+            'trim',
+            $headers
+        );
+
+
+        // Determine identifier type
+        $identifierType =
+            strtolower($headers[0] ?? '');
+
+
+        // Email-first CSV
+        if ($identifierType === 'email') {
+
+            $expectedHeaders = [
+                'email',
+                'fullName',
+                'password'
+            ];
+
+        }
+
+        // Student-ID-first CSV
+         elseif ($identifierType === 'student_id') {
+
+            $expectedHeaders = [
+                'student_id',
+                'fullName',
+                'email',
+                'password'
+            ];
+
+        } else {
+
+            fclose($handle);
+
+            return
+                "The first column must be "
+                . "'email' or 'student_id'.";
+        }
+
+
+        // Check headers
+        if ($headers !== $expectedHeaders) {
+
+            fclose($handle);
+
+            return
+                "Invalid CSV header. Expected: "
+                . implode(
+                    ', ',
+                    $expectedHeaders
+                ) . ".";
+        }
+
+
+        $rows = [];
+        $emails = [];
+        $studentIds = [];
+
+        $rowNumber = 1;
+
+
+        // Read student rows
+        while (
+            ($row = fgetcsv($handle)) !== false
+        ) {
+
+            $rowNumber++;
+
+
+            // Skip blank rows
+            if (
+                count($row) === 1 &&
+                trim($row[0]) === ''
+            ) {
+                continue;
+            }
+
+
+            // Check column count
+            if (
+                count($row) !==
+                count($expectedHeaders)
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber} must contain "
+                    . count($expectedHeaders)
+                    . " columns.";
+            }
+
+
+            // Email-first
+            if ($identifierType === 'email') {
+
+                $email = trim($row[0]);
+                $fullName = trim($row[1]);
+                $password = trim($row[2]);
+
+                $studentId = null;
+
+            }
+
+
+            // Student-ID-first
+            else {
+
+                $studentId = trim($row[0]);
+                $fullName = trim($row[1]);
+                $email = trim($row[2]);
+                $password = trim($row[3]);
+
+            }
+
+
+            // Validate name
+            if ($fullName === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Full name is required.";
+            }
+
+
+            // Validate email
+            if (
+                $email === '' ||
+                !filter_var(
+                    $email,
+                    FILTER_VALIDATE_EMAIL
+                )
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Invalid email address.";
+            }
+
+
+            // Validate password
+            if ($password === '') {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Password is required.";
+            }
+
+
+            // Check duplicate email in CSV
+            $emailKey = strtolower($email);
+
+            if (
+                in_array(
+                    $emailKey,
+                    $emails
+                )
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Duplicate "
+                    . "email '{$email}'.";
+            }
+
+
+            // Check existing email in database
+            if (
+                $this->users
+                    ->studentEmailExists($email)
+            ) {
+
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: Email "
+                    . "'{$email}' already exists.";
+            }
+
+            // Validate student ID if one was supplied
+            if (
+                $studentId !== null &&
+                $studentId !== ''
+            ) {
+
+                if (
+                    in_array(
+                        strtoupper($studentId),
+                        $studentIds
+                    )
+                ) {
+
+                    fclose($handle);
+
+                    return
+                        "Row {$rowNumber}: Duplicate "
+                        . "student ID '{$studentId}'.";
+                }
+
+
+                if (
+                    $this->students
+                        ->studentIdExists(
+                            $studentId
+                        )
+                ) {
+
+                    fclose($handle);
+
+                    return
+                        "Row {$rowNumber}: Student ID "
+                        . "'{$studentId}' already exists.";
+                }
+
+
+                $studentIds[] =
+                    strtoupper($studentId);
+            }
+
+
+            $emails[] = $emailKey;
+
+
+            // Store validated row
+            $rows[] = [
+                'studentId' => $studentId,
+                'fullName' => $fullName,
+                'email' => $email,
+                'password' => $password
+            ];
+        }
+
+
+        fclose($handle);
+
+
+        // Check data exists
+        if (empty($rows)) {
+            return
+                "The CSV file contains no student data.";
+        }
+
+
+        // Return everything needed for insertion
+        return [
+            'rows' => $rows,
+            'programmeId' => $programme['id'],
+            'programmeCode' => $programmeCode,
+            'academicYear' => $academicYear,
+            'semester' => $semester
+        ];
+    }
+
     public function getLatestFloorPlan($universityId)
     {
         return $this->floorPlans->getLatestFloorPlan(
@@ -1381,7 +1779,64 @@ class ManageUniversityInformationController
         return "Unable to save floor plan information to the database.";
     }
 
+    public function uploadStudentList(
+        $csvFile,
+        $universityId
+    ) {
+        // Validate everything first
+        $validated =
+            $this->validateStudentCsv(
+                $csvFile,
+                $universityId
+            );
 
+        if (!is_array($validated)) {
+            return $validated;
+        }
+
+
+        // Create each student's account and student record
+        foreach ($validated['rows'] as $row) {
+
+            // Create account in Users
+            $userId =
+                $this->users
+                    ->createStudentUser(
+                        $universityId,
+                        $row['email'],
+                        $row['password'],
+                        $row['fullName']
+                    );
+
+
+            if ($userId === false) {
+                return
+                    "Unable to create student account "
+                    . "for '{$row['email']}'.";
+            }
+
+
+            // Create student-specific record
+            $studentRecordId =
+                $this->students
+                    ->createStudentRecord(
+                        $userId,
+                        $row['studentId'],
+                        $validated['programmeId'],
+                        $validated['academicYear'],
+                        $validated['semester']
+                    );
+
+
+            if ($studentRecordId === false) {
+                return
+                    "Unable to create student record "
+                    . "for '{$row['email']}'.";
+            }
+        }
+
+        return true;
+    }
 }
 
 // Handle Faculty upload
@@ -1833,6 +2288,69 @@ if (
 
         exit();
     }
+}
+
+// Handle Student upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "student"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $csvFile =
+        $_FILES['uploadFile'] ?? null;
+
+    $universityId =
+        $_SESSION['university_id'] ?? null;
+
+
+    // Check university
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/UploadListPage.php?type=student"
+        );
+
+        exit();
+    }
+
+
+    // Upload student list
+    $result =
+        $controller->uploadStudentList(
+            $csvFile,
+            $universityId
+        );
+
+
+    // Success
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Student list uploaded successfully.";
+
+        header(
+            "Location: ../boundary/uploadStudentListPage.php"
+        );
+
+        exit();
+    }
+
+
+    // Failure
+    $_SESSION['upload_error'] = $result;
+
+    header(
+        "Location: ../boundary/UploadListPage.php?type=student"
+    );
+
+    exit();
 }
 
 // Handle Floor Plan upload

@@ -604,4 +604,83 @@ class Users
             return false;
         }
     }
+
+    // Check whether an email already exists.
+    public function studentEmailExists($email)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT id
+                    FROM Users
+                    WHERE email = ?
+                    LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $email
+            ]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+
+        } catch (PDOException $e) {
+
+            return false;
+        }
+    }
+
+
+    // Create a student account in Users.
+    public function createStudentUser(
+        $universityId,
+        $email,
+        $password,
+        $fullName
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $passwordHash = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            $sql = "INSERT INTO Users
+                    (
+                        universityId,
+                        email,
+                        passwordHash,
+                        fullName,
+                        role,
+                        status,
+                        createdAt,
+                        updatedAt
+                    )
+                    VALUES
+                    (
+                        ?, ?, ?, ?, 'student',
+                        'active', NOW(), NOW()
+                    )";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId,
+                $email,
+                $passwordHash,
+                $fullName
+            ]);
+
+            return $db->lastInsertId();
+
+        } catch (PDOException $e) {
+
+            return false;
+        }
+    }
 }

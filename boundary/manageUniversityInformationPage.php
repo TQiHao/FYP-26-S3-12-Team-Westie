@@ -153,7 +153,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </a>
 
             <!-- Student -->
-            <a href="#" class="university-management-card">
+            <a href="uploadStudentListPage.php?type=student" class="university-management-card">
                 <div class="management-card-icon">
                     <img src="../images/student.png" alt="Student" class="icon-student">
                 </div>

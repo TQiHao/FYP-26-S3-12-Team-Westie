@@ -65,6 +65,14 @@ switch ($type) {
         $icon = 'faculty.png';
         break;
 
+    case 'student':
+        $title = 'Student';
+        $uploadType = 'student';
+        $backPage = 'UploadStudentListPage.php';
+        $buttonText = 'Upload Student';
+        $icon = 'student.png';
+        break;
+
     case 'floorPlan':
         $title = 'Campus Floor Plan';
         $uploadType = 'floorPlan';
@@ -245,6 +253,309 @@ unset($_SESSION['upload_error']);
                     name="programmeId"
                     value="<?php echo htmlspecialchars($programmeId); ?>"
                 >
+
+            <?php endif; ?>
+
+            <?php if ($type === 'faculty'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Faculty CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
+
+                    <pre>U01_FacultyList.csv</pre>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>name,code,description</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>Faculty of Computing,FC,Computing and IT programmes</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>File name must follow the required naming convention.</li>
+                        <li>Faculty name and code are required.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+
+            <?php elseif ($type === 'programme'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Programme CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
+
+                    <pre>U01_ProgrammeList_FC.csv</pre>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>name,code,durationYears,description</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>Bachelor of Computer Science,BSCS,4,Computing programme</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>File name must include the university code and faculty code.</li>
+                        <li>Programme name, code and duration are required.</li>
+                        <li>Duration must be a positive number.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+
+            <?php elseif ($type === 'module'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Module CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
+
+                    <pre>U01_ModuleList_BSCS.csv</pre>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>name,code,credits,semester,description</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>Programming Fundamentals,CS101,4,1,Introduction to programming</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>File name must include the university code and programme code.</li>
+                        <li>Module name, code, credits and semester are required.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+            <?php elseif ($type === 'facility'): ?>
+
+            <div class="csv-guide">
+
+                <h3>Facility CSV Upload Guide</h3>
+
+                <p>
+                    <strong>File Name:</strong>
+                </p>
+
+                <pre>U01_FacilityList.csv</pre>
+
+                <p>
+                    <strong>CSV Format:</strong>
+                </p>
+
+                <pre>name,type,description,location,blockFloor,capacity</pre>
+
+                <p>
+                    <strong>Example:</strong>
+                </p>
+
+                <pre>Central Study Room,study room,Quiet study area,Block A,Level 2,30</pre>
+
+                <p>
+                    <strong>Requirements:</strong>
+                </p>
+
+                <ul>
+                    <li>File name must follow the required naming convention.</li>
+                    <li>Facility name and type are required.</li>
+                    <li>Type must be study room, gym, lecture hall, or lab.</li>
+                    <li>Capacity must be a positive number.</li>
+                    <li>Only .csv files will be accepted.</li>
+                </ul>
+
+            </div>
+
+            <?php elseif ($type === 'courseCoordinator'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Course Coordinator CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
+
+                    <pre>U01_CourseCoordinatorList.csv</pre>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>fullName,email,password</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>Alice Tan,alice.tan@unibee.edu.sg,Coord@123</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>Full name, email and password are required.</li>
+                        <li>Email must be a valid email address.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+
+            <?php elseif ($type === 'lecturer'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Lecturer CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
+
+                    <pre>U01_LecturerList.csv</pre>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>fullName,email,password</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>John Lim,john.lim@unibee.com,Lecturer@123</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>Full name, email and password are required.</li>
+                        <li>Email must be a valid email address.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+
+            <?php elseif ($type === 'student'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Student List CSV Upload Guide</h3>
+
+                    <p>
+                        <strong>File Name Format:</strong>
+                    </p>
+
+                    <pre>{universityCode}_{programmeCode}_{academicYear}_{semester}_StudentList.csv</pre>
+
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
+
+                    <pre>U01_BSCS_2026-2027_S1_StudentList.csv</pre>
+
+                    <p>
+                        <strong>The system will parse the file name to determine:</strong>
+                    </p>
+
+                    <ul>
+                        <li>University Code: U01</li>
+                        <li>Programme: BSCS</li>
+                        <li>Academic Year: 2026-2027</li>
+                        <li>Semester: S1</li>
+                    </ul>
+
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
+
+                    <pre>email,fullName,password</pre>
+
+                    <p>
+                        <strong>Or:</strong>
+                    </p>
+
+                   <pre>student_id,fullName,email,password</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>The first column must be <strong>email</strong> or <strong>student_id</strong>.</li>
+                        <li>Student name and password must be included.</li>
+                        <li>File name must follow the required naming convention.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
+
+                </div>
+
+
+            <?php elseif ($type === 'floorPlan'): ?>
+
+                <div class="csv-guide">
+
+                    <h3>Campus Floor Plan Upload Guide</h3>
+
+                    <p>
+                        <strong>Accepted File Formats:</strong>
+                    </p>
+
+                    <pre>PNG, JPG, JPEG</pre>
+
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
+
+                    <ul>
+                        <li>Only PNG, JPG or JPEG files will be accepted.</li>
+                        <li>Upload a clear and readable campus floor plan.</li>
+                    </ul>
+
+                </div>
 
             <?php endif; ?>
 

@@ -167,4 +167,50 @@ class Programmes
 
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
+
+    public function getProgrammeByCodeAndUniversity(
+        $programmeCode,
+        $universityId
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "
+            SELECT
+                p.id,
+                p.facultyId,
+                p.name,
+                p.code,
+                p.durationYears,
+                p.description
+            FROM Programmes p
+            JOIN Faculties f
+                ON p.facultyId = f.id
+            WHERE p.code = ?
+              AND f.universityId = ?
+            LIMIT 1
+        ";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $programmeCode,
+                $universityId
+            ]);
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($result === false) {
+                return false;
+            }
+
+            return $result;
+
+        } catch (PDOException $e) {
+
+            return false;
+        }
+    }
 }

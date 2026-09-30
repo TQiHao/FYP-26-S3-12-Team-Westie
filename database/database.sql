@@ -542,3 +542,25 @@ CREATE TABLE PasswordResetTokens (
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
+
+-- Student Table for Student List
+CREATE TABLE Students (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    userId INT NOT NULL UNIQUE,
+    studentId VARCHAR(50) NULL UNIQUE,
+    programmeId INT NOT NULL,
+    academicYear VARCHAR(20) NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (userId)
+        REFERENCES Users(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (programmeId)
+        REFERENCES Programmes(id)
+        ON DELETE CASCADE
+);
