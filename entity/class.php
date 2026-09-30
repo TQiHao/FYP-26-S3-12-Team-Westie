@@ -11,9 +11,6 @@ class ClassEntity
         $this->db = $database->connect();
     }
 
-    /**
-     * Get classes filtered by Search and Status
-     */
     public function getClasses($searchQuery = '', $facultyId = '', $departmentId = '', $statusFilter = '')
     {
         try {
@@ -104,9 +101,39 @@ class ClassEntity
         }
     }
 
-    /**
-     * Check duplicate code or venue/schedule collision
-     */
+    public function getStudentFilesFromFolder($universityId)
+    {
+        $folder = __DIR__ . "/../csv/";
+        if (!is_dir($folder))
+            return [];
+
+        $result = [];
+        foreach (glob($folder . "*.csv") as $path) {
+            $result[] = [
+                'fileName' => basename($path),
+                'fullPath' => $path,
+                'uploadedAt' => date('Y-m-d H:i:s', filemtime($path)),
+            ];
+        }
+
+        usort($result, function ($a, $b) {
+            return strcmp($b['uploadedAt'], $a['uploadedAt']);
+        });
+
+        return $result;
+    }
+    public function readStudentFileByFilename($fileName, $universityId)
+    {
+        $fileName = basename($fileName);
+        $folder = __DIR__ . "/../csv/";
+        $fullPath = $folder . $fileName;
+
+        if (!file_exists($fullPath))
+            return null;
+        return ['fileName' => $fileName, 'fullPath' => $fullPath];
+    }
+
+
     public function checkClassConflict($moduleId, $classCode, $dayOfWeek, $room, $startTime, $endTime, $excludeClassId = null)
     {
         $sqlDup = "SELECT id FROM Classes WHERE moduleId = ? AND classCode = ?";
@@ -136,14 +163,87 @@ class ClassEntity
         return "OK";
     }
 
+    /**
+     * Returns the first conflicting class for the lecturer, or null.
+     */
+    public function findLecturerClash($staffId, $dayOfWeek, $startTime, $endTime, $excludeClassId = null)
+    {
+        if (empty($staffId))
+            return null;
+        try {
+            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime, c.room
+                    FROM Classes c
+                    WHERE c.staffId = ?
+                      AND c.dayOfWeek = ?
+                      AND c.status = 'active'
+                      AND c.startTime < ?
+                      AND c.endTime > ?";
+            $params = [$staffId, $dayOfWeek, $endTime, $startTime];
+            if ($excludeClassId) {
+                $sql .= " AND c.id != ?";
+                $params[] = $excludeClassId;
+            }
+            $sql .= " LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the first conflicting class for the student, or null.
+     */
+    public function findStudentClash($studentId, $targetClassId)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT dayOfWeek, startTime, endTime FROM Classes WHERE id = ?");
+            $stmt->execute([$targetClassId]);
+            $target = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$target)
+                return null;
+
+            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime
+                    FROM StudentEnrolments se
+                    JOIN Classes c ON c.id = se.classId
+                    WHERE se.studentId = ?
+                      AND se.status = 'enrolled'
+                      AND c.status = 'active'
+                      AND c.dayOfWeek = ?
+                      AND c.startTime < ?
+                      AND c.endTime > ?
+                      AND c.id != ?
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $studentId,
+                $target['dayOfWeek'],
+                $target['endTime'],
+                $target['startTime'],
+                $targetClassId,
+            ]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
     public function createClass($data, $coordinatorId)
     {
         try {
             $conflict = $this->checkClassConflict($data['moduleId'], $data['classCode'], $data['dayOfWeek'], $data['room'], $data['startTime'], $data['endTime']);
             if ($conflict === "DUPLICATE_CODE")
-                return "DUPLICATE_CODE";
+                return ['status' => 'DUPLICATE_CODE', 'newId' => 0];
             if ($conflict === "SCHEDULE_CLASH")
-                return "SCHEDULE_CLASH";
+                return ['status' => 'SCHEDULE_CLASH', 'newId' => 0];
+
+            if (!empty($data['staffId'])) {
+                $lecClash = $this->findLecturerClash($data['staffId'], $data['dayOfWeek'], $data['startTime'], $data['endTime']);
+                if ($lecClash) {
+                    return ['status' => 'LECTURER_CLASH', 'newId' => 0, 'clash' => $lecClash];
+                }
+            }
 
             $sql = "INSERT INTO Classes (moduleId, courseCoordinatorId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, capacity, academicYear, semester, status, createdAt, updatedAt)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())";
@@ -163,15 +263,16 @@ class ClassEntity
                 $data['semester'] ?? '1'
             ]);
 
-            $newClassId = $this->db->lastInsertId();
+            $newClassId = (int) $this->db->lastInsertId();
 
             if (!empty($data['examDate'])) {
                 $this->saveExamPlan($newClassId, $data['examDate'], $data['examStartTime'], $data['examEndTime'], $data['examVenue'], $coordinatorId);
             }
 
-            return "SUCCESS_CREATE";
+            return ['status' => 'SUCCESS_CREATE', 'newId' => $newClassId];
         } catch (Exception $e) {
-            return "DB_ERROR";
+            error_log("Create Class Error: " . $e->getMessage());
+            return ['status' => 'DB_ERROR', 'newId' => 0];
         }
     }
 
@@ -180,9 +281,16 @@ class ClassEntity
         try {
             $conflict = $this->checkClassConflict($data['moduleId'], $data['classCode'], $data['dayOfWeek'], $data['room'], $data['startTime'], $data['endTime'], $classId);
             if ($conflict === "DUPLICATE_CODE")
-                return "DUPLICATE_CODE";
+                return ['status' => 'DUPLICATE_CODE'];
             if ($conflict === "SCHEDULE_CLASH")
-                return "SCHEDULE_CLASH";
+                return ['status' => 'SCHEDULE_CLASH'];
+
+            if (!empty($data['staffId'])) {
+                $lecClash = $this->findLecturerClash($data['staffId'], $data['dayOfWeek'], $data['startTime'], $data['endTime'], $classId);
+                if ($lecClash) {
+                    return ['status' => 'LECTURER_CLASH', 'clash' => $lecClash];
+                }
+            }
 
             $sql = "UPDATE Classes 
                     SET moduleId = ?, staffId = ?, className = ?, classCode = ?, dayOfWeek = ?, startTime = ?, endTime = ?, room = ?, capacity = ?, academicYear = ?, semester = ?, updatedAt = NOW()
@@ -207,9 +315,10 @@ class ClassEntity
                 $this->saveExamPlan($classId, $data['examDate'], $data['examStartTime'], $data['examEndTime'], $data['examVenue'], $currentUserId);
             }
 
-            return "SUCCESS_UPDATE";
+            return ['status' => 'SUCCESS_UPDATE'];
         } catch (Exception $e) {
-            return "DB_ERROR";
+            error_log("Update Class Error: " . $e->getMessage());
+            return ['status' => 'DB_ERROR'];
         }
     }
 
@@ -224,6 +333,14 @@ class ClassEntity
         }
     }
 
+    /**
+     * Returns one of:
+     *   SUCCESS_ENROLL
+     *   CAPACITY_FULL
+     *   ALREADY_ENROLLED
+     *   STUDENT_CLASH:<classCode>
+     *   DB_ERROR
+     */
     public function enrollStudentSingle($classId, $studentId, $enrolledBy)
     {
         try {
@@ -239,10 +356,16 @@ class ClassEntity
             $checkStmt->execute([$studentId, $classId]);
             $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
+            if ($existing && $existing['status'] === 'enrolled') {
+                return "ALREADY_ENROLLED";
+            }
+
+            $clash = $this->findStudentClash($studentId, $classId);
+            if ($clash) {
+                return "STUDENT_CLASH:" . $clash['classCode'];
+            }
+
             if ($existing) {
-                if ($existing['status'] === 'enrolled') {
-                    return "ALREADY_ENROLLED";
-                }
                 $upd = $this->db->prepare("UPDATE StudentEnrolments SET status = 'enrolled', enrolledBy = ?, enrolmentDate = NOW() WHERE id = ?");
                 $upd->execute([$enrolledBy, $existing['id']]);
                 return "SUCCESS_ENROLL";

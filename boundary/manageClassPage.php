@@ -3,7 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Session Access Check for Course Coordinator
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
     exit();
@@ -20,25 +19,37 @@ require_once "../controller/ManageClassController.php";
 $controller = new ManageClassController();
 
 $searchQuery = $_GET['search'] ?? '';
-$statusFilter = $_GET['status'] ?? '';
+$statusFilter = array_key_exists('status', $_GET) ? $_GET['status'] : 'active';
 
 $classList = $controller->getClasses($searchQuery, '', '', $statusFilter);
 $modulesList = $controller->getAllModules();
 $lecturersList = $controller->getLecturers();
 $studentsList = $controller->getStudents();
 
-// Attach enrolled student list to each class
+$universityId = $_SESSION['university_id'] ?? 0;
+$studentFiles = $controller->getUniversityStudentFiles($universityId);
+
 foreach ($classList as &$cls) {
     $cls['enrolledStudents'] = $controller->getEnrolledStudents($cls['id']);
 }
 unset($cls);
 
-// Group classes by Module
+$autoOpenClass = null;
+if (!empty($_SESSION['auto_open_edit'])) {
+    $autoOpenId = (int) $_SESSION['auto_open_edit'];
+    unset($_SESSION['auto_open_edit']);
+    foreach ($classList as $c) {
+        if ((int) $c['id'] === $autoOpenId) {
+            $autoOpenClass = $c;
+            break;
+        }
+    }
+}
+
 $groupedModules = [];
 foreach ($classList as $cls) {
     $modId = $cls['moduleId'];
     if (!isset($groupedModules[$modId])) {
-        // Format Academic Year (e.g. 2026/2027 -> AY26/27)
         $ayRaw = $cls['academicYear'] ?? '2026/2027';
         if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
             $ayFormatted = 'AY' . $matches[1] . '/' . $matches[2];
@@ -60,7 +71,6 @@ foreach ($classList as $cls) {
     $groupedModules[$modId]['classes'][] = $cls;
 }
 
-// Sort classes within each module: Active first (0), Inactive/Suspended last (1)
 foreach ($groupedModules as &$modGroup) {
     usort($modGroup['classes'], function ($a, $b) {
         $statusA = strtolower($a['status']) === 'active' ? 0 : 1;
@@ -73,6 +83,17 @@ unset($modGroup);
 $flashMessage = $_SESSION['flash_message'] ?? null;
 $flashError = $_SESSION['flash_error'] ?? null;
 unset($_SESSION['flash_message'], $_SESSION['flash_error']);
+
+$formActionParams = [];
+if ($searchQuery !== '') {
+    $formActionParams['search'] = $searchQuery;
+}
+if (isset($_GET['status']) || $statusFilter !== 'active') {
+    $formActionParams['status'] = $statusFilter;
+}
+$formActionQs = $formActionParams ? '?' . http_build_query($formActionParams) : '';
+
+$allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => '']);
 ?>
 
 <!DOCTYPE html>
@@ -453,6 +474,58 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             box-sizing: border-box;
         }
 
+        .searchable-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .searchable-select .ss-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .searchable-select .ss-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 50;
+            margin-top: 2px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .searchable-select .ss-dropdown.open {
+            display: block;
+        }
+
+        .searchable-select .ss-option {
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #1e293b;
+        }
+
+        .searchable-select .ss-option:hover {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .searchable-select .ss-empty {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
         .info-group {
             margin-bottom: 14px;
         }
@@ -524,23 +597,6 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             border-color: #2563eb;
         }
 
-        .csv-guide-box {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            padding: 10px 12px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #334155;
-        }
-
-        .csv-guide-box code {
-            background: #e2e8f0;
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
         .alert-box {
             padding: 12px 16px;
             border-radius: 8px;
@@ -559,13 +615,56 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             border: 1px solid #fca5a5;
             color: #991b1b;
         }
+
+        .modal-room-suggestions {
+            display: none;
+            margin-top: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .modal-room-suggestions .room-sug-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .modal-room-suggestions .room-sug-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-room-suggestions .room-sug-item:hover {
+            background: #eff6ff;
+        }
+
+        .modal-room-suggestions .room-sug-reason {
+            color: #2563eb;
+            font-size: 11px;
+        }
+
+        .modal-room-suggestions .room-sug-msg {
+            padding: 10px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .create-hint {
+            padding: 14px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+            font-style: italic;
+        }
     </style>
 </head>
 
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <a href="courseCoordinatorDashboardPage.php">
@@ -597,13 +696,11 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
 
     <main class="page-container">
 
-        <!-- Back Button & Title -->
         <div class="profile-header">
             <a href="courseCoordinatorDashboardPage.php" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Manage Classes</h2>
         </div>
 
-        <!-- Flash Messages -->
         <?php if ($flashMessage): ?>
             <div class="alert-box alert-success"><?php echo htmlspecialchars($flashMessage); ?></div>
         <?php endif; ?>
@@ -611,7 +708,6 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             <div class="alert-box alert-danger"><?php echo htmlspecialchars($flashError); ?></div>
         <?php endif; ?>
 
-        <!-- Search Bar with Filter -->
         <div class="filter-bar">
             <form method="GET" action="manageClassPage.php" class="search-box">
                 <input type="text" name="search" placeholder="Search class code, module name, or schedule..."
@@ -628,10 +724,18 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             <button type="button" class="btn-primary-small" onclick="openCreateModal()">+ Create New Class</button>
         </div>
 
-        <!-- Modules & Classes Section -->
         <?php if (empty($groupedModules)): ?>
             <div class="empty-card">
-                No classes found matching your criteria.
+                <?php if ($statusFilter === 'active'): ?>
+                    No active classes found matching your criteria.<br>
+                    <span style="display:inline-block; margin-top:8px; font-size:14px;">
+                        Looking for a suspended class to reactivate?
+                        <a href="<?php echo htmlspecialchars($allStatusUrl, ENT_QUOTES); ?>"
+                            style="color:#2563eb; font-weight:600;">Show all statuses</a>.
+                    </span>
+                <?php else: ?>
+                    No classes found matching your criteria.
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <?php foreach ($groupedModules as $mod): ?>
@@ -704,14 +808,14 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
         <?php endif; ?>
     </main>
 
-    <!-- Hidden Status Form -->
-    <form id="statusForm" action="../controller/ManageClassController.php" method="POST" style="display:none;">
+    <form id="statusForm"
+        action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+        method="POST" style="display:none;">
         <input type="hidden" name="action" value="toggle_status">
         <input type="hidden" name="class_id" id="statusClassId">
         <input type="hidden" name="target_status" id="statusTarget">
     </form>
 
-    <!-- VIEW CLASS MODAL (Read-Only) -->
     <div id="viewModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -744,28 +848,27 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
         </div>
     </div>
 
-    <!-- EDIT / CREATE CLASS MODAL -->
     <div id="classModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
                 <h3 id="classModalTitle">Edit Class</h3>
                 <span style="cursor:pointer; font-size: 20px;" onclick="closeModal('classModal')">&times;</span>
             </div>
-            <form action="../controller/ManageClassController.php" method="POST">
+            <form id="classForm"
+                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                method="POST">
                 <input type="hidden" name="action" id="classFormAction" value="update_class">
                 <input type="hidden" name="class_id" id="classId">
 
                 <div class="form-grid">
                     <div class="form-group form-group-full">
                         <label>Module</label>
-                        <select name="moduleId" id="modalModuleId" required>
-                            <option value="">Select Module</option>
-                            <?php foreach ($modulesList as $m): ?>
-                                <option value="<?php echo $m['id']; ?>">
-                                    <?php echo htmlspecialchars($m['code'] . " - " . $m['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="searchable-select" id="moduleSelectWrap">
+                            <input type="text" class="ss-input" id="modalModuleSearch"
+                                placeholder="Type to search module..." autocomplete="off">
+                            <input type="hidden" name="moduleId" id="modalModuleId">
+                            <div class="ss-dropdown" id="modalModuleDropdown"></div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -791,9 +894,14 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group form-group-full">
                         <label>Venue</label>
-                        <input type="text" name="room" id="modalRoom" required>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" name="room" id="modalRoom" required style="flex: 1;">
+                            <button type="button" class="btn-secondary-small"
+                                onclick="suggestRoomsInline()">Suggest</button>
+                        </div>
+                        <div id="modalRoomSuggestions" class="modal-room-suggestions"></div>
                     </div>
 
                     <div class="form-group">
@@ -844,68 +952,65 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                     </div>
                 </div>
 
-                <!-- Enrolled Students View & Add Student Section -->
                 <div id="modalStudentsSection"
                     style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
                     <h4 style="margin-bottom: 8px; color: #1e293b;">Enrolled Students (<span
                             id="modalEnrolledRatio">0/40</span>)</h4>
                     <div class="student-list-box" id="modalStudentList"></div>
 
-                    <!-- Enrolment Controls -->
                     <div class="enrol-box" id="enrolBox">
                         <div style="font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 8px;">Add Student
                             to Class</div>
                         <div class="tab-buttons">
                             <button type="button" class="tab-btn active" id="btnTabSingle"
                                 onclick="switchEnrolTab('single')">Single Student</button>
-                            <button type="button" class="tab-btn" id="btnTabCsv" onclick="switchEnrolTab('csv')">Import
-                                CSV</button>
+                            <button type="button" class="tab-btn" id="btnTabCsv" onclick="switchEnrolTab('csv')">From
+                                File</button>
                         </div>
 
-                        <!-- Single Enrolment Sub-form -->
                         <div id="tabSingleContent">
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <select id="singleStudentId"
-                                    style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
-                                    <option value="">-- Select Student --</option>
-                                    <?php foreach ($studentsList as $st): ?>
-                                        <option value="<?php echo $st['id']; ?>">
-                                            <?php echo htmlspecialchars($st['fullName'] . " (" . $st['email'] . ")"); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div class="searchable-select" id="studentSelectWrap" style="flex: 1;">
+                                    <input type="text" class="ss-input" id="studentSearch"
+                                        placeholder="Type to search student by name, email, or ID..." autocomplete="off"
+                                        style="padding: 6px 10px; font-size: 13px;">
+                                    <input type="hidden" id="singleStudentId">
+                                    <div class="ss-dropdown" id="studentDropdown"></div>
+                                </div>
                                 <button type="button" class="btn-primary-small"
                                     style="padding: 6px 14px; font-size: 13px;" onclick="submitSingleEnrol()">+
                                     Enroll</button>
                             </div>
                         </div>
 
-                        <!-- CSV Import Sub-form -->
                         <div id="tabCsvContent" style="display: none;">
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="file" id="csvFileInput" accept=".csv" style="flex: 1; font-size: 12px;">
-                                <button type="button" class="btn-primary-small"
-                                    style="padding: 6px 14px; font-size: 13px;" onclick="submitCsvEnrol()">Upload &
-                                    Enroll</button>
-                            </div>
-
-                            <div class="csv-guide-box">
-                                <strong>CSV Format Instructions:</strong>
-                                <ul style="margin: 4px 0 6px 16px; padding: 0;">
-                                    <li>First column should contain student <code>email</code> or
-                                        <code>student_id</code>.
-                                    </li>
-                                    <li>Optional header row: <code>email</code> or <code>student_id</code>
-                                        (automatically skipped).</li>
-                                </ul>
-                                <button type="button" onclick="downloadCsvTemplate()" class="btn-secondary-small"
-                                    style="padding: 3px 8px; font-size: 11px;">Download Sample CSV Template</button>
-                            </div>
+                            <?php if (empty($studentFiles)): ?>
+                                <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+                                    Your university admin has not uploaded any student file yet.
+                                </p>
+                            <?php else: ?>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <select id="csvFileSelectId"
+                                        style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                        <option value="">-- Select file uploaded by admin --</option>
+                                        <?php foreach ($studentFiles as $sf): ?>
+                                            <option value="<?php echo htmlspecialchars($sf['fileName']); ?>">
+                                                <?php echo htmlspecialchars($sf['fileName'] . ' (' . date('d M Y', strtotime($sf['uploadedAt'])) . ')'); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="button" class="btn-primary-small"
+                                        style="padding: 6px 14px; font-size: 13px;" onclick="submitFileEnrol()">Enrol
+                                        from File</button>
+                                </div>
+                                <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">
+                                    The file's first column should contain student email or student ID.
+                                </p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <!-- Exam Schedule Section -->
                 <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
                     <h4 style="margin-bottom: 10px; color: #1e293b;">Exam Schedule</h4>
                     <div class="form-grid">
@@ -934,13 +1039,13 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                 </div>
             </form>
 
-            <!-- Hidden separate post form for enrolment and removal -->
-            <form id="enrolPostForm" action="../controller/ManageClassController.php" method="POST"
-                enctype="multipart/form-data" style="display: none;">
+            <form id="enrolPostForm"
+                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                method="POST" style="display: none;">
                 <input type="hidden" name="action" id="enrolFormAction" value="enroll_student_single">
                 <input type="hidden" name="class_id" id="enrolClassId">
                 <input type="hidden" name="student_id" id="enrolStudentId">
-                <input type="file" name="csv_file" id="enrolCsvFile">
+                <input type="hidden" name="file_name" id="enrolFileName">
             </form>
         </div>
     </div>
@@ -952,16 +1057,14 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
     </footer>
 
     <script>
+        const MODULES = <?php echo json_encode($modulesList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const STUDENTS = <?php echo json_encode($studentsList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+
         let currentSelectedClassData = null;
         let currentEnrolledCount = 0;
 
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
         function updateRatioDisplay() {
             const cap = document.getElementById('modalCapacity').value || 0;
@@ -972,6 +1075,184 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             updateRatioDisplay();
         });
 
+        // ===== Module searchable dropdown =====
+        const moduleSearch = document.getElementById('modalModuleSearch');
+        const moduleDropdown = document.getElementById('modalModuleDropdown');
+        const moduleHidden = document.getElementById('modalModuleId');
+        const moduleWrap = document.getElementById('moduleSelectWrap');
+
+        function renderModuleOptions(filter) {
+            const q = (filter || '').trim().toLowerCase();
+            moduleDropdown.innerHTML = '';
+
+            const filtered = MODULES.filter(function (m) {
+                const label = (m.code + ' - ' + m.name).toLowerCase();
+                return label.indexOf(q) !== -1;
+            });
+
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'ss-empty';
+                empty.textContent = 'No modules found';
+                moduleDropdown.appendChild(empty);
+                return;
+            }
+
+            filtered.forEach(function (m) {
+                const label = m.code + ' - ' + m.name;
+                const opt = document.createElement('div');
+                opt.className = 'ss-option';
+                opt.textContent = label;
+                opt.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    selectModule(m.id, label);
+                });
+                moduleDropdown.appendChild(opt);
+            });
+        }
+
+        function selectModule(id, label) {
+            moduleHidden.value = id;
+            moduleSearch.value = label;
+            moduleDropdown.classList.remove('open');
+        }
+
+        function clearModule() {
+            moduleHidden.value = '';
+            moduleSearch.value = '';
+            moduleDropdown.innerHTML = '';
+            moduleDropdown.classList.remove('open');
+        }
+
+        function setModuleById(id) {
+            const mod = MODULES.find(function (m) { return String(m.id) === String(id); });
+            if (mod) {
+                selectModule(mod.id, mod.code + ' - ' + mod.name);
+            } else {
+                clearModule();
+            }
+        }
+
+        moduleSearch.addEventListener('focus', function () {
+            renderModuleOptions('');
+            moduleDropdown.classList.add('open');
+        });
+
+        moduleSearch.addEventListener('input', function () {
+            moduleHidden.value = '';
+            renderModuleOptions(moduleSearch.value);
+            moduleDropdown.classList.add('open');
+        });
+
+        moduleSearch.addEventListener('blur', function () {
+            setTimeout(function () {
+                moduleDropdown.classList.remove('open');
+                if (moduleHidden.value) {
+                    const mod = MODULES.find(function (m) { return String(m.id) === String(moduleHidden.value); });
+                    if (mod) {
+                        moduleSearch.value = mod.code + ' - ' + mod.name;
+                    }
+                } else {
+                    moduleSearch.value = '';
+                }
+            }, 150);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!moduleWrap.contains(e.target)) {
+                moduleDropdown.classList.remove('open');
+            }
+        });
+
+        // ===== Student searchable dropdown =====
+        const studentSearch = document.getElementById('studentSearch');
+        const studentDropdown = document.getElementById('studentDropdown');
+        const studentHidden = document.getElementById('singleStudentId');
+        const studentWrap = document.getElementById('studentSelectWrap');
+
+        function renderStudentOptions(filter) {
+            const q = (filter || '').trim().toLowerCase();
+            studentDropdown.innerHTML = '';
+
+            const filtered = STUDENTS.filter(function (s) {
+                const label = (s.fullName + ' ' + s.email + ' #' + s.id).toLowerCase();
+                return label.indexOf(q) !== -1;
+            });
+
+            if (filtered.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'ss-empty';
+                empty.textContent = 'No students found';
+                studentDropdown.appendChild(empty);
+                return;
+            }
+
+            filtered.slice(0, 100).forEach(function (s) {
+                const label = s.fullName + ' — ' + s.email + ' (#' + s.id + ')';
+                const opt = document.createElement('div');
+                opt.className = 'ss-option';
+                opt.textContent = label;
+                opt.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    selectStudent(s.id, label);
+                });
+                studentDropdown.appendChild(opt);
+            });
+        }
+
+        function selectStudent(id, label) {
+            studentHidden.value = id;
+            studentSearch.value = label;
+            studentDropdown.classList.remove('open');
+        }
+
+        function clearStudent() {
+            studentHidden.value = '';
+            studentSearch.value = '';
+            studentDropdown.innerHTML = '';
+            studentDropdown.classList.remove('open');
+        }
+
+        studentSearch.addEventListener('focus', function () {
+            renderStudentOptions('');
+            studentDropdown.classList.add('open');
+        });
+
+        studentSearch.addEventListener('input', function () {
+            studentHidden.value = '';
+            renderStudentOptions(studentSearch.value);
+            studentDropdown.classList.add('open');
+        });
+
+        studentSearch.addEventListener('blur', function () {
+            setTimeout(function () {
+                studentDropdown.classList.remove('open');
+                if (studentHidden.value) {
+                    const s = STUDENTS.find(function (x) { return String(x.id) === String(studentHidden.value); });
+                    if (s) {
+                        studentSearch.value = s.fullName + ' — ' + s.email + ' (#' + s.id + ')';
+                    }
+                } else {
+                    studentSearch.value = '';
+                }
+            }, 150);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!studentWrap.contains(e.target)) {
+                studentDropdown.classList.remove('open');
+            }
+        });
+
+        document.getElementById('classForm').addEventListener('submit', function (e) {
+            if (!moduleHidden.value) {
+                e.preventDefault();
+                alert('Please select a module.');
+                moduleSearch.focus();
+            }
+        });
+
+        // ===== Enrolment tabs =====
         function switchEnrolTab(tab) {
             if (tab === 'single') {
                 document.getElementById('tabSingleContent').style.display = 'block';
@@ -987,14 +1268,22 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
         }
 
         function submitSingleEnrol() {
-            const stId = document.getElementById('singleStudentId').value;
-            if (!stId) {
-                alert('Please select a student.');
-                return;
-            }
+            const stId = studentHidden.value;
+            if (!stId) { alert('Please select a student.'); return; }
             document.getElementById('enrolFormAction').value = 'enroll_student_single';
             document.getElementById('enrolClassId').value = document.getElementById('classId').value;
             document.getElementById('enrolStudentId').value = stId;
+            document.getElementById('enrolFileName').value = '';
+            document.getElementById('enrolPostForm').submit();
+        }
+
+        function submitFileEnrol() {
+            const fileName = document.getElementById('csvFileSelectId').value;
+            if (!fileName) { alert('Please select a file first.'); return; }
+            document.getElementById('enrolFormAction').value = 'enrol_from_file';
+            document.getElementById('enrolClassId').value = document.getElementById('classId').value;
+            document.getElementById('enrolStudentId').value = '';
+            document.getElementById('enrolFileName').value = fileName;
             document.getElementById('enrolPostForm').submit();
         }
 
@@ -1003,38 +1292,11 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                 document.getElementById('enrolFormAction').value = 'remove_student';
                 document.getElementById('enrolClassId').value = classId;
                 document.getElementById('enrolStudentId').value = studentId;
+                document.getElementById('enrolFileName').value = '';
                 document.getElementById('enrolPostForm').submit();
             }
         }
 
-        function submitCsvEnrol() {
-            const fileInput = document.getElementById('csvFileInput');
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please choose a CSV file first.');
-                return;
-            }
-            document.getElementById('enrolFormAction').value = 'import_students_csv';
-            document.getElementById('enrolClassId').value = document.getElementById('classId').value;
-
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(fileInput.files[0]);
-            document.getElementById('enrolCsvFile').files = dataTransfer.files;
-
-            document.getElementById('enrolPostForm').submit();
-        }
-
-        function downloadCsvTemplate() {
-            const csvContent = "data:text/csv;charset=utf-8,email\nstudent1@unibee.edu\nstudent2@unibee.edu";
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "student_import_template.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        /* VIEW MODAL (PURELY READ-ONLY: NO REMOVE BUTTON) */
         function openViewModal(data) {
             currentSelectedClassData = data;
             document.getElementById('viewClassTitle').textContent = data.moduleCode + " - " + data.classCode;
@@ -1050,10 +1312,8 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                 data.enrolledStudents.forEach(st => {
                     const div = document.createElement('div');
                     div.className = 'student-item';
-
                     const textSpan = document.createElement('span');
                     textSpan.textContent = st.fullName + ' (' + st.email + ')';
-
                     div.appendChild(textSpan);
                     viewStudentContainer.appendChild(div);
                 });
@@ -1081,7 +1341,8 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             document.getElementById('classFormAction').value = 'create_class';
             document.getElementById('classId').value = '';
             document.getElementById('classModalTitle').textContent = 'Create New Class';
-            document.getElementById('modalModuleId').value = '';
+            clearModule();
+            clearStudent();
             document.getElementById('modalClassCode').value = '';
             document.getElementById('modalClassName').value = '';
             document.getElementById('modalRoom').value = '';
@@ -1096,17 +1357,28 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             document.getElementById('modalExamStartTime').value = '';
             document.getElementById('modalExamEndTime').value = '';
 
-            document.getElementById('modalStudentsSection').style.display = 'none';
+            const sug = document.getElementById('modalRoomSuggestions');
+            sug.style.display = 'none';
+            sug.innerHTML = '';
+
+            currentEnrolledCount = 0;
+            updateRatioDisplay();
+
+            const listBox = document.getElementById('modalStudentList');
+            listBox.innerHTML = '<div class="create-hint">Save this class first. After saving, the edit form will open automatically so you can add students.</div>';
+
+            document.getElementById('enrolBox').style.display = 'none';
+            document.getElementById('modalStudentsSection').style.display = 'block';
+
             openModal('classModal');
         }
 
-        /* EDIT MODAL (HAS REMOVE BUTTON) */
         function openEditModal(data) {
             currentSelectedClassData = data;
             document.getElementById('classFormAction').value = 'update_class';
             document.getElementById('classId').value = data.id;
             document.getElementById('classModalTitle').textContent = 'Edit Class (' + data.classCode + ')';
-            document.getElementById('modalModuleId').value = data.moduleId;
+            setModuleById(data.moduleId);
             document.getElementById('modalClassCode').value = data.classCode;
             document.getElementById('modalClassName').value = data.className || data.classCode;
             document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
@@ -1121,6 +1393,12 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
             document.getElementById('modalExamVenue').value = data.examVenue || '';
             document.getElementById('modalExamStartTime').value = data.examStartTime || '';
             document.getElementById('modalExamEndTime').value = data.examEndTime || '';
+
+            const sug = document.getElementById('modalRoomSuggestions');
+            sug.style.display = 'none';
+            sug.innerHTML = '';
+
+            clearStudent();
 
             currentEnrolledCount = data.enrolledStudents ? data.enrolledStudents.length : 0;
             updateRatioDisplay();
@@ -1149,6 +1427,7 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                 modalStudentContainer.innerHTML = '<div style="color: #64748b; padding: 6px; font-size: 13px;">No enrolled students found.</div>';
             }
 
+            document.getElementById('enrolBox').style.display = 'block';
             document.getElementById('modalStudentsSection').style.display = 'block';
             switchEnrolTab('single');
             openModal('classModal');
@@ -1161,6 +1440,62 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error']);
                 document.getElementById('statusForm').submit();
             }
         }
+
+        // ===== Inline Suggest rooms in modal =====
+        function suggestRoomsInline() {
+            const day = document.getElementById('modalDayOfWeek').value;
+            const startTime = document.getElementById('modalStartTime').value;
+            const endTime = document.getElementById('modalEndTime').value;
+            const capacity = document.getElementById('modalCapacity').value;
+
+            if (!day || !startTime || !endTime || !capacity) {
+                alert('Please fill in Day, Start Time, End Time, and Capacity first.');
+                return;
+            }
+
+            const box = document.getElementById('modalRoomSuggestions');
+            box.style.display = 'block';
+            box.innerHTML = '<div class="room-sug-msg">Searching...</div>';
+
+            const fd = new FormData();
+            fd.append('action', 'find_rooms');
+            fd.append('day', day);
+            fd.append('startTime', startTime);
+            fd.append('endTime', endTime);
+            fd.append('capacity', capacity);
+
+            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
+                        box.innerHTML = '';
+                        data.rooms.forEach(function (r) {
+                            const item = document.createElement('div');
+                            item.className = 'room-sug-item';
+                            item.innerHTML = '<strong>' + r.roomCode + '</strong> - ' + r.name
+                                + ' <span style="color:#64748b;">(Cap: ' + r.capacity + ')</span><br>'
+                                + '<span class="room-sug-reason">' + (r.reason || '') + '</span>';
+                            item.onclick = function () {
+                                document.getElementById('modalRoom').value = r.roomCode;
+                                box.style.display = 'none';
+                            };
+                            box.appendChild(item);
+                        });
+                    } else {
+                        box.innerHTML = '<div class="room-sug-msg">' + (data.message || 'No rooms found.') + '</div>';
+                    }
+                })
+                .catch(function () {
+                    box.innerHTML = '<div class="room-sug-msg" style="color:#991b1b;">Network error.</div>';
+                });
+        }
+
+        // ===== Auto-open Edit after Create =====
+        <?php if ($autoOpenClass): ?>
+            document.addEventListener('DOMContentLoaded', function () {
+                openEditModal(<?php echo json_encode($autoOpenClass, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
+            });
+        <?php endif; ?>
     </script>
 </body>
 
