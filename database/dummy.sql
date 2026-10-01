@@ -110,7 +110,6 @@ VALUES
 (101, 1, 1, 'AI Innovation Seminar', 'Monday CS201 Data Structures class session.', 'Auditorium A', '2026-09-28 10:00:00', '2026-09-28 11:30:00', 50, 'active'),
 (102, 1, 1, 'Algorithms Workshop', 'Tuesday MATH255 class session.', 'Lab C101', '2026-09-29 10:30:00', '2026-09-29 12:00:00', 30, 'active');
 
-
 -- ============================================
 -- 8. BSCS STUDENTS (S1 2026/2027)
 -- ============================================
@@ -144,3 +143,13 @@ VALUES
 ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 
 SET FOREIGN_KEY_CHECKS = 1;
+=======
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================
+-- 7. SYSTEM ADMIN
+-- ============================================
+-- System Admin (PW: SystemAdmin123!)
+INSERT INTO SystemAdmins (email, passwordHash, fullName, status)
+VALUES
+( 'systemadmin@unibee.com', '$2y$12$0yPsP1593ENJj.gDG/5FD.6rva8FZgf0R0BKHW3MuUo0p.yvlWHYy', 'Sarah Tan', 'active');

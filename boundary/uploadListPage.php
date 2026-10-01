@@ -512,13 +512,13 @@ unset($_SESSION['upload_error']);
                         <strong>CSV Format:</strong>
                     </p>
 
-                    <pre>email,fullName,password</pre>
+                    <pre>email,fullName,password,semesterStart,semesterEnd</pre>
 
                     <p>
                         <strong>Or:</strong>
                     </p>
 
-                   <pre>student_id,fullName,email,password</pre>
+                   <pre>student_id,fullName,email,password,semesterStart,semesterEnd</pre>
 
                     <p>
                         <strong>Requirements:</strong>

@@ -28,3 +28,11 @@ function changeSlide(direction) {
     currentSlide = (currentSlide + direction + slides.length) % slides.length;
     slides[currentSlide].classList.add("active");
 }
+
+function closeSuccessPopup() {
+    const popup = document.getElementById("successPopup");
+
+    if (popup) {
+        popup.remove();
+    }
+}

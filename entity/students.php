@@ -10,6 +10,8 @@ class Students
     private $programmeId;
     private $academicYear;
     private $semester;
+    private $semesterStart;
+    private $semesterEnd;
     private $createdAt;
     private $updatedAt;
 
@@ -21,6 +23,8 @@ class Students
         $programmeId = null,
         $academicYear = null,
         $semester = null,
+        $semesterStart = null,
+        $semesterEnd = null,
         $createdAt = null,
         $updatedAt = null
     ) {
@@ -30,6 +34,8 @@ class Students
         $this->programmeId = $programmeId;
         $this->academicYear = $academicYear;
         $this->semester = $semester;
+        $this->semesterStart = $semesterStart;
+        $this->semesterEnd = $semesterEnd;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
     }
@@ -64,6 +70,16 @@ class Students
     public function getSemester()
     {
         return $this->semester;
+    }
+
+    public function getSemesterStartDate()
+    {
+        return $this->semesterStartDate;
+    }
+
+    public function getSemesterEndDate()
+    {
+        return $this->semesterEndDate;
     }
 
     public function getCreatedAt()
@@ -106,6 +122,16 @@ class Students
     public function setSemester($semester)
     {
         $this->semester = $semester;
+    }
+
+    public function setSemesterStartDate($semesterStartDate)
+    {
+        $this->semesterStartDate = $semesterStartDate;
+    }
+
+    public function setSemesterEndDate($semesterEndDate)
+    {
+        $this->semesterEndDate = $semesterEndDate;
     }
 
     public function setCreatedAt($createdAt)
@@ -151,7 +177,9 @@ class Students
         $studentId,
         $programmeId,
         $academicYear,
-        $semester
+        $semester,
+        $semesterStart,
+        $semesterEnd
     ) {
         $database = new Database();
         $db = $database->connect();
@@ -165,12 +193,14 @@ class Students
                         programmeId,
                         academicYear,
                         semester,
+                        semesterStart,
+                        semesterEnd,
                         createdAt,
                         updatedAt
                     )
                     VALUES
                     (
-                        ?, ?, ?, ?, ?, NOW(), NOW()
+                        ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
                     )";
 
             $stmt = $db->prepare($sql);
@@ -180,7 +210,9 @@ class Students
                 $studentId,
                 $programmeId,
                 $academicYear,
-                $semester
+                $semester,
+                $semesterStart,
+                $semesterEnd
             ]);
 
             return $db->lastInsertId();

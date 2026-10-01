@@ -555,6 +555,8 @@ CREATE TABLE Students (
     programmeId INT NOT NULL,
     academicYear VARCHAR(20) NOT NULL,
     semester VARCHAR(20) NOT NULL,
+    semesterStart DATE NULL,
+    semesterEnd DATE NULL,
 
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP

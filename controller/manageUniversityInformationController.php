@@ -1374,7 +1374,9 @@ class ManageUniversityInformationController
             $expectedHeaders = [
                 'email',
                 'fullName',
-                'password'
+                'password',
+                'semesterStart',
+                'semesterEnd'
             ];
 
         }
@@ -1386,7 +1388,9 @@ class ManageUniversityInformationController
                 'student_id',
                 'fullName',
                 'email',
-                'password'
+                'password',
+                'semesterStart',
+                'semesterEnd'
             ];
 
         } else {
@@ -1436,7 +1440,6 @@ class ManageUniversityInformationController
                 continue;
             }
 
-
             // Check column count
             if (
                 count($row) !==
@@ -1451,18 +1454,18 @@ class ManageUniversityInformationController
                     . " columns.";
             }
 
-
             // Email-first
             if ($identifierType === 'email') {
 
                 $email = trim($row[0]);
                 $fullName = trim($row[1]);
                 $password = trim($row[2]);
+                $semesterStart = trim($row[3]);
+                $semesterEnd = trim($row[4]);
 
                 $studentId = null;
 
             }
-
 
             // Student-ID-first
             else {
@@ -1471,9 +1474,10 @@ class ManageUniversityInformationController
                 $fullName = trim($row[1]);
                 $email = trim($row[2]);
                 $password = trim($row[3]);
+                $semesterStart = trim($row[4]);
+                $semesterEnd = trim($row[5]);
 
             }
-
 
             // Validate name
             if ($fullName === '') {
@@ -1484,7 +1488,6 @@ class ManageUniversityInformationController
                     "Row {$rowNumber}: "
                     . "Full name is required.";
             }
-
 
             // Validate email
             if (
@@ -1502,7 +1505,6 @@ class ManageUniversityInformationController
                     . "Invalid email address.";
             }
 
-
             // Validate password
             if ($password === '') {
 
@@ -1513,6 +1515,48 @@ class ManageUniversityInformationController
                     . "Password is required.";
             }
 
+            // Validate semester start date
+            if (
+                $semesterStart === '' ||
+                !DateTime::createFromFormat('Y-m-d', $semesterStart)
+            ) {
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Semester start must use YYYY-MM-DD format.";
+            }
+
+            // Validate semester end date
+            if (
+                $semesterEnd === '' ||
+                !DateTime::createFromFormat('Y-m-d', $semesterEnd)
+            ) {
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Semester end must use YYYY-MM-DD format.";
+            }
+
+            // Check that end date is after start date
+            $startDate = DateTime::createFromFormat(
+                'Y-m-d',
+                $semesterStart
+            );
+
+            $endDate = DateTime::createFromFormat(
+                'Y-m-d',
+                $semesterEnd
+            );
+
+            if ($endDate <= $startDate) {
+                fclose($handle);
+
+                return
+                    "Row {$rowNumber}: "
+                    . "Semester end must be after semester start.";
+            }
 
             // Check duplicate email in CSV
             $emailKey = strtolower($email);
@@ -1594,7 +1638,9 @@ class ManageUniversityInformationController
                 'studentId' => $studentId,
                 'fullName' => $fullName,
                 'email' => $email,
-                'password' => $password
+                'password' => $password,
+                'semesterStart' => $semesterStart,
+                'semesterEnd' => $semesterEnd
             ];
         }
 
@@ -1824,9 +1870,10 @@ class ManageUniversityInformationController
                         $row['studentId'],
                         $validated['programmeId'],
                         $validated['academicYear'],
-                        $validated['semester']
+                        $validated['semester'],
+                        $row['semesterStart'],
+                        $row['semesterEnd']
                     );
-
 
             if ($studentRecordId === false) {
                 return
