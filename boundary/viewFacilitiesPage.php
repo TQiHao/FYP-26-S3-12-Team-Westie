@@ -91,6 +91,10 @@ function getDetailPage($type) {
     <!-- Main Content -->
     <main class="dashboard">
 
+        <div class="facility-back-bar">
+            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+        </div>
+        
         <?php if ($facilities === false): ?>
             <p class="error-message">Unable to load facilities information, please try again.</p>
 

@@ -82,6 +82,10 @@ if (isset($_GET['facilityId'])) {
     <!-- Main Content -->
     <main class="dashboard">
 
+        <div class="facility-back-bar facility-back-bar--wide">
+            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+        </div>
+
         <?php
         if (isset($_SESSION['booking_success'])) {
             echo '<div class="success-message">' . $_SESSION['booking_success'] . '</div>';

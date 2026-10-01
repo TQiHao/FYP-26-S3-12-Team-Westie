@@ -6,6 +6,17 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/studentDashboardController.php";
+
+$dashboardController = new StudentDashboardController();
+
+$studentId    = $_SESSION['user_id'] ?? null;
+$universityId = $_SESSION['university_id'] ?? null;
+
+$nextClass       = $dashboardController->getNextClass($studentId);
+$notificationSum = $dashboardController->getNotificationSummary($studentId);
+$nextEvent       = $dashboardController->getNextEvent($universityId);
+
 $fullName = $_SESSION['user_name'];
 ?>
 
@@ -28,7 +39,9 @@ $fullName = $_SESSION['user_name'];
     <header class="header">
 
         <div class="logo-container">
-            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+            <a href="studentDashboardPage.php">
+                <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+            </a>
         </div>
 
         <div class="welcome-message">
@@ -61,9 +74,9 @@ $fullName = $_SESSION['user_name'];
                 <div id="profileMenu" class="dropdown-menu">
 
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="AIChatbotPage.php">AI Chatbot</a>
                     <a href="academicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                    <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logoutController.php">Log Out</a>
 
@@ -82,37 +95,68 @@ $fullName = $_SESSION['user_name'];
         <!-- Dashboard Summary -->
         <section class="dashboard-summary">
 
-            <!-- Next Class -->
+            <!-- Next Class (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/nextClass.png" alt="Next class" class="summary-icon">
                     <span>Next class</span>
                 </div>
 
-                <h2>Data Structures, 2:00pm</h2>
-                <p>Room B204</p>
+                <?php if ($nextClass === false): ?>
+                    <h2>Unable to load</h2>
+                    <p>Please try again later</p>
+                <?php elseif ($nextClass === null): ?>
+                    <h2>No upcoming class</h2>
+                    <p>You're free!</p>
+                <?php else: ?>
+                    <h2>
+                        <?php echo htmlspecialchars($nextClass['title']); ?>,
+                        <?php echo htmlspecialchars(date('g:ia', strtotime($nextClass['startTime']))); ?>
+                    </h2>
+                    <p><?php echo htmlspecialchars($nextClass['location']); ?></p>
+                <?php endif; ?>
             </div>
 
-            <!-- Notifications -->
+            <!-- Notifications (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/noti.png" alt="Notifications" class="summary-icon">
                     <span>Notifications</span>
                 </div>
 
-                <h2>3 unread</h2>
-                <p>Exam schedule updated</p>
+                <?php if ($notificationSum === false): ?>
+                    <h2>Unable to load</h2>
+                    <p>Please try again later</p>
+                <?php else: ?>
+                    <h2><?php echo (int) $notificationSum['unreadCount']; ?> unread</h2>
+                    <?php if (!empty($notificationSum['latest'])): ?>
+                        <p><?php echo htmlspecialchars($notificationSum['latest']['title']); ?></p>
+                    <?php else: ?>
+                        <p>No notifications yet</p>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Upcoming Event -->
+            <!-- Upcoming Event (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/upcomingEvent.png" alt="Upcoming event" class="summary-icon">
                     <span>Upcoming event</span>
                 </div>
 
-                <h2>Career fair, Fri 22 Aug</h2>
-                <p>Main Hall</p>
+                <?php if ($nextEvent === false): ?>
+                    <h2>Unable to load</h2>
+                    <p>Please try again later</p>
+                <?php elseif ($nextEvent === null): ?>
+                    <h2>No upcoming event</h2>
+                    <p>Check back later</p>
+                <?php else: ?>
+                    <h2>
+                        <?php echo htmlspecialchars($nextEvent['title']); ?>,
+                        <?php echo htmlspecialchars(date('D d M', strtotime($nextEvent['startDatetime']))); ?>
+                    </h2>
+                    <p><?php echo htmlspecialchars($nextEvent['location']); ?></p>
+                <?php endif; ?>
             </div>
 
         </section>
@@ -129,11 +173,11 @@ $fullName = $_SESSION['user_name'];
                     Ask AI Chatbot
                 </a>
 
-                <a href="FacilitiesBookingPage.php" class="quick-button">
+                <a href="bookFacilityPage.php" class="quick-button">
                     Book Study Room
                 </a>
 
-                <a href="TimetablePage.php" class="quick-button">
+                <a href="academicsPage.php?tab=timetable" class="quick-button">
                     View Timetable
                 </a>
 
@@ -158,7 +202,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Facilities -->
-                <a href="ViewFacilitiesPage.php" class="dashboard-card">
+                <a href="viewFacilitiesPage.php" class="dashboard-card">
                     <img src="../images/facilityBooking.png" alt="Facilities Booking" class="card-icon">
                     <h2>Facilities Booking</h2>
                     <p>1 Active Booking</p>
@@ -190,7 +234,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- Feedback -->
-                <a href="SubmitFeedbackPage.php" class="dashboard-card">
+                <a href="submitFeedbackPage.php" class="dashboard-card">
                     <img src="../images/feedback.png" alt="Submit Feedback" class="card-icon">
                     <h2>Submit Feedback</h2>
                     <p>Share your thoughts</p>

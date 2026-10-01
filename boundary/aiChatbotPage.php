@@ -66,6 +66,7 @@ if ($history === false) $history = [];
 
         <!-- LEFT: Chat History Sidebar -->
         <aside class="chat-history-panel">
+            <a href="studentDashboardPage.php" class="btn-back chat-back-btn">&#8592; Back</a>
             <div class="chat-history-header">
                 <h3>Chat History</h3>
                 <button type="button" class="btn-clear-chat" title="Clear chat history"

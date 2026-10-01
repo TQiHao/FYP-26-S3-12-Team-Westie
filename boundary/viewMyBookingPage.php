@@ -73,6 +73,10 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
     <!-- Main Content -->
     <main class="dashboard">
 
+        <div class="facility-back-bar facility-back-bar--list">
+            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+        </div>
+        
         <div class="booking-header">
             <h2 class="section-label">My Bookings</h2>
         </div>
