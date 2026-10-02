@@ -10,6 +10,18 @@ require_once "../controller/AIChatbotController.php";
 
 $controller = new AIChatbotController();
 $studentId = $_SESSION['user_id'];
+
+// ===== Session timeout: if user was away > 30 min, start fresh =====
+$SESSION_RESET_TIMEOUT = 1800; // 30 minutes
+$lastActive = $_SESSION['chat_last_active'] ?? 0;
+$shouldStartFresh = false;
+
+if ($lastActive > 0 && (time() - $lastActive) > $SESSION_RESET_TIMEOUT) {
+    $shouldStartFresh = true;
+    unset($_SESSION['chat_session_id']);
+}
+$_SESSION['chat_last_active'] = time();
+
 $sessions = $controller->getChatSessions($studentId);
 if ($sessions === false)
     $sessions = [];
@@ -39,8 +51,10 @@ switch ($userRole) {
         break;
 }
 
+$showNotifications = in_array($userRole, ['student', 'lecturer']);
+
 $initialMessages = [];
-if (!empty($sessions)) {
+if (!$shouldStartFresh && !empty($sessions)) {
     $initialMessages = $controller->getChatsBySession($sessions[0]['sessionId'], $studentId);
     if ($initialMessages === false)
         $initialMessages = [];
@@ -154,6 +168,13 @@ if (!empty($sessions)) {
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 320px;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .session-tooltip-row:hover {
+            background-color: #f8ea9b;
+            color: #1e40af;
         }
 
         .session-tooltip-row+.session-tooltip-row {
@@ -229,7 +250,6 @@ if (!empty($sessions)) {
             padding: 10px 0;
         }
 
-        /* ===== Multi-line input bar (DeepSeek style) ===== */
         .chat-input-bar {
             flex-shrink: 0;
             display: flex;
@@ -280,15 +300,21 @@ if (!empty($sessions)) {
             background-color: #e6c23a;
         }
 
-        /* ===== Bubbles ===== */
         .chat-bubble {
-            max-width: 70%;
+            max-width: 85%;
             padding: 12px 18px;
             border-radius: 14px;
             font-size: 0.92rem;
             line-height: 1.55;
             word-wrap: break-word;
+            white-space: pre-line;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: outline 0.2s ease;
+        }
+
+        .chat-bubble.chat-highlight {
+            outline: 3px solid var(--bg-yellow);
+            outline-offset: 3px;
         }
 
         .user-bubble {
@@ -324,9 +350,11 @@ if (!empty($sessions)) {
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
-                <img src="../images/notification.png" alt="Notifications">
-            </a>
+            <?php if ($showNotifications): ?>
+                <a href="NotificationPage.php" class="header-icon">
+                    <img src="../images/notification.png" alt="Notifications">
+                </a>
+            <?php endif; ?>
 
             <div class="profile-dropdown">
                 <div class="profile-container" onclick="toggleDropdown()">
@@ -352,7 +380,8 @@ if (!empty($sessions)) {
             <div class="chat-history-header">
                 <a href="<?php echo htmlspecialchars($dashboardUrl); ?>" class="btn-back">&#8592;</a>
                 <h3>Chat History</h3>
-                <button type="button" class="btn-clear-chat" title="Clear chat history" onclick="clearChatHistory()">
+                <button type="button" class="btn-clear-chat" title="Clear this chat session"
+                    onclick="clearChatHistory()">
                     &#128465;
                 </button>
             </div>
@@ -361,9 +390,10 @@ if (!empty($sessions)) {
                 <?php if (empty($sessions)): ?>
                     <li class="chat-empty">No chat history yet.</li>
                 <?php else: ?>
+                    <?php $markActive = !$shouldStartFresh; ?>
+                    <?php $firstSessionId = $sessions[0]['sessionId']; ?>
                     <?php foreach ($sessions as $s): ?>
-                        <?php $firstSessionId = $sessions[0]['sessionId']; ?>
-                        <li class="chat-session-item <?php echo $s['sessionId'] == $firstSessionId ? 'active' : ''; ?>"
+                        <li class="chat-session-item <?php echo ($markActive && $s['sessionId'] == $firstSessionId) ? 'active' : ''; ?>"
                             data-session-id="<?php echo (int) $s['sessionId']; ?>"
                             data-questions='<?php echo htmlspecialchars(json_encode($s['questions']), ENT_QUOTES); ?>'
                             onclick="loadSession(<?php echo (int) $s['sessionId']; ?>)">
@@ -381,16 +411,13 @@ if (!empty($sessions)) {
             <h2>Ask a Question</h2>
 
             <div class="chat-messages" id="chatMessages">
-                <?php if (!empty($initialMessages)): ?>
-                    <?php foreach ($initialMessages as $m): ?>
-                        <div class="chat-bubble user-bubble">
-                            <?php echo htmlspecialchars($m['question']); ?>
+                <?php if (!empty($initialMessages)): ?>     <?php foreach ($initialMessages as $m): ?>
+                        <div class="chat-bubble user-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
+                            <?php echo htmlspecialchars(trim($m['question'])); ?>
                         </div>
-                        <div class="chat-bubble bot-bubble">
-                            <?php echo htmlspecialchars($m['answer']); ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                        <div class="chat-bubble bot-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
+                            <?php echo htmlspecialchars(trim($m['answer'])); ?>
+                        </div><?php endforeach; ?><?php endif; ?>
             </div>
 
             <div class="chat-input-bar">
@@ -404,7 +431,7 @@ if (!empty($sessions)) {
     <div class="modal-overlay" id="clearConfirmModal" style="display:none;">
         <div class="modal-box">
             <span class="modal-close" onclick="closeClearModal()">&times;</span>
-            <p class="modal-message">Are you sure you want to clear all chat history?</p>
+            <p class="modal-message">Are you sure you want to clear this chat session?</p>
             <div class="clear-actions">
                 <button type="button" class="btn-cancel-clear" onclick="closeClearModal()">Cancel</button>
                 <button type="button" class="btn-confirm-clear" onclick="confirmClearChat()">Clear</button>
@@ -428,6 +455,8 @@ if (!empty($sessions)) {
 
     <script>
         const CONTROLLER = "../controller/AIChatbotController.php";
+
+        let currentSessionId = null;
 
         function autoResizeInput() {
             const ta = document.getElementById("questionInput");
@@ -472,11 +501,15 @@ if (!empty($sessions)) {
                 });
         }
 
-        function appendBubble(text, type, source) {
+        function appendBubble(text, type, source, chatId) {
             const box = document.getElementById("chatMessages");
             const bubble = document.createElement("div");
             bubble.className = "chat-bubble " + (type === "user" ? "user-bubble" : "bot-bubble");
-            bubble.textContent = text;
+            bubble.textContent = (text || '').replace(/^\s+/, '').replace(/\s+$/, '');
+
+            if (chatId) {
+                bubble.setAttribute("data-chat-id", chatId);
+            }
 
             if (source) {
                 const tag = document.createElement("small");
@@ -564,21 +597,43 @@ if (!empty($sessions)) {
         }
 
         function attachTooltip(li) {
-            li.addEventListener('mouseenter', function () {
+            let hideTimer = null;
+
+            function hide() {
+                if (li._tooltip) {
+                    li._tooltip.remove();
+                    li._tooltip = null;
+                }
+            }
+
+            function show() {
+                if (li._tooltip) return;
+
                 const qJson = li.getAttribute('data-questions');
                 if (!qJson) return;
+
                 let questions;
                 try { questions = JSON.parse(qJson); } catch (e) { return; }
                 if (!questions || !questions.length) return;
 
+                const sessionId = li.getAttribute('data-session-id');
+
                 const tooltip = document.createElement('div');
                 tooltip.className = 'session-tooltip';
+
                 questions.forEach(function (q) {
                     const row = document.createElement('div');
                     row.className = 'session-tooltip-row';
                     row.textContent = q.question;
+                    row.setAttribute('title', 'Click to jump to this question');
+                    row.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        hide();
+                        jumpToMessage(sessionId, q.id);
+                    });
                     tooltip.appendChild(row);
                 });
+
                 document.body.appendChild(tooltip);
 
                 const rect = li.getBoundingClientRect();
@@ -592,15 +647,44 @@ if (!empty($sessions)) {
                     }
                 });
 
+                tooltip.addEventListener('mouseenter', function () {
+                    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                });
+                tooltip.addEventListener('mouseleave', function () {
+                    hideTimer = setTimeout(hide, 150);
+                });
+
                 li._tooltip = tooltip;
+            }
+
+            li.addEventListener('mouseenter', function () {
+                if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                show();
             });
 
             li.addEventListener('mouseleave', function () {
-                if (li._tooltip) {
-                    li._tooltip.remove();
-                    li._tooltip = null;
-                }
+                hideTimer = setTimeout(hide, 150);
             });
+        }
+
+        function jumpToMessage(sessionId, chatId) {
+            if (String(currentSessionId) !== String(sessionId)) {
+                loadSession(sessionId, function () {
+                    setTimeout(function () { scrollToChat(chatId); }, 80);
+                });
+            } else {
+                scrollToChat(chatId);
+            }
+        }
+
+        function scrollToChat(chatId) {
+            const el = document.querySelector('.chat-bubble[data-chat-id="' + chatId + '"]');
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('chat-highlight');
+            setTimeout(function () {
+                el.classList.remove('chat-highlight');
+            }, 1600);
         }
 
         function refreshSessions() {
@@ -614,11 +698,20 @@ if (!empty($sessions)) {
                     list.innerHTML = "";
                     if (json.data.length === 0) {
                         list.innerHTML = '<li class="chat-empty">No chat history yet.</li>';
+                        currentSessionId = null;
                         return;
                     }
                     json.data.forEach(function (s, idx) {
+                        let isActive;
+                        if (currentSessionId !== null) {
+                            isActive = String(s.sessionId) === String(currentSessionId);
+                        } else {
+                            isActive = idx === 0;
+                            if (isActive) currentSessionId = s.sessionId;
+                        }
+
                         const li = document.createElement("li");
-                        li.className = "chat-session-item" + (idx === 0 ? " active" : "");
+                        li.className = "chat-session-item" + (isActive ? " active" : "");
                         li.setAttribute("data-session-id", s.sessionId);
                         li.setAttribute("data-questions", JSON.stringify(s.questions));
 
@@ -640,7 +733,8 @@ if (!empty($sessions)) {
                 });
         }
 
-        function loadSession(sessionId) {
+        function loadSession(sessionId, callback) {
+            currentSessionId = sessionId;
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -652,21 +746,20 @@ if (!empty($sessions)) {
                         const box = document.getElementById("chatMessages");
                         box.innerHTML = "";
                         json.data.forEach(function (m) {
-                            appendBubble(m.question, "user");
-                            appendBubble(m.answer, "bot", m.source);
+                            appendBubble(m.question, "user", null, m.id);
+                            appendBubble(m.answer, "bot", m.source, m.id);
                         });
                         document.querySelectorAll('.chat-session-item').forEach(x => x.classList.remove('active'));
                         const el = document.querySelector('.chat-session-item[data-session-id="' + sessionId + '"]');
                         if (el) el.classList.add('active');
+                        if (typeof callback === 'function') callback();
                     }
                 });
         }
 
         function clearChatHistory() {
-            const list = document.getElementById("chatHistoryList");
-            const isEmpty = list.querySelector(".chat-empty") !== null;
-            if (isEmpty) {
-                showToast("You have no chat history");
+            if (currentSessionId === null) {
+                showToast("No chat session selected");
                 return;
             }
             document.getElementById("clearConfirmModal").style.display = "flex";
@@ -677,34 +770,50 @@ if (!empty($sessions)) {
         }
 
         function confirmClearChat() {
+            const sid = currentSessionId;
+            if (sid === null) {
+                closeClearModal();
+                return;
+            }
+
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
-                body: new URLSearchParams({ action: "clear" })
+                body: new URLSearchParams({ action: "clear_session", sessionId: sid })
             })
                 .then(res => res.json())
                 .then(json => {
                     closeClearModal();
                     if (json.ok) {
-                        document.getElementById("chatHistoryList").innerHTML =
-                            '<li class="chat-empty">No chat history yet.</li>';
+                        const el = document.querySelector('.chat-session-item[data-session-id="' + sid + '"]');
+                        if (el) el.remove();
+
                         document.getElementById("chatMessages").innerHTML = "";
-                        showToast("Chat history cleared successfully");
+                        currentSessionId = null;
+
+                        if (!document.querySelector('.chat-session-item')) {
+                            document.getElementById("chatHistoryList").innerHTML =
+                                '<li class="chat-empty">No chat history yet.</li>';
+                        }
+
+                        showToast("Chat session cleared successfully");
                     } else {
-                        showToast("Unable to clear chat history. Please try again later.");
+                        showToast("Unable to clear chat session. Please try again later.");
                     }
                 })
                 .catch(() => {
                     closeClearModal();
-                    showToast("Unable to clear chat history. Please try again later.");
+                    showToast("Unable to clear chat session. Please try again later.");
                 });
         }
 
         function newChat() {
+            currentSessionId = null;
             document.getElementById("chatMessages").innerHTML = "";
             document.getElementById("questionInput").value = "";
             document.getElementById("questionInput").style.height = "44px";
             document.getElementById("questionInput").focus();
+            document.querySelectorAll('.chat-session-item').forEach(x => x.classList.remove('active'));
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -725,6 +834,10 @@ if (!empty($sessions)) {
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+            const activeEl = document.querySelector('.chat-session-item.active');
+            if (activeEl) {
+                currentSessionId = activeEl.getAttribute('data-session-id');
+            }
             document.querySelectorAll('.chat-session-item').forEach(attachTooltip);
         });
     </script>

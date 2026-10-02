@@ -1064,7 +1064,7 @@ foreach ($classList as $c) {
 
                 <div style="margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn-secondary-small" onclick="closeModal('classModal')">Cancel</button>
-                    <button type="submit" class="btn-primary-small">Save Changes</button>
+                    <button type="submit" class="btn-primary-small">Create</button>
                 </div>
             </form>
 

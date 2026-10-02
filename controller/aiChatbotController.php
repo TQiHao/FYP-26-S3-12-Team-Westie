@@ -89,6 +89,22 @@ class AIChatbotController
         return $this->chatHistory->clearByUserId($userId);
     }
 
+    public function clearChatSession($sessionId, $userId)
+    {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM ChatHistory WHERE sessionId = ? AND userId = ?");
+            $stmt->execute([$sessionId, $userId]);
+
+            $stmt2 = $this->db->prepare("DELETE FROM AIChatbotSession WHERE id = ? AND userId = ?");
+            $stmt2->execute([$sessionId, $userId]);
+
+            return true;
+        } catch (Exception $e) {
+            error_log("clearChatSession error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function askQuestion($userId, $universityId, $question)
     {
         $question = trim($question);
@@ -125,15 +141,37 @@ class AIChatbotController
             }
 
             return [
-                'answer' => "I couldn't reach the AI service right now. Please try again later, or ask about courses, exams, timetable, facilities, or events.",
+                'answer' => "I couldn't reach the AI service right now. Please try again later.",
                 'source' => 'fallback'
             ];
         }
 
         return [
-            'answer' => "I can only help with school-related questions. Try asking about your courses, exams, timetable, facility booking, campus events, or notifications.",
+            'answer' => $this->getOffTopicMessage(),
             'source' => 'fallback'
         ];
+    }
+
+    /**
+     * Role-aware off-topic message.
+     */
+    private function getOffTopicMessage()
+    {
+        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
+
+        switch ($role) {
+            case 'course_coordinator':
+            case 'course coordinator':
+                return "I can only help with class management questions. Try asking about creating or managing classes, exam schedules, classroom suggestions, or student enrolment.";
+
+            case 'university_admin':
+            case 'university admin':
+                return "I can only help with university administration questions. Try asking about university information, facilities, campus events, or user management.";
+
+            case 'student':
+            default:
+                return "I can only help with school-related questions. Try asking about your courses, exams, timetable, facility booking, campus events, or notifications.";
+        }
     }
 
     private function isSchoolRelated($question)
@@ -141,6 +179,7 @@ class AIChatbotController
         $q = strtolower($question);
 
         $keywords = [
+            // Academic
             'class',
             'course',
             'module',
@@ -160,6 +199,11 @@ class AIChatbotController
             'program',
             'faculty',
             'major',
+            'university',
+            'uni',
+            'school',
+            'college',
+            // Exam
             'exam',
             'test',
             'quiz',
@@ -169,10 +213,12 @@ class AIChatbotController
             'result',
             'gpa',
             'score',
+            // Time
             'timetable',
             'schedule',
             'attendance',
             'lesson',
+            // People
             'lecturer',
             'professor',
             'teacher',
@@ -180,6 +226,7 @@ class AIChatbotController
             'coordinator',
             'staff',
             'student',
+            // Location / campus
             'campus',
             'room',
             'hall',
@@ -193,11 +240,13 @@ class AIChatbotController
             'parking',
             'wifi',
             'floor plan',
+            // Booking
             'book',
             'reserve',
             'booking',
             'gym',
             'slot',
+            // Events
             'event',
             'seminar',
             'workshop',
@@ -205,6 +254,7 @@ class AIChatbotController
             'orientation',
             'ceremony',
             'talk',
+            // System / UniBee
             'unibee',
             'account',
             'login',
@@ -216,6 +266,11 @@ class AIChatbotController
             'chatbot',
             'help',
             'support',
+            'guide',
+            'feature',
+            'explain',
+            'tutorial',
+            // Money / admin
             'fee',
             'tuition',
             'scholarship',
@@ -271,7 +326,9 @@ class AIChatbotController
         if (preg_match('/\b(logout|log out|sign out|exit)\b/', $q))
             return 'logout';
 
-        return null;
+        // Guide / features — broad, so checked LAST
+        if (preg_match('/\b(guides?|tutorials?|manuals?|features?|capabilities|getting started|what can (you|i) do|show (me )?(the )?features?|list (the )?features?|how (do i|can i|to) use|how to use|use the (system|page|chatbot|website|app)|use this (system|page|chatbot|website|app))\b/i', $q))
+            return 'features_guide';
     }
 
     private function handleIntent($intent, $userId, $universityId, $question)
@@ -301,8 +358,102 @@ class AIChatbotController
                 return $this->handleNavigation();
             case 'logout':
                 return $this->handleLogout();
+            case 'features_guide':
+                return $this->handleFeaturesGuide();
         }
         return null;
+    }
+
+    /* ============================================================
+     * INTENT HANDLERS
+     * ============================================================ */
+
+    private function handleFeaturesGuide()
+    {
+        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
+
+        if ($role === 'course_coordinator' || $role === 'course coordinator') {
+            return [
+                'answer' =>
+                    "Here's what I can help you with as a Course Coordinator:\n\n" .
+                    "• Manage Classes — create, edit, suspend, or search classes\n" .
+                    "• Suggest a Classroom — find free rooms for a given day and time\n" .
+                    "• Enrol Students — add one by one or import from a CSV file\n" .
+                    "• Exam Scheduling — set exam date, time, and venue\n" .
+                    "• Assign Lecturers — assign or change a lecturer for a class\n\n" .
+                    "Try asking things like:\n" .
+                    "• \"Create a class CS201-L5 on Monday 9am to 12pm for 40 students\"\n" .
+                    "• \"Show my classes\"\n" .
+                    "• \"How do I enrol a student?\"",
+                'source' => 'faq'
+            ];
+        }
+
+        if ($role === 'lecturer') {
+            return [
+                'answer' =>
+                    "Here's what I can help you with as a Lecturer:\n\n" .
+                    "• Personal Timetable — view your weekly teaching schedule\n" .
+                    "• Assigned Modules — see the modules you teach\n" .
+                    "• Campus Events — browse and register for events\n" .
+                    "• Notifications — check your latest updates\n\n" .
+                    "Try asking things like:\n" .
+                    "• \"Show my timetable\"\n" .
+                    "• \"What modules am I teaching?\"\n" .
+                    "• \"Show upcoming events\"",
+                'source' => 'faq'
+            ];
+        }
+
+        if ($role === 'university_admin' || $role === 'university admin') {
+            return [
+                'answer' =>
+                    "Here's what I can help you with as a University Admin:\n\n" .
+                    "• Manage University Info — faculty, programmes, modules, facilities, users\n" .
+                    "• Campus Events — create and manage events\n" .
+                    "• FAQ Database — manage frequently asked questions\n" .
+                    "• Feedback — view feedback from users\n" .
+                    "• License — renew or check your university license\n\n" .
+                    "Try asking things like:\n" .
+                    "• \"How do I upload the student list?\"\n" .
+                    "• \"Show upcoming events\"\n" .
+                    "• \"How do I renew my license?\"",
+                'source' => 'faq'
+            ];
+        }
+
+        if ($role === 'system_admin' || $role === 'system admin') {
+            return [
+                'answer' =>
+                    "Here's what I can help you with as a System Admin:\n\n" .
+                    "• Manage Universities — approve registrations, suspend, or reactivate\n" .
+                    "• Landing Page — update public content\n" .
+                    "• AI Model — deploy or roll back model versions\n" .
+                    "• System Operations — view logs, backup, or restore\n\n" .
+                    "Try asking things like:\n" .
+                    "• \"Show pending university registrations\"\n" .
+                    "• \"View system logs\"\n" .
+                    "• \"How do I backup the database?\"",
+                'source' => 'faq'
+            ];
+        }
+
+        return [
+            'answer' =>
+                "Here's what I can help you with as a Student:\n\n" .
+                "• Personal Timetable — view your weekly schedule\n" .
+                "• Enrolled Courses — see your registered modules\n" .
+                "• Exam Schedule — check upcoming exams\n" .
+                "• Facility Booking — book study rooms or gym slots\n" .
+                "• Campus Events — browse and register for events\n" .
+                "• Study Groups — create or join study groups\n" .
+                "• Notifications — check your latest updates\n\n" .
+                "Try asking things like:\n" .
+                "• \"Show my timetable\"\n" .
+                "• \"When is my next exam?\"\n" .
+                "• \"Book a study room\"",
+            'source' => 'faq'
+        ];
     }
 
     private function handleCreateClass($userId, $question)
@@ -330,8 +481,7 @@ class AIChatbotController
 
         $answer = "I've opened the Manage Classes page for you. ";
         if (!empty($prefillData)) {
-            $fields = array_keys($prefillData);
-            $answer .= "I pre-filled " . count($fields) . " field(s) I understood — please review and adjust before saving.";
+            $answer .= "I pre-filled " . count($prefillData) . " field(s) I understood — please review and adjust before saving.";
         } else {
             $answer .= "Click the button below to go there.";
         }
@@ -701,7 +851,42 @@ class AIChatbotController
         }
 
         $data = json_decode($response, true);
-        return $data['answer'] ?? null;
+        $raw = $data['answer'] ?? null;
+
+        if ($raw === null) {
+            return null;
+        }
+
+        return $this->cleanAiResponse($raw);
+    }
+
+    /**
+     * Strip markdown formatting from AI responses so they display as plain text.
+     */
+    private function cleanAiResponse($text)
+    {
+        // Remove code fences
+        $text = preg_replace('/^```[\w]*\s*$/m', '', $text);
+
+        // Strip heading markers (### Heading -> Heading)
+        $text = preg_replace('/^#{1,6}\s+/m', '', $text);
+
+        // **bold** -> bold
+        $text = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
+
+        // *italic* -> italic (only when standalone)
+        $text = preg_replace('/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/', '$1', $text);
+
+        // __bold__ -> bold
+        $text = preg_replace('/__(.+?)__/', '$1', $text);
+
+        // `code` -> code
+        $text = preg_replace('/`([^`]+)`/', '$1', $text);
+
+        // Collapse 3+ blank lines to 2
+        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+
+        return trim($text);
     }
 }
 
@@ -719,33 +904,55 @@ if (
 
     switch ($action) {
         case 'ask':
+            $_SESSION['chat_last_active'] = time();
             $question = $_POST['question'] ?? '';
             $result = $controller->askQuestion($userId, $universityId, $question);
             echo json_encode(['ok' => true, 'data' => $result]);
             exit;
+
         case 'history':
             echo json_encode(['ok' => true, 'data' => $controller->getChatHistory($userId)]);
             exit;
+
         case 'view_chat':
             $chatId = (int) ($_POST['chatId'] ?? 0);
             echo json_encode(['ok' => true, 'data' => $controller->getChatById($chatId, $userId)]);
             exit;
+
         case 'sessions':
             echo json_encode(['ok' => true, 'data' => $controller->getChatSessions($userId)]);
             exit;
+
         case 'view_session':
             $sid = (int) ($_POST['sessionId'] ?? 0);
+            $_SESSION['chat_session_id'] = $sid;
             echo json_encode(['ok' => true, 'data' => $controller->getChatsBySession($sid, $userId)]);
             exit;
+
         case 'clear':
             $result = $controller->clearChatHistory($userId);
             $_SESSION['chat_session_id'] = null;
             echo json_encode(['ok' => $result]);
             exit;
+
+        case 'clear_session':
+            $sid = (int) ($_POST['sessionId'] ?? 0);
+            if ($sid <= 0) {
+                echo json_encode(['ok' => false, 'error' => 'No session specified']);
+                exit;
+            }
+            $result = $controller->clearChatSession($sid, $userId);
+            if (($_SESSION['chat_session_id'] ?? null) == $sid) {
+                $_SESSION['chat_session_id'] = null;
+            }
+            echo json_encode(['ok' => $result]);
+            exit;
+
         case 'new_session':
             $_SESSION['chat_session_id'] = null;
             echo json_encode(['ok' => true]);
             exit;
+
         default:
             echo json_encode(['ok' => false, 'error' => 'Unknown action']);
             exit;
