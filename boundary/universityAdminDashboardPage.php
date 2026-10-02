@@ -48,7 +48,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="renewLicensePage.php">Renew License</a>
-                    <a href="">AI Chatbot</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
@@ -105,7 +105,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </a>
 
                 <!-- AI Chatbot -->
-                <a href="" class="dashboard-card">
+                <a href="aiChatbotPage.php" class="dashboard-card">
                     <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>

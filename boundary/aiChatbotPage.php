@@ -10,8 +10,41 @@ require_once "../controller/AIChatbotController.php";
 
 $controller = new AIChatbotController();
 $studentId = $_SESSION['user_id'];
-$history = $controller->getChatHistory($studentId);
-if ($history === false) $history = [];
+$sessions = $controller->getChatSessions($studentId);
+if ($sessions === false)
+    $sessions = [];
+
+$rawRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student';
+$userRole = strtolower(trim($rawRole));
+
+switch ($userRole) {
+    case 'lecturer':
+        $dashboardUrl = 'lecturerDashboardPage.php';
+        break;
+    case 'course_coordinator':
+    case 'course coordinator':
+        $dashboardUrl = 'courseCoordinatorDashboardPage.php';
+        break;
+    case 'university_admin':
+    case 'university admin':
+        $dashboardUrl = 'universityAdminDashboardPage.php';
+        break;
+    case 'system_admin':
+    case 'system admin':
+        $dashboardUrl = 'systemAdminDashboardPage.php';
+        break;
+    case 'student':
+    default:
+        $dashboardUrl = 'studentDashboardPage.php';
+        break;
+}
+
+$initialMessages = [];
+if (!empty($sessions)) {
+    $initialMessages = $controller->getChatsBySession($sessions[0]['sessionId'], $studentId);
+    if ($initialMessages === false)
+        $initialMessages = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -22,6 +55,257 @@ if ($history === false) $history = [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chatbot - UniBee</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .chat-history-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .chat-history-header .btn-back {
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            font-weight: 900;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            flex-shrink: 0;
+        }
+
+        .chat-history-header h3 {
+            margin: 0;
+            flex: 1;
+            font-size: 1.15rem;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-history-header .btn-clear-chat {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #333;
+            padding: 5px;
+            border-radius: 6px;
+            transition: 0.2s ease;
+        }
+
+        .chat-history-header .btn-clear-chat:hover {
+            background-color: #ffb3b3;
+        }
+
+        .chat-session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-session-item .session-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-session-item .session-count {
+            background: #e0e0e0;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .chat-session-item.active {
+            background-color: #f8ea9b;
+            border-color: #e6c23a;
+        }
+
+        .session-tooltip {
+            position: fixed;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+            padding: 8px 0;
+            max-width: 320px;
+            z-index: 9999;
+            font-size: 0.82rem;
+        }
+
+        .session-tooltip-row {
+            padding: 6px 14px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 320px;
+        }
+
+        .session-tooltip-row+.session-tooltip-row {
+            border-top: 1px solid #f0f0f0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        header {
+            flex-shrink: 0;
+        }
+
+        footer {
+            flex-shrink: 0;
+        }
+
+        .chatbot-layout.chatbot-full-width {
+            flex: 1;
+            min-height: 0;
+            height: auto !important;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            max-width: none;
+            width: 100%;
+        }
+
+        .chat-history-panel {
+            min-height: 0;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .chat-history-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .btn-new-chat {
+            flex-shrink: 0;
+        }
+
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .chat-main h2 {
+            flex-shrink: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 10px 0;
+        }
+
+        /* ===== Multi-line input bar (DeepSeek style) ===== */
+        .chat-input-bar {
+            flex-shrink: 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .chat-input-bar textarea {
+            flex: 1;
+            min-height: 44px;
+            max-height: 160px;
+            padding: 12px 20px;
+            border: 1px solid #ccc;
+            border-radius: 22px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            line-height: 1.4;
+            background: #fafafa;
+            resize: none;
+            overflow-y: auto;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .chat-input-bar textarea:focus {
+            outline: none;
+            border-color: var(--bg-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+        }
+
+        .chat-input-bar .btn-send {
+            flex-shrink: 0;
+            padding: 12px 28px;
+            height: 44px;
+            border: none;
+            border-radius: 22px;
+            background-color: var(--bg-yellow);
+            color: #222;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .chat-input-bar .btn-send:hover {
+            background-color: #e6c23a;
+        }
+
+        /* ===== Bubbles ===== */
+        .chat-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 0.92rem;
+            line-height: 1.55;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-bubble {
+            align-self: flex-end;
+            background-color: var(--bg-yellow);
+            color: #222;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-bubble {
+            align-self: flex-start;
+            background-color: #f5f5f5;
+            color: #222;
+            border-bottom-left-radius: 4px;
+            border: none;
+        }
+    </style>
 </head>
 
 <body>
@@ -29,7 +313,7 @@ if ($history === false) $history = [];
 
     <header class="header">
         <div class="logo-container">
-            <a href="studentDashboardPage.php">
+            <a href="<?php echo $dashboardUrl; ?>">
                 <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
@@ -64,24 +348,27 @@ if ($history === false) $history = [];
 
     <main class="chatbot-layout chatbot-full-width">
 
-        <!-- LEFT: Chat History Sidebar -->
         <aside class="chat-history-panel">
-            <a href="studentDashboardPage.php" class="btn-back chat-back-btn">&#8592; Back</a>
             <div class="chat-history-header">
+                <a href="<?php echo htmlspecialchars($dashboardUrl); ?>" class="btn-back">&#8592;</a>
                 <h3>Chat History</h3>
-                <button type="button" class="btn-clear-chat" title="Clear chat history"
-                        onclick="clearChatHistory()">
+                <button type="button" class="btn-clear-chat" title="Clear chat history" onclick="clearChatHistory()">
                     &#128465;
                 </button>
             </div>
 
             <ul class="chat-history-list" id="chatHistoryList">
-                <?php if (empty($history)): ?>
+                <?php if (empty($sessions)): ?>
                     <li class="chat-empty">No chat history yet.</li>
                 <?php else: ?>
-                    <?php foreach ($history as $h): ?>
-                        <li onclick="loadPastQuestion(<?php echo $h['id']; ?>)">
-                            <?php echo htmlspecialchars($h['question']); ?>
+                    <?php foreach ($sessions as $s): ?>
+                        <?php $firstSessionId = $sessions[0]['sessionId']; ?>
+                        <li class="chat-session-item <?php echo $s['sessionId'] == $firstSessionId ? 'active' : ''; ?>"
+                            data-session-id="<?php echo (int) $s['sessionId']; ?>"
+                            data-questions='<?php echo htmlspecialchars(json_encode($s['questions']), ENT_QUOTES); ?>'
+                            onclick="loadSession(<?php echo (int) $s['sessionId']; ?>)">
+                            <span class="session-title"><?php echo htmlspecialchars($s['title']); ?></span>
+                            <span class="session-count"><?php echo count($s['questions']); ?></span>
                         </li>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -90,35 +377,30 @@ if ($history === false) $history = [];
             <button type="button" class="btn-new-chat" onclick="newChat()">+ New chat</button>
         </aside>
 
-        <!-- RIGHT: Main Chat Area -->
         <section class="chat-main">
             <h2>Ask a Question</h2>
 
             <div class="chat-messages" id="chatMessages">
-                <?php if (!empty($history)): ?>
-                    <?php
-                    // Show most recent Q&A
-                    $recent = $history[0];
-                    ?>
-                    <div class="chat-bubble user-bubble">
-                        <?php echo htmlspecialchars($recent['question']); ?>
-                    </div>
-                    <div class="chat-bubble bot-bubble">
-                        <?php echo htmlspecialchars($recent['answer']); ?>
-                    </div>
+                <?php if (!empty($initialMessages)): ?>
+                    <?php foreach ($initialMessages as $m): ?>
+                        <div class="chat-bubble user-bubble">
+                            <?php echo htmlspecialchars($m['question']); ?>
+                        </div>
+                        <div class="chat-bubble bot-bubble">
+                            <?php echo htmlspecialchars($m['answer']); ?>
+                        </div>
+                    <?php endforeach; ?>
                 <?php endif; ?>
             </div>
 
             <div class="chat-input-bar">
-                <input type="text" id="questionInput" placeholder="Type your Question..."
-                       onkeydown="if(event.key==='Enter')sendQuestion()">
+                <textarea id="questionInput" placeholder="Type your Question..." rows="1"></textarea>
                 <button type="button" class="btn-send" onclick="sendQuestion()">Send</button>
             </div>
         </section>
 
     </main>
 
-    <!-- Confirmation Modal for Clear Chat -->
     <div class="modal-overlay" id="clearConfirmModal" style="display:none;">
         <div class="modal-box">
             <span class="modal-close" onclick="closeClearModal()">&times;</span>
@@ -130,10 +412,10 @@ if ($history === false) $history = [];
         </div>
     </div>
 
-    <!-- Success Toast -->
     <div class="modal-overlay" id="successToast" style="display:none;">
         <div class="modal-box">
-            <span class="modal-close" onclick="document.getElementById('successToast').style.display='none'">&times;</span>
+            <span class="modal-close"
+                onclick="document.getElementById('successToast').style.display='none'">&times;</span>
             <p class="modal-message" id="successToastText"></p>
         </div>
     </div>
@@ -147,6 +429,21 @@ if ($history === false) $history = [];
     <script>
         const CONTROLLER = "../controller/AIChatbotController.php";
 
+        function autoResizeInput() {
+            const ta = document.getElementById("questionInput");
+            ta.style.height = 'auto';
+            ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+        }
+
+        document.getElementById("questionInput").addEventListener("input", autoResizeInput);
+
+        document.getElementById("questionInput").addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        });
+
         function sendQuestion() {
             const input = document.getElementById("questionInput");
             const question = input.value.trim();
@@ -154,24 +451,25 @@ if ($history === false) $history = [];
 
             appendBubble(question, "user");
             input.value = "";
+            input.style.height = "44px";
 
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ action: "ask", question: question })
             })
-            .then(res => res.json())
-            .then(json => {
-                if (json.ok) {
-                    renderRichResponse(json.data);
-                    refreshHistory();
-                } else {
+                .then(res => res.json())
+                .then(json => {
+                    if (json.ok) {
+                        renderRichResponse(json.data);
+                        refreshSessions();
+                    } else {
+                        appendBubble("Unable to process your question. Please try again later.", "bot");
+                    }
+                })
+                .catch(() => {
                     appendBubble("Unable to process your question. Please try again later.", "bot");
-                }
-            })
-            .catch(() => {
-                appendBubble("Unable to process your question. Please try again later.", "bot");
-            });
+                });
         }
 
         function appendBubble(text, type, source) {
@@ -197,7 +495,6 @@ if ($history === false) $history = [];
         function renderRichResponse(data) {
             const bubble = appendBubble(data.answer, "bot", data.source);
 
-            // --- ROOMS ---
             if (Array.isArray(data.rooms) && data.rooms.length > 0) {
                 const list = document.createElement("div");
                 list.className = "chat-room-list";
@@ -213,7 +510,6 @@ if ($history === false) $history = [];
                 bubble.appendChild(list);
             }
 
-            // --- TIMETABLE ---
             if (Array.isArray(data.timetable) && data.timetable.length > 0) {
                 const list = document.createElement("div");
                 list.className = "chat-timetable-list";
@@ -230,7 +526,6 @@ if ($history === false) $history = [];
                 bubble.appendChild(list);
             }
 
-            // --- NOTIFICATIONS ---
             if (Array.isArray(data.notifications) && data.notifications.length > 0) {
                 const list = document.createElement("div");
                 list.className = "chat-notif-list";
@@ -243,7 +538,6 @@ if ($history === false) $history = [];
                 bubble.appendChild(list);
             }
 
-            // --- EVENTS ---
             if (Array.isArray(data.events) && data.events.length > 0) {
                 const list = document.createElement("div");
                 list.className = "chat-event-list";
@@ -260,7 +554,6 @@ if ($history === false) $history = [];
                 bubble.appendChild(list);
             }
 
-            // --- ACTION BUTTON ---
             if (data.action && data.action.url) {
                 const btn = document.createElement("a");
                 btn.className = "chat-action-btn";
@@ -270,45 +563,105 @@ if ($history === false) $history = [];
             }
         }
 
-        function refreshHistory() {
-            fetch(CONTROLLER + "?action=history", {
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            })
-            .then(res => res.json())
-            .then(json => {
-                if (!json.ok || !Array.isArray(json.data)) return;
-                const list = document.getElementById("chatHistoryList");
-                list.innerHTML = "";
-                if (json.data.length === 0) {
-                    list.innerHTML = '<li class="chat-empty">No chat history yet.</li>';
-                    return;
-                }
-                json.data.forEach(h => {
-                    const li = document.createElement("li");
-                    li.textContent = h.question;
-                    li.onclick = () => loadPastQuestion(h.id);
-                    list.appendChild(li);
+        function attachTooltip(li) {
+            li.addEventListener('mouseenter', function () {
+                const qJson = li.getAttribute('data-questions');
+                if (!qJson) return;
+                let questions;
+                try { questions = JSON.parse(qJson); } catch (e) { return; }
+                if (!questions || !questions.length) return;
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'session-tooltip';
+                questions.forEach(function (q) {
+                    const row = document.createElement('div');
+                    row.className = 'session-tooltip-row';
+                    row.textContent = q.question;
+                    tooltip.appendChild(row);
                 });
+                document.body.appendChild(tooltip);
+
+                const rect = li.getBoundingClientRect();
+                tooltip.style.top = rect.top + 'px';
+                tooltip.style.left = (rect.right + 8) + 'px';
+
+                requestAnimationFrame(function () {
+                    const tRect = tooltip.getBoundingClientRect();
+                    if (tRect.bottom > window.innerHeight) {
+                        tooltip.style.top = (window.innerHeight - tRect.height - 10) + 'px';
+                    }
+                });
+
+                li._tooltip = tooltip;
+            });
+
+            li.addEventListener('mouseleave', function () {
+                if (li._tooltip) {
+                    li._tooltip.remove();
+                    li._tooltip = null;
+                }
             });
         }
 
-        function loadPastQuestion(chatId) {
+        function refreshSessions() {
+            fetch(CONTROLLER + "?action=sessions", {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(res => res.json())
+                .then(json => {
+                    if (!json.ok || !Array.isArray(json.data)) return;
+                    const list = document.getElementById("chatHistoryList");
+                    list.innerHTML = "";
+                    if (json.data.length === 0) {
+                        list.innerHTML = '<li class="chat-empty">No chat history yet.</li>';
+                        return;
+                    }
+                    json.data.forEach(function (s, idx) {
+                        const li = document.createElement("li");
+                        li.className = "chat-session-item" + (idx === 0 ? " active" : "");
+                        li.setAttribute("data-session-id", s.sessionId);
+                        li.setAttribute("data-questions", JSON.stringify(s.questions));
+
+                        const title = document.createElement("span");
+                        title.className = "session-title";
+                        title.textContent = s.title;
+
+                        const count = document.createElement("span");
+                        count.className = "session-count";
+                        count.textContent = s.questions.length;
+
+                        li.appendChild(title);
+                        li.appendChild(count);
+                        li.onclick = function () { loadSession(s.sessionId); };
+
+                        attachTooltip(li);
+                        list.appendChild(li);
+                    });
+                });
+        }
+
+        function loadSession(sessionId) {
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
-                body: new URLSearchParams({ action: "view_chat", chatId: chatId })
+                body: new URLSearchParams({ action: "view_session", sessionId: sessionId })
             })
-            .then(res => res.json())
-            .then(json => {
-                if (json.ok && json.data) {
-                    document.getElementById("chatMessages").innerHTML = "";
-                    appendBubble(json.data.question, "user");
-                    appendBubble(json.data.answer, "bot");
-                }
-            });
+                .then(res => res.json())
+                .then(json => {
+                    if (json.ok && Array.isArray(json.data)) {
+                        const box = document.getElementById("chatMessages");
+                        box.innerHTML = "";
+                        json.data.forEach(function (m) {
+                            appendBubble(m.question, "user");
+                            appendBubble(m.answer, "bot", m.source);
+                        });
+                        document.querySelectorAll('.chat-session-item').forEach(x => x.classList.remove('active'));
+                        const el = document.querySelector('.chat-session-item[data-session-id="' + sessionId + '"]');
+                        if (el) el.classList.add('active');
+                    }
+                });
         }
 
-                // ===== Clear Chat History =====
         function clearChatHistory() {
             const list = document.getElementById("chatHistoryList");
             const isEmpty = list.querySelector(".chat-empty") !== null;
@@ -329,37 +682,36 @@ if ($history === false) $history = [];
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ action: "clear" })
             })
-            .then(res => res.json())
-            .then(json => {
-                closeClearModal();
-                if (json.ok) {
-                    document.getElementById("chatHistoryList").innerHTML =
-                        '<li class="chat-empty">No chat history yet.</li>';
-                    document.getElementById("chatMessages").innerHTML = "";
-                    showToast("Chat history cleared successfully");
-                } else {
+                .then(res => res.json())
+                .then(json => {
+                    closeClearModal();
+                    if (json.ok) {
+                        document.getElementById("chatHistoryList").innerHTML =
+                            '<li class="chat-empty">No chat history yet.</li>';
+                        document.getElementById("chatMessages").innerHTML = "";
+                        showToast("Chat history cleared successfully");
+                    } else {
+                        showToast("Unable to clear chat history. Please try again later.");
+                    }
+                })
+                .catch(() => {
+                    closeClearModal();
                     showToast("Unable to clear chat history. Please try again later.");
-                }
-            })
-            .catch(() => {
-                closeClearModal();
-                showToast("Unable to clear chat history. Please try again later.");
-            });
+                });
         }
 
-        // ===== New Chat =====
         function newChat() {
             document.getElementById("chatMessages").innerHTML = "";
             document.getElementById("questionInput").value = "";
+            document.getElementById("questionInput").style.height = "44px";
             document.getElementById("questionInput").focus();
             fetch(CONTROLLER, {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ action: "new_session" })
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
-        // ===== Toast =====
         function showToast(message) {
             const toast = document.getElementById("successToast");
             const text = document.getElementById("successToastText");
@@ -371,6 +723,10 @@ if ($history === false) $history = [];
             toast.style.display = "flex";
             setTimeout(() => { toast.style.display = "none"; }, 2500);
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.chat-session-item').forEach(attachTooltip);
+        });
     </script>
 </body>
 

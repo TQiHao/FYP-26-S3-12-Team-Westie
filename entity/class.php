@@ -313,6 +313,24 @@ class ClassEntity
 
             if (!empty($data['examDate'])) {
                 $this->saveExamPlan($classId, $data['examDate'], $data['examStartTime'], $data['examEndTime'], $data['examVenue'], $currentUserId);
+
+                // If CC ticked "apply to all other classes of this module"
+                if (!empty($data['apply_to_module'])) {
+                    $stmt = $this->db->prepare("SELECT moduleId FROM Classes WHERE id = ?");
+                    $stmt->execute([$classId]);
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($row) {
+                        $this->applyExamToModuleClasses(
+                            (int) $row['moduleId'],
+                            $classId,
+                            $data['examDate'],
+                            $data['examStartTime'],
+                            $data['examEndTime'],
+                            $data['examVenue'],
+                            $currentUserId
+                        );
+                    }
+                }
             }
 
             return ['status' => 'SUCCESS_UPDATE'];
@@ -419,6 +437,29 @@ class ClassEntity
         } catch (Exception $e) {
             error_log("Save Exam Error: " . $e->getMessage());
             return "DB_ERROR";
+        }
+    }
+
+    /**
+     * Copy the same exam schedule to every other class of the same module.
+     * Returns number of classes updated.
+     */
+    public function applyExamToModuleClasses($moduleId, $excludeClassId, $examDate, $startTime, $endTime, $venue, $createdBy)
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id FROM Classes WHERE moduleId = ? AND id != ?");
+            $stmt->execute([$moduleId, $excludeClassId]);
+            $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $count = 0;
+            foreach ($classes as $c) {
+                $this->saveExamPlan($c['id'], $examDate, $startTime, $endTime, $venue, $createdBy);
+                $count++;
+            }
+            return $count;
+        } catch (Exception $e) {
+            error_log("applyExamToModuleClasses Error: " . $e->getMessage());
+            return 0;
         }
     }
 }

@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/OllamaClient.php";
 
 header('Content-Type: application/json');
 
@@ -36,8 +35,6 @@ $action = $_POST['action'] ?? '';
 
 if ($action === 'find_rooms') {
     handleFindRooms($db, $universityId);
-} elseif ($action === 'ask_ai') {
-    handleAskAi($db, $universityId);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Unknown action.']);
 }
@@ -87,159 +84,6 @@ function handleFindRooms($db, $universityId)
         'message' => 'Found ' . count($rooms) . ' classroom(s) that fit ' . $capacity . ' students.',
         'rooms' => $rooms,
     ]);
-}
-
-
-function handleAskAi($db, $universityId)
-{
-    $question = trim($_POST['question'] ?? '');
-    if ($question === '') {
-        echo json_encode(['status' => 'error', 'message' => 'Please type a question.']);
-        return;
-    }
-
-    $parsed = parseNaturalQuestion($question);
-
-    if (!$parsed) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => "I couldn't pick out the day/time/capacity. Try: \"Find a room on Friday 3pm to 6pm for 43 students\"."
-        ]);
-        return;
-    }
-
-    $day = $parsed['day'];
-    $startTime = $parsed['startTime'];
-    $endTime = $parsed['endTime'];
-    $capacity = $parsed['capacity'];
-
-    $rooms = findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $capacity, 5);
-
-    if (empty($rooms)) {
-        $occupied = findOccupiedRooms($db, $universityId, $day, $startTime, $endTime);
-        $message = "Understood: " . ucfirst($day) . " $startTime-$endTime for $capacity students. "
-            . "But no free classroom fits these constraints.";
-        if (!empty($occupied)) {
-            $message .= " Occupied at that time: " . implode(', ', array_column($occupied, 'roomCode')) . ".";
-        }
-        echo json_encode([
-            'status' => 'no_rooms',
-            'message' => $message,
-            'parsed' => $parsed,
-            'rooms' => [],
-        ]);
-        return;
-    }
-
-    foreach ($rooms as &$r) {
-        $r['reason'] = buildReason($r, $capacity);
-    }
-    unset($r);
-
-    $summary = "Understood: " . ucfirst($day) . " $startTime-$endTime for $capacity students. "
-        . "Here are " . count($rooms) . " classroom(s) that fit.";
-
-    echo json_encode([
-        'status' => 'ok',
-        'message' => $summary,
-        'parsed' => $parsed,
-        'rooms' => $rooms,
-    ]);
-}
-
-
-function parseNaturalQuestion($q)
-{
-    $q = strtolower($q);
-
-    // ---- Day ----
-    $dayMap = [
-        'monday' => 'mon',
-        'mon' => 'mon',
-        'tuesday' => 'tue',
-        'tue' => 'tue',
-        'tues' => 'tue',
-        'wednesday' => 'wed',
-        'wed' => 'wed',
-        'thursday' => 'thu',
-        'thu' => 'thu',
-        'thur' => 'thu',
-        'thurs' => 'thu',
-        'friday' => 'fri',
-        'fri' => 'fri',
-        'saturday' => 'sat',
-        'sat' => 'sat',
-        'sunday' => 'sun',
-        'sun' => 'sun',
-    ];
-    $day = null;
-    foreach ($dayMap as $word => $code) {
-        if (preg_match('/\b' . $word . '\b/', $q)) {
-            $day = $code;
-            break;
-        }
-    }
-
-    // ---- Times (range) ----
-    // Support: "3pm to 6pm", "3pm-6pm", "3:30pm to 6:00pm", "15:00-18:00"
-    $startTime = null;
-    $endTime = null;
-
-    if (preg_match('/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:to|-|until|till)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i', $q, $m)) {
-        $startTime = to24Hour($m[1], $m[2] ?? '00', $m[3] ?? null);
-        $endTime = to24Hour($m[4], $m[5] ?? '00', $m[6] ?? null);
-
-        // If no meridiem on end but on start, inherit (3pm-6 => 6pm)
-        if (empty($m[6]) && !empty($m[3])) {
-            $endTime = to24Hour($m[4], $m[5] ?? '00', $m[3]);
-        }
-    }
-
-    // ---- Capacity ----
-    // "for 43 students", "43 ppl", "capacity 60"
-    $capacity = null;
-    if (preg_match('/\b(?:for|capacity|about|around)?\s*(\d{1,3})\s*(?:students?|ppl|people|seats?|persons?)?\b/', $q, $m)) {
-        $capacity = (int) $m[1];
-    }
-    // More specific first
-    if (preg_match('/\bfor\s+(\d{1,3})\b/', $q, $m)) {
-        $capacity = (int) $m[1];
-    }
-
-    if (!$day || !$startTime || !$endTime || !$capacity) {
-        return null;
-    }
-
-    if ($startTime >= $endTime) {
-        return null;
-    }
-
-    return [
-        'day' => $day,
-        'startTime' => $startTime,
-        'endTime' => $endTime,
-        'capacity' => $capacity,
-    ];
-}
-
-
-function to24Hour($hour, $minute, $meridiem)
-{
-    $h = (int) $hour;
-    $min = str_pad((int) $minute, 2, '0', STR_PAD_LEFT);
-
-    if ($meridiem === 'pm' && $h < 12) {
-        $h += 12;
-    } elseif ($meridiem === 'am' && $h === 12) {
-        $h = 0;
-    }
-
-    // Heuristic: if no meridiem and hour <= 7, assume PM (school hours 8-22)
-    if ($meridiem === null && $h >= 1 && $h <= 7) {
-        $h += 12;
-    }
-
-    return str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $min;
 }
 
 
@@ -307,16 +151,6 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
     } catch (Exception $e) {
         return [];
     }
-}
-
-
-function normalizeTime($t)
-{
-    $t = trim($t);
-    if (preg_match('/^(\d{1,2}):(\d{2})/', $t, $m)) {
-        return str_pad($m[1], 2, '0', STR_PAD_LEFT) . ':' . $m[2];
-    }
-    return $t;
 }
 
 

@@ -46,6 +46,18 @@ if (!empty($_SESSION['auto_open_edit'])) {
     }
 }
 
+// Read prefill data from URL (sent by AI Chatbot)
+$prefill = null;
+if (!empty($_GET['prefill'])) {
+    $decoded = base64_decode($_GET['prefill']);
+    if ($decoded) {
+        $parsed = json_decode($decoded, true);
+        if (is_array($parsed)) {
+            $prefill = $parsed;
+        }
+    }
+}
+
 $groupedModules = [];
 foreach ($classList as $cls) {
     $modId = $cls['moduleId'];
@@ -94,6 +106,12 @@ if (isset($_GET['status']) || $statusFilter !== 'active') {
 $formActionQs = $formActionParams ? '?' . http_build_query($formActionParams) : '';
 
 $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => '']);
+// Count classes per module (used for "apply to all" checkbox)
+$moduleClassCounts = [];
+foreach ($classList as $c) {
+    $mid = (int) $c['moduleId'];
+    $moduleClassCounts[$mid] = ($moduleClassCounts[$mid] ?? 0) + 1;
+}
 ?>
 
 <!DOCTYPE html>
@@ -1031,6 +1049,17 @@ $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => ''
                             <input type="time" name="examEndTime" id="modalExamEndTime">
                         </div>
                     </div>
+
+                    <div id="applyExamWrap"
+                        style="display:none; margin-top: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #1e40af; cursor: pointer; margin: 0;">
+                            <input type="checkbox" name="apply_to_module" id="applyToModule" value="1"
+                                style="width: auto; margin: 0;">
+                            <span id="applyToModuleLabel">Apply this exam schedule to all other classes of this
+                                module</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div style="margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
@@ -1059,6 +1088,8 @@ $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => ''
     <script>
         const MODULES = <?php echo json_encode($modulesList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
         const STUDENTS = <?php echo json_encode($studentsList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const PREFILL = <?php echo json_encode($prefill, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const MODULE_CLASS_COUNTS = <?php echo json_encode($moduleClassCounts, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 
         let currentSelectedClassData = null;
         let currentEnrolledCount = 0;
@@ -1356,6 +1387,8 @@ $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => ''
             document.getElementById('modalExamVenue').value = '';
             document.getElementById('modalExamStartTime').value = '';
             document.getElementById('modalExamEndTime').value = '';
+            document.getElementById('applyExamWrap').style.display = 'none';
+            document.getElementById('applyToModule').checked = false;
 
             const sug = document.getElementById('modalRoomSuggestions');
             sug.style.display = 'none';
@@ -1393,6 +1426,21 @@ $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => ''
             document.getElementById('modalExamVenue').value = data.examVenue || '';
             document.getElementById('modalExamStartTime').value = data.examStartTime || '';
             document.getElementById('modalExamEndTime').value = data.examEndTime || '';
+
+            // Show "apply to all" checkbox if module has more than 1 class
+            const mid = String(data.moduleId);
+            const totalInModule = MODULE_CLASS_COUNTS[mid] || 1;
+            const otherCount = totalInModule - 1;
+            const applyWrap = document.getElementById('applyExamWrap');
+            if (otherCount > 0) {
+                applyWrap.style.display = 'block';
+                document.getElementById('applyToModuleLabel').textContent =
+                    'Apply this exam schedule to all other classes of this module (' + otherCount + ' more)';
+            } else {
+                applyWrap.style.display = 'none';
+            }
+            document.getElementById('applyToModule').checked = false;
+
 
             const sug = document.getElementById('modalRoomSuggestions');
             sug.style.display = 'none';
@@ -1490,12 +1538,55 @@ $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => ''
                 });
         }
 
-        // ===== Auto-open Edit after Create =====
-        <?php if ($autoOpenClass): ?>
-            document.addEventListener('DOMContentLoaded', function () {
+        // ===== Apply prefill from AI Chatbot =====
+        function applyPrefill(data) {
+            if (!data) return;
+
+            openCreateModal();
+
+            if (data.moduleName) {
+                const target = data.moduleName.toLowerCase();
+                const matched = MODULES.find(function (m) {
+                    return m.name.toLowerCase() === target || m.code.toLowerCase() === target;
+                });
+                if (matched) {
+                    selectModule(matched.id, matched.code + ' - ' + matched.name);
+                } else {
+                    moduleSearch.value = data.moduleName;
+                }
+            }
+
+            if (data.classCode) document.getElementById('modalClassCode').value = data.classCode;
+            if (data.className) document.getElementById('modalClassName').value = data.className;
+            if (data.dayOfWeek) document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
+            if (data.room) document.getElementById('modalRoom').value = data.room;
+            if (data.startTime) document.getElementById('modalStartTime').value = data.startTime;
+            if (data.endTime) document.getElementById('modalEndTime').value = data.endTime;
+            if (data.capacity) document.getElementById('modalCapacity').value = data.capacity;
+            if (data.academicYear) document.getElementById('modalAcademicYear').value = data.academicYear;
+
+            if (data.lecturerName) {
+                const lecSel = document.getElementById('modalStaffId');
+                const target = data.lecturerName.toLowerCase();
+                for (let i = 0; i < lecSel.options.length; i++) {
+                    if (lecSel.options[i].text.toLowerCase() === target) {
+                        lecSel.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            updateRatioDisplay();
+        }
+
+        // ===== Auto-open Edit after Create, or apply prefill =====
+        document.addEventListener('DOMContentLoaded', function () {
+            <?php if ($autoOpenClass): ?>
                 openEditModal(<?php echo json_encode($autoOpenClass, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
-            });
-        <?php endif; ?>
+            <?php elseif ($prefill): ?>
+                applyPrefill(PREFILL);
+            <?php endif; ?>
+        });
     </script>
 </body>
 
