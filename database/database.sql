@@ -261,6 +261,7 @@ CREATE TABLE Facilities (
     id INT PRIMARY KEY AUTO_INCREMENT,
     universityId INT NOT NULL,
     name VARCHAR(255) NOT NULL,
+    roomCode VARCHAR(100),
     type ENUM('study room', 'gym', 'lecture hall', 'lab') DEFAULT 'study room',
     description TEXT,
     location VARCHAR(255),
