@@ -10,12 +10,17 @@ require_once "../controller/studentDashboardController.php";
 
 $dashboardController = new StudentDashboardController();
 
-$studentId    = $_SESSION['user_id'] ?? null;
+$studentId = $_SESSION['user_id'] ?? null;
 $universityId = $_SESSION['university_id'] ?? null;
 
-$nextClass       = $dashboardController->getNextClass($studentId);
+$nextClass = $dashboardController->getNextClass($studentId);
 $notificationSum = $dashboardController->getNotificationSummary($studentId);
-$nextEvent       = $dashboardController->getNextEvent($universityId);
+$nextEvent = $dashboardController->getNextEvent($universityId);
+
+$coursesEnrolled = $dashboardController->getEnrolledCoursesCount($studentId);
+$activeBookings = $dashboardController->getActiveBookingsCount($studentId);
+$groupsJoined = $dashboardController->getGroupsJoinedCount($studentId);
+$upcomingEventsCnt = $dashboardController->getUpcomingEventsCount($universityId);
 
 $fullName = $_SESSION['user_name'];
 ?>
@@ -61,13 +66,9 @@ $fullName = $_SESSION['user_name'];
 
                 <div class="profile-container" onclick="toggleDropdown()">
 
-                    <img src="../images/profilePic.png"
-                         alt="Profile"
-                         class="profile-icon">
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                    <img src="../images/dropdown.png"
-                         alt="Menu"
-                         class="dropdown-arrow">
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
                 </div>
 
@@ -197,7 +198,8 @@ $fullName = $_SESSION['user_name'];
                 <a href="academicsPage.php" class="dashboard-card">
                     <img src="../images/academic.png" alt="Academics" class="card-icon">
                     <h2>Academics</h2>
-                    <p>5 Courses Enrolled</p>
+                    <p><?php echo $coursesEnrolled . ' Course' . ($coursesEnrolled === 1 ? '' : 's') . ' Enrolled'; ?>
+                    </p>
                 </a>
 
 
@@ -205,7 +207,7 @@ $fullName = $_SESSION['user_name'];
                 <a href="viewFacilitiesPage.php" class="dashboard-card">
                     <img src="../images/facilityBooking.png" alt="Facilities Booking" class="card-icon">
                     <h2>Facilities Booking</h2>
-                    <p>1 Active Booking</p>
+                    <p><?php echo $activeBookings . ' Active Booking' . ($activeBookings === 1 ? '' : 's'); ?></p>
                 </a>
 
 
@@ -213,7 +215,7 @@ $fullName = $_SESSION['user_name'];
                 <a href="academicsPage.php?tab=interaction" class="dashboard-card">
                     <img src="../images/studyGrp.png" alt="Study Groups" class="card-icon">
                     <h2>Study Groups</h2>
-                    <p>2 Groups joined</p>
+                    <p><?php echo $groupsJoined . ' Group' . ($groupsJoined === 1 ? '' : 's') . ' joined'; ?></p>
                 </a>
 
 
@@ -221,7 +223,7 @@ $fullName = $_SESSION['user_name'];
                 <a href="viewEventsPage.php" class="dashboard-card">
                     <img src="../images/campusEvent.png" alt="Campus Events" class="card-icon">
                     <h2>Campus Events</h2>
-                    <p>3 Upcoming</p>
+                    <p><?php echo $upcomingEventsCnt . ' Upcoming'; ?></p>
                 </a>
 
 
@@ -257,4 +259,5 @@ $fullName = $_SESSION['user_name'];
     </footer>
 
 </body>
+
 </html>
