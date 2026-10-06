@@ -149,3 +149,19 @@ ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 INSERT INTO SystemAdmins (email, passwordHash, fullName, status)
 VALUES
 ( 'systemadmin@unibee.com', '$2y$12$0yPsP1593ENJj.gDG/5FD.6rva8FZgf0R0BKHW3MuUo0p.yvlWHYy', 'Sarah Tan', 'active');
+
+-- ============================================
+-- 10. LICENSES
+-- ============================================
+INSERT INTO Licenses (id, name, durationYears, description, status)
+VALUES
+(1, '1 Year License', 1, 'Standard 1-year subscription', 'active'),
+(2, '2 Year License', 2, 'Standard 2-year subscription', 'active'),
+(3, '5 Year License', 5, 'Standard 5-year subscription', 'active')
+ON DUPLICATE KEY UPDATE name = VALUES(name), durationYears = VALUES(durationYears);
+
+INSERT INTO UniversityLicenses (universityId, licenseId, startDate, expiryDate, status)
+SELECT 1, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'
+WHERE NOT EXISTS (SELECT 1 FROM UniversityLicenses WHERE universityId = 1);
+
+SET FOREIGN_KEY_CHECKS = 1;
