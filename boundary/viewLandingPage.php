@@ -528,8 +528,8 @@ function getInitials($fullName)
                 <img src="../images/uniBeeLogo.png" alt="UniBee">
             </div>
             <ul class="footer-links">
-                <li><a href="termsAndConditions.php">Terms & Conditions</a></li>
-                <li><a href="privacyPolicy.php">Privacy Policy</a></li>
+                <li><a href="termsAndConditionsPage.php">Terms & Conditions</a></li>
+                <li><a href="privacyPolicyPage.php">Privacy Policy</a></li>
             </ul>
         </div>
         <div class="footer-bottom-bar">
