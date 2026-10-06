@@ -84,7 +84,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </a>
 
                 <!-- Manage University Events -->
-                <a href="manageUniversityEventsPage.php" class="dashboard-card">
+                <a href="createUniversityEventPage.php" class="dashboard-card">
                     <img src="../images/campusEvent.png" alt="Manage University Events" class="card-icon">
                     <h2>Manage University Events</h2>
                     <p>4 Ongoing Events</p>

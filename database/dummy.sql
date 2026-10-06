@@ -142,12 +142,8 @@ VALUES
 (1, 'yuki.tan@unibee.com', '$2y$12$931ktvH/mTPbXERHh0n9xOGauH28z6aqVMoU6n82/GXicF2s8AH52', 'Yuki Tan Hui Ling', 'student', 'active')
 ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 
-SET FOREIGN_KEY_CHECKS = 1;
-=======
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- ============================================
--- 7. SYSTEM ADMIN
+-- 9. SYSTEM ADMIN
 -- ============================================
 -- System Admin (PW: SystemAdmin123!)
 INSERT INTO SystemAdmins (email, passwordHash, fullName, status)

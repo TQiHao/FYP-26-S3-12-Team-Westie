@@ -182,5 +182,180 @@ class Facilities
 
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
+
+    public function updateFacilityStatus($facilityId, $status)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "UPDATE Facilities
+                SET status = ?,
+                    updatedAt = NOW()
+                WHERE id = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $status,
+                $facilityId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Update facility status error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    public function getFacilityByIdAndUniversity(
+        $facilityId,
+        $universityId
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT
+                    id,
+                    universityId,
+                    name,
+                    type,
+                    description,
+                    location,
+                    blockFloor,
+                    capacity,
+                    status
+                FROM Facilities
+                WHERE id = ?
+                  AND universityId = ?
+                LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $facilityId,
+                $universityId
+            ]);
+
+            $result =
+                $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ?: false;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Get facility error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    public function releaseFacilitiesForCompletedEvents($universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "UPDATE Facilities f
+                INNER JOIN Events e
+                    ON e.universityId = f.universityId
+                    AND (
+                        TRIM(e.location) = TRIM(f.name)
+
+                        OR
+
+                        TRIM(e.location) =
+                        TRIM(
+                            CONCAT(
+                                f.name,
+                                ' — ',
+                                f.location,
+                                ', ',
+                                f.blockFloor
+                            )
+                        )
+                    )
+                SET
+                    f.status = 'active',
+                    f.updatedAt = NOW()
+                WHERE f.universityId = ?
+                  AND f.status = 'occupied'
+                  AND e.status = 'completed'";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Release completed event facilities error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    public function releaseFacilityByEventLocation(
+        $universityId,
+        $eventLocation
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "UPDATE Facilities
+                SET status = 'active',
+                    updatedAt = NOW()
+                WHERE universityId = ?
+                  AND status = 'occupied'
+                  AND LOWER(TRIM(
+                      CONCAT(
+                          name,
+                          ' — ',
+                          location,
+                          ', ',
+                          blockFloor
+                      )
+                  )) = LOWER(TRIM(?))";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId,
+                $eventLocation
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Release facility error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
 }
 ?>

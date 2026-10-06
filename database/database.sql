@@ -215,8 +215,6 @@ CREATE TABLE Classes (
     capacity INT,
     academicYear VARCHAR(20),
     semester VARCHAR(20),
-    semesterStart DATE NULL,
-    semesterEnd DATE NULL,
     status VARCHAR(50) DEFAULT 'active',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -263,8 +261,7 @@ CREATE TABLE Facilities (
     id INT PRIMARY KEY AUTO_INCREMENT,
     universityId INT NOT NULL,
     name VARCHAR(255) NOT NULL,
-    roomCode VARCHAR(50) NULL,
-    type ENUM('study room', 'gym', 'lecture hall', 'lab', 'classroom') DEFAULT 'study room',
+    type ENUM('study room', 'gym', 'lecture hall', 'lab') DEFAULT 'study room',
     description TEXT,
     location VARCHAR(255),
     blockFloor VARCHAR(100),
@@ -272,8 +269,7 @@ CREATE TABLE Facilities (
     status VARCHAR(50) DEFAULT 'active',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_room_per_uni (universityId, roomCode)
+    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE
 );
 
 -- Bookable Facilities Table
