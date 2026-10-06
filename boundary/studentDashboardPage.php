@@ -170,8 +170,8 @@ $fullName = $_SESSION['user_name'];
 
             <div class="quick-actions">
 
-                <a href="AIChatbotPage.php" class="quick-button">
-                    Ask AI Chatbot
+                <a href="academicsPage.php?tab=exams" class="quick-button">
+                    View Exam Schedule
                 </a>
 
                 <a href="bookFacilityPage.php" class="quick-button">

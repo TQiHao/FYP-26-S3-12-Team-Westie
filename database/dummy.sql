@@ -103,12 +103,14 @@ SELECT id, 'CSIT111 - System Security', 'thu', '10:00:00', '13:00:00', 'D3'
 FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
 
 -- ============================================
--- 7. EVENTS
+-- 7. EVENTS (always in the future)
 -- ============================================
 INSERT IGNORE INTO Events (id, universityId, createdBy, title, description, location, startDatetime, endDatetime, capacity, status)
 VALUES 
-(101, 1, 1, 'AI Innovation Seminar', 'Monday CS201 Data Structures class session.', 'Auditorium A', '2026-09-28 10:00:00', '2026-09-28 11:30:00', 50, 'active'),
-(102, 1, 1, 'Algorithms Workshop', 'Tuesday MATH255 class session.', 'Lab C101', '2026-09-29 10:30:00', '2026-09-29 12:00:00', 30, 'active');
+(101, 1, 1, 'AI Innovation Seminar', 'A seminar on the latest AI trends and innovations.', 'Auditorium A',
+    DATE_ADD(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 3 DAY + INTERVAL 90 MINUTE), 50, 'active'),
+(102, 1, 1, 'Algorithms Workshop', 'Hands-on workshop on advanced algorithm design.', 'Lab C101',
+    DATE_ADD(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY + INTERVAL 90 MINUTE), 30, 'active');
 
 -- ============================================
 -- 8. BSCS STUDENTS (S1 2026/2027)

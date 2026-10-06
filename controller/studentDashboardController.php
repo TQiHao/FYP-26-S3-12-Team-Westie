@@ -146,7 +146,8 @@ class StudentDashboardController
                     LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
 
         } catch (PDOException $e) {
             error_log("getNextEvent error: " . $e->getMessage());
