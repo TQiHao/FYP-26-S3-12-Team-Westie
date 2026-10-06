@@ -134,8 +134,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($status === "DUPLICATE_CODE") {
             $_SESSION['flash_error'] = "Cannot create: A class with this Class Code already exists for this module.";
+            $_SESSION['reopen_class_form'] = 'create';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "SCHEDULE_CLASH") {
             $_SESSION['flash_error'] = "Cannot create: This room is already booked at the same day/time.";
+            $_SESSION['reopen_class_form'] = 'create';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "LECTURER_CLASH") {
             $c = $res['clash'] ?? null;
             if ($c) {
@@ -145,6 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $_SESSION['flash_error'] = "Cannot create: The lecturer has another class at that time.";
             }
+            $_SESSION['reopen_class_form'] = 'create';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "SUCCESS_CREATE" && $newId > 0) {
             $_SESSION['flash_message'] = "Class created successfully.";
             $_SESSION['auto_open_edit'] = $newId;
@@ -157,8 +163,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($status === "DUPLICATE_CODE") {
             $_SESSION['flash_error'] = "Cannot update: A class with this Class Code already exists for this module.";
+            $_SESSION['reopen_class_form'] = 'edit';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "SCHEDULE_CLASH") {
             $_SESSION['flash_error'] = "Cannot update: This room is already booked at the same day/time.";
+            $_SESSION['reopen_class_form'] = 'edit';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "LECTURER_CLASH") {
             $c = $res['clash'] ?? null;
             if ($c) {
@@ -168,6 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $_SESSION['flash_error'] = "Cannot update: The lecturer has another class at that time.";
             }
+            $_SESSION['reopen_class_form'] = 'edit';
+            $_SESSION['class_form_data'] = $_POST;
         } elseif ($status === "SUCCESS_UPDATE") {
             $_SESSION['flash_message'] = "Class updated successfully.";
         } else {

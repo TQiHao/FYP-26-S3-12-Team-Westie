@@ -35,6 +35,8 @@ $action = $_POST['action'] ?? '';
 
 if ($action === 'find_rooms') {
     handleFindRooms($db, $universityId);
+} elseif ($action === 'find_exam_venues') {
+    handleFindExamVenues($db, $universityId);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Unknown action.']);
 }
@@ -83,6 +85,54 @@ function handleFindRooms($db, $universityId)
         'status' => 'ok',
         'message' => 'Found ' . count($rooms) . ' classroom(s) that fit ' . $capacity . ' students.',
         'rooms' => $rooms,
+    ]);
+}
+
+
+function handleFindExamVenues($db, $universityId)
+{
+    $examDate = trim($_POST['examDate'] ?? '');
+    $startTime = trim($_POST['startTime'] ?? '');
+    $endTime = trim($_POST['endTime'] ?? '');
+    $capacity = (int) ($_POST['capacity'] ?? 0);
+    $excludeClassId = (int) ($_POST['excludeClassId'] ?? 0);
+
+    if ($examDate === '' || $startTime === '' || $endTime === '' || $capacity <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Please fill in Exam Date, Start Time, End Time, and Capacity first.']);
+        return;
+    }
+
+    if ($startTime >= $endTime) {
+        echo json_encode(['status' => 'error', 'message' => 'End time must be later than start time.']);
+        return;
+    }
+
+    $venues = findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $capacity, $excludeClassId, 5);
+
+    if (empty($venues)) {
+        $occupied = findOccupiedExamVenues($db, $examDate, $startTime, $endTime, $excludeClassId);
+        $message = "No free venue fits $capacity students on $examDate $startTime-$endTime.";
+        if (!empty($occupied)) {
+            $names = array_unique(array_column($occupied, 'venue'));
+            $message .= " Occupied at that time: " . implode(', ', $names) . ".";
+        }
+        echo json_encode([
+            'status' => 'no_rooms',
+            'message' => $message,
+            'rooms' => [],
+        ]);
+        return;
+    }
+
+    foreach ($venues as &$v) {
+        $v['reason'] = buildReason($v, $capacity);
+    }
+    unset($v);
+
+    echo json_encode([
+        'status' => 'ok',
+        'message' => 'Found ' . count($venues) . ' venue(s) that fit ' . $capacity . ' students.',
+        'rooms' => $venues,
     ]);
 }
 
@@ -147,6 +197,67 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
 
         $stmt = $db->prepare($sql);
         $stmt->execute([$universityId, $day, $endTime, $startTime]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+
+function findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $minCapacity, $excludeClassId, $limit = 5)
+{
+    try {
+        $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
+                FROM Facilities f
+                WHERE f.universityId = ?
+                  AND f.type IN ('lecture hall', 'classroom')
+                  AND f.status = 'active'
+                  AND f.roomCode IS NOT NULL
+                  AND f.capacity >= ?
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Exam e
+                      WHERE e.venue = f.roomCode
+                        AND e.examDate = ?
+                        AND e.startTime < ?
+                        AND e.endTime > ?
+                        AND (? = 0 OR e.classId != ?)
+                  )
+                ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
+                LIMIT " . (int) $limit;
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            $universityId,
+            $minCapacity,
+            $examDate,
+            $endTime,
+            $startTime,
+            $excludeClassId,
+            $excludeClassId,
+            $minCapacity,
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Find Available Exam Venues Error: " . $e->getMessage());
+        return [];
+    }
+}
+
+
+function findOccupiedExamVenues($db, $examDate, $startTime, $endTime, $excludeClassId)
+{
+    try {
+        $sql = "SELECT DISTINCT e.venue, c.classCode
+                FROM Exam e
+                JOIN Classes c ON e.classId = c.id
+                WHERE e.examDate = ?
+                  AND e.startTime < ?
+                  AND e.endTime > ?
+                  AND (? = 0 OR e.classId != ?)
+                ORDER BY e.startTime ASC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$examDate, $endTime, $startTime, $excludeClassId, $excludeClassId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         return [];

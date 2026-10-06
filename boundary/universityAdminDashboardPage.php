@@ -60,7 +60,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     </header>
 
     <!-- University Admin Dashboard -->
-    <main class="dashboard">
+    <main class="dashboard university-admin-dashboard">
 
         <!-- Explore -->
         <section class="dashboard-section">

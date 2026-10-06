@@ -5697,3 +5697,47 @@ footer {
 .chat-history-panel .chat-back-link:hover {
   color: #000;
 }
+
+/* ===== UNIVERSITY ADMIN DASHBOARD - compact, one-screen fit ===== */
+.dashboard.university-admin-dashboard {
+  padding: 12px 0 16px;
+}
+
+.dashboard.university-admin-dashboard .section-label {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+}
+
+.dashboard.university-admin-dashboard .dashboard-grid {
+  row-gap: 14px;
+  column-gap: 28px;
+}
+
+.dashboard.university-admin-dashboard .dashboard-card {
+  min-height: 78px;
+  padding: 10px 14px;
+}
+
+.dashboard.university-admin-dashboard .dashboard-card h2 {
+  font-size: 1.05rem;
+}
+
+.dashboard.university-admin-dashboard .dashboard-card p {
+  font-size: 0.68rem;
+}
+
+.dashboard.university-admin-dashboard .card-icon {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 3px;
+}
+
+@media (max-width: 768px) {
+  .dashboard.university-admin-dashboard {
+    padding: 10px 0 14px;
+  }
+
+  .dashboard.university-admin-dashboard .dashboard-grid {
+    row-gap: 10px;
+  }
+}

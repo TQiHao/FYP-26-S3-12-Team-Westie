@@ -58,6 +58,24 @@ if (!empty($_GET['prefill'])) {
     }
 }
 
+// --- Flash messages FIRST, so $flashError exists before we use it ---
+$flashMessage = $_SESSION['flash_message'] ?? null;
+$flashError = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_message'], $_SESSION['flash_error']);
+
+// --- Then read reopen state ---
+$reopenMode = $_SESSION['reopen_class_form'] ?? null;
+$reopenData = $_SESSION['class_form_data'] ?? null;
+unset($_SESSION['reopen_class_form'], $_SESSION['class_form_data']);
+
+// If we are reopening the modal due to a validation error,
+// move the flash error inside the modal so the user actually sees it.
+$reopenError = null;
+if ($reopenMode !== null && $flashError !== null) {
+    $reopenError = $flashError;
+    $flashError = null;
+}
+
 $groupedModules = [];
 foreach ($classList as $cls) {
     $modId = $cls['moduleId'];
@@ -92,10 +110,6 @@ foreach ($groupedModules as &$modGroup) {
 }
 unset($modGroup);
 
-$flashMessage = $_SESSION['flash_message'] ?? null;
-$flashError = $_SESSION['flash_error'] ?? null;
-unset($_SESSION['flash_message'], $_SESSION['flash_error']);
-
 $formActionParams = [];
 if ($searchQuery !== '') {
     $formActionParams['search'] = $searchQuery;
@@ -106,6 +120,7 @@ if (isset($_GET['status']) || $statusFilter !== 'active') {
 $formActionQs = $formActionParams ? '?' . http_build_query($formActionParams) : '';
 
 $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => '']);
+
 // Count classes per module (used for "apply to all" checkbox)
 $moduleClassCounts = [];
 foreach ($classList as $c) {
@@ -677,6 +692,17 @@ foreach ($classList as $c) {
             font-size: 13px;
             font-style: italic;
         }
+
+        .modal-error-banner {
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            line-height: 1.4;
+        }
     </style>
 </head>
 
@@ -872,6 +898,7 @@ foreach ($classList as $c) {
                 <h3 id="classModalTitle">Edit Class</h3>
                 <span style="cursor:pointer; font-size: 20px;" onclick="closeModal('classModal')">&times;</span>
             </div>
+            <div id="modalErrorBanner" class="modal-error-banner" style="display:none;"></div>
             <form id="classForm"
                 action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST">
@@ -1036,9 +1063,15 @@ foreach ($classList as $c) {
                             <label>Exam Date</label>
                             <input type="date" name="examDate" id="modalExamDate">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group form-group-full">
                             <label>Exam Venue</label>
-                            <input type="text" name="examVenue" id="modalExamVenue" placeholder="e.g. Hall A">
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" name="examVenue" id="modalExamVenue" placeholder="e.g. Hall A"
+                                    style="flex: 1;">
+                                <button type="button" class="btn-secondary-small"
+                                    onclick="suggestExamVenues()">Suggest</button>
+                            </div>
+                            <div id="modalExamSuggestions" class="modal-room-suggestions"></div>
                         </div>
                         <div class="form-group">
                             <label>Exam Start Time</label>
@@ -1064,7 +1097,7 @@ foreach ($classList as $c) {
 
                 <div style="margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn-secondary-small" onclick="closeModal('classModal')">Cancel</button>
-                    <button type="submit" class="btn-primary-small">Create</button>
+                    <button type="submit" class="btn-primary-small">Save Changes</button>
                 </div>
             </form>
 
@@ -1090,6 +1123,10 @@ foreach ($classList as $c) {
         const STUDENTS = <?php echo json_encode($studentsList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
         const PREFILL = <?php echo json_encode($prefill, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
         const MODULE_CLASS_COUNTS = <?php echo json_encode($moduleClassCounts, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const REOPEN_MODE = <?php echo json_encode($reopenMode); ?>;
+        const REOPEN_DATA = <?php echo json_encode($reopenData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const REOPEN_ERROR = <?php echo json_encode($reopenError, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
+        const CLASS_LIST = <?php echo json_encode($classList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
 
         let currentSelectedClassData = null;
         let currentEnrolledCount = 0;
@@ -1369,6 +1406,7 @@ foreach ($classList as $c) {
         }
 
         function openCreateModal() {
+            clearModalError();   // ← added
             document.getElementById('classFormAction').value = 'create_class';
             document.getElementById('classId').value = '';
             document.getElementById('classModalTitle').textContent = 'Create New Class';
@@ -1394,6 +1432,9 @@ foreach ($classList as $c) {
             sug.style.display = 'none';
             sug.innerHTML = '';
 
+            const examSug = document.getElementById('modalExamSuggestions');
+            if (examSug) { examSug.style.display = 'none'; examSug.innerHTML = ''; }
+
             currentEnrolledCount = 0;
             updateRatioDisplay();
 
@@ -1407,6 +1448,7 @@ foreach ($classList as $c) {
         }
 
         function openEditModal(data) {
+            clearModalError();   // ← added
             currentSelectedClassData = data;
             document.getElementById('classFormAction').value = 'update_class';
             document.getElementById('classId').value = data.id;
@@ -1441,10 +1483,12 @@ foreach ($classList as $c) {
             }
             document.getElementById('applyToModule').checked = false;
 
-
             const sug = document.getElementById('modalRoomSuggestions');
             sug.style.display = 'none';
             sug.innerHTML = '';
+
+            const examSug = document.getElementById('modalExamSuggestions');
+            if (examSug) { examSug.style.display = 'none'; examSug.innerHTML = ''; }
 
             clearStudent();
 
@@ -1538,6 +1582,57 @@ foreach ($classList as $c) {
                 });
         }
 
+        // ===== Suggest exam venues in modal =====
+        function suggestExamVenues() {
+            const examDate = document.getElementById('modalExamDate').value;
+            const startTime = document.getElementById('modalExamStartTime').value;
+            const endTime = document.getElementById('modalExamEndTime').value;
+            const capacity = document.getElementById('modalCapacity').value;
+            const classId = document.getElementById('classId').value || 0;
+
+            if (!examDate || !startTime || !endTime || !capacity) {
+                alert('Please fill in Exam Date, Exam Start Time, Exam End Time, and Capacity first.');
+                return;
+            }
+
+            const box = document.getElementById('modalExamSuggestions');
+            box.style.display = 'block';
+            box.innerHTML = '<div class="room-sug-msg">Searching...</div>';
+
+            const fd = new FormData();
+            fd.append('action', 'find_exam_venues');
+            fd.append('examDate', examDate);
+            fd.append('startTime', startTime);
+            fd.append('endTime', endTime);
+            fd.append('capacity', capacity);
+            fd.append('excludeClassId', classId);
+
+            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
+                        box.innerHTML = '';
+                        data.rooms.forEach(function (r) {
+                            const item = document.createElement('div');
+                            item.className = 'room-sug-item';
+                            item.innerHTML = '<strong>' + r.roomCode + '</strong> - ' + r.name
+                                + ' <span style="color:#64748b;">(Cap: ' + r.capacity + ')</span><br>'
+                                + '<span class="room-sug-reason">' + (r.reason || '') + '</span>';
+                            item.onclick = function () {
+                                document.getElementById('modalExamVenue').value = r.roomCode;
+                                box.style.display = 'none';
+                            };
+                            box.appendChild(item);
+                        });
+                    } else {
+                        box.innerHTML = '<div class="room-sug-msg">' + (data.message || 'No venues found.') + '</div>';
+                    }
+                })
+                .catch(function () {
+                    box.innerHTML = '<div class="room-sug-msg" style="color:#991b1b;">Network error.</div>';
+                });
+        }
+
         // ===== Apply prefill from AI Chatbot =====
         function applyPrefill(data) {
             if (!data) return;
@@ -1579,10 +1674,66 @@ foreach ($classList as $c) {
             updateRatioDisplay();
         }
 
-        // ===== Auto-open Edit after Create, or apply prefill =====
+        // ===== Fill form from session data (after validation error) =====
+        function fillFormFromData(data) {
+            if (!data) return;
+
+            if (data.moduleId) {
+                setModuleById(data.moduleId);
+            }
+            if (data.classCode) document.getElementById('modalClassCode').value = data.classCode;
+            if (data.className) document.getElementById('modalClassName').value = data.className;
+            if (data.dayOfWeek) document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
+            if (data.room) document.getElementById('modalRoom').value = data.room;
+            if (data.startTime) document.getElementById('modalStartTime').value = data.startTime;
+            if (data.endTime) document.getElementById('modalEndTime').value = data.endTime;
+            if (data.capacity) document.getElementById('modalCapacity').value = data.capacity;
+            if (data.academicYear) document.getElementById('modalAcademicYear').value = data.academicYear;
+            if (data.semester) document.getElementById('modalSemester').value = data.semester;
+            if (data.staffId) document.getElementById('modalStaffId').value = data.staffId;
+            if (data.examDate) document.getElementById('modalExamDate').value = data.examDate;
+            if (data.examVenue) document.getElementById('modalExamVenue').value = data.examVenue;
+            if (data.examStartTime) document.getElementById('modalExamStartTime').value = data.examStartTime;
+            if (data.examEndTime) document.getElementById('modalExamEndTime').value = data.examEndTime;
+
+            if (data.apply_to_module) {
+                var applyBox = document.getElementById('applyToModule');
+                if (applyBox) applyBox.checked = true;
+            }
+
+            updateRatioDisplay();
+        }
+
+        function showModalError(message) {
+            if (!message) return;
+            var banner = document.getElementById('modalErrorBanner');
+            if (!banner) return;
+            banner.textContent = message;
+            banner.style.display = 'block';
+        }
+
+        function clearModalError() {
+            var banner = document.getElementById('modalErrorBanner');
+            if (!banner) return;
+            banner.style.display = 'none';
+            banner.textContent = '';
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             <?php if ($autoOpenClass): ?>
                 openEditModal(<?php echo json_encode($autoOpenClass, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
+            <?php elseif ($reopenMode === 'create' && $reopenData): ?>
+                openCreateModal();
+                fillFormFromData(REOPEN_DATA);
+                showModalError(REOPEN_ERROR);
+            <?php elseif ($reopenMode === 'edit' && $reopenData): ?>
+                var editId = <?php echo (int) ($reopenData['class_id'] ?? 0); ?>;
+                var editClass = CLASS_LIST.find(function (c) { return c.id == editId; });
+                if (editClass) {
+                    openEditModal(editClass);
+                    fillFormFromData(REOPEN_DATA);
+                    showModalError(REOPEN_ERROR);
+                }
             <?php elseif ($prefill): ?>
                 applyPrefill(PREFILL);
             <?php endif; ?>
