@@ -103,6 +103,18 @@ SELECT id, 'CSIT111 - System Security', 'thu', '10:00:00', '13:00:00', 'D3'
 FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
 
 -- ============================================
+-- 6b. STUDENT ENROLMENTS（for student Evan Lu)
+-- ============================================
+INSERT INTO StudentEnrolments (studentId, classId, enrolledBy, status)
+SELECT u.id, 1, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.com';
+
+INSERT INTO StudentEnrolments (studentId, classId, enrolledBy, status)
+SELECT u.id, 3, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.com';
+
+INSERT INTO StudentEnrolments (studentId, classId, enrolledBy, status)
+SELECT u.id, 4, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.com';
+
+-- ============================================
 -- 7. EVENTS  
 -- ============================================
 INSERT IGNORE INTO Events (id, universityId, createdBy, title, description, location, startDatetime, endDatetime, capacity, status)

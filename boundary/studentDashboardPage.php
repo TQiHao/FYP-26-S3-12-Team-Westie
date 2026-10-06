@@ -15,7 +15,7 @@ $universityId = $_SESSION['university_id'] ?? null;
 
 $nextClass = $dashboardController->getNextClass($studentId);
 $notificationSum = $dashboardController->getNotificationSummary($studentId);
-$nextEvent = $dashboardController->getNextEvent($universityId);
+$nextEvent = $dashboardController->getNextEvent($studentId, $universityId);
 
 $coursesEnrolled = $dashboardController->getEnrolledCoursesCount($studentId);
 $activeBookings = $dashboardController->getActiveBookingsCount($studentId);

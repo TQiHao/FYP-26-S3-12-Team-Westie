@@ -24,7 +24,7 @@ class AcademicsController
 
     /**
      * Get timetable entries for a student.
-     * Combines their personal TimetableEntries with classes they are enrolled in.
+     * Reads enrolled classes joined with their module — each class appears once.
      * Returns List<TimetableEntry> | null | false
      */
     public function getTimetable($studentId)
@@ -33,32 +33,24 @@ class AcademicsController
             return null;
         }
 
-        $sql = "SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt
-                FROM (
-                    SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt
-                    FROM TimetableEntries
-                    WHERE userId = :studentId
-
-                    UNION ALL
-
-                    SELECT c.id,
-                           se.studentId AS userId,
-                           m.code AS title,
-                           c.dayOfWeek,
-                           c.startTime,
-                           c.endTime,
-                           c.room AS location,
-                           c.createdAt,
-                           c.updatedAt
-                    FROM Classes c
-                    INNER JOIN Modules m ON c.moduleId = m.id
-                    INNER JOIN StudentEnrolments se ON se.classId = c.id
-                    WHERE se.studentId = :studentId
-                      AND se.status = 'enrolled'
-                      AND c.status = 'active'
-                ) AS CombinedTimetable
-                ORDER BY FIELD(dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'),
-                         startTime ASC";
+        $sql = "SELECT
+                    c.id                AS id,
+                    se.studentId        AS userId,
+                    CONCAT(m.code, ' - ', m.name) AS title,
+                    c.dayOfWeek,
+                    c.startTime,
+                    c.endTime,
+                    c.room              AS location,
+                    c.createdAt,
+                    c.updatedAt
+                FROM StudentEnrolments se
+                INNER JOIN Classes c ON c.id = se.classId
+                INNER JOIN Modules m ON m.id = c.moduleId
+                WHERE se.studentId = :studentId
+                  AND se.status = 'enrolled'
+                  AND c.status  = 'active'
+                ORDER BY FIELD(c.dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'),
+                         c.startTime ASC";
 
         try {
             $stmt = $this->db->prepare($sql);

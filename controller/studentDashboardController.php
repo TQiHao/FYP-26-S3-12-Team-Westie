@@ -126,26 +126,33 @@ class StudentDashboardController
     }
 
     /**
-     * Get the next upcoming campus event for a university.
+     * Get the next upcoming campus event the student has registered for.
+     * @param int $studentId
      * @param int $universityId
      * @return array|null|false
      */
-    public function getNextEvent($universityId)
+    public function getNextEvent($studentId, $universityId)
     {
+        if (!$studentId || !is_numeric($studentId)) {
+            return null;
+        }
         if (!$universityId || !is_numeric($universityId)) {
             return null;
         }
 
         try {
-            $sql = "SELECT title, location, startDatetime
-                    FROM Events
-                    WHERE universityId = ?
-                      AND status = 'active'
-                      AND startDatetime >= NOW()
-                    ORDER BY startDatetime ASC
+            $sql = "SELECT e.title, e.location, e.startDatetime
+                    FROM Events e
+                    JOIN EventRegistrations er ON er.eventId = e.id
+                    WHERE e.universityId = ?
+                      AND e.status = 'active'
+                      AND e.startDatetime >= NOW()
+                      AND er.userId = ?
+                      AND er.status IN ('registered', 'attended')
+                    ORDER BY e.startDatetime ASC
                     LIMIT 1";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId]);
+            $stmt->execute([$universityId, $studentId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ?: null;
 
