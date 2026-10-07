@@ -7,7 +7,7 @@ class Feedback
     private $universityId;
     private $category;
     private $message;
-    private $rating;       // <-- NEW
+    private $rating;
     private $status;
     private $createdAt;
     private $updatedAt;
@@ -18,7 +18,7 @@ class Feedback
         $universityId = null,
         $category = null,
         $message = null,
-        $rating = null,     // <-- NEW
+        $rating = null,
         $status = null,
         $createdAt = null,
         $updatedAt = null
@@ -35,20 +35,59 @@ class Feedback
     }
 
     // Getters
-    public function getId() { return $this->id; }
-    public function getUserId() { return $this->userId; }
-    public function getUniversityId() { return $this->universityId; }
-    public function getCategory() { return $this->category; }
-    public function getMessage() { return $this->message; }
-    public function getRating() { return $this->rating; }   // <-- NEW
-    public function getStatus() { return $this->status; }
-    public function getCreatedAt() { return $this->createdAt; }
-    public function getUpdatedAt() { return $this->updatedAt; }
+    public function getId()
+    {
+        return $this->id;
+    }
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+    public function getUniversityId()
+    {
+        return $this->universityId;
+    }
+    public function getCategory()
+    {
+        return $this->category;
+    }
+    public function getMessage()
+    {
+        return $this->message;
+    }
+    public function getRating()
+    {
+        return $this->rating;
+    }
+    public function getStatus()
+    {
+        return $this->status;
+    }
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
 
     // Setters
-    public function setCategory($category) { $this->category = $category; }
-    public function setMessage($message) { $this->message = $message; }
-    public function setRating($rating) { $this->rating = $rating; }   // <-- NEW
-    public function setStatus($status) { $this->status = $status; }
+    public function setCategory($category)
+    {
+        $this->category = $category;
+    }
+    public function setMessage($message)
+    {
+        $this->message = $message;
+    }
+    public function setRating($rating)
+    {
+        $this->rating = $rating;
+    }
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
 }
 ?>

@@ -10,20 +10,20 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 require_once "../controller/viewEventsController.php";
 
-// Filter user role first to determine proper dashboard and navigation
 $userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
 $isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
 $dashboardPage = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 
 $controller = new ViewEventsController();
 $universityId = $_SESSION['university_id'] ?? 1;
-$events = $controller->getEventList($universityId);
+$userId = $_SESSION['user_id'] ?? null;
 
-// If search results are set, use them; otherwise show all events
+$events = $controller->getEventList($universityId);
+$registeredIds = $controller->getUserRegisteredEventIds($userId);
+
 $eventsToDisplay = $_SESSION['search_results'] ?? $events;
 unset($_SESSION['search_results']);
 
-// Capture and clear the search keyword
 $searchKeywordValue = $_SESSION['search_keyword'] ?? '';
 $searchPerformed = !empty($searchKeywordValue) ? '1' : '0';
 unset($_SESSION['search_keyword']);
@@ -37,12 +37,95 @@ unset($_SESSION['search_keyword']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>University Campus Events - UniBee</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .event-actions {
+            display: grid;
+            grid-template-columns: 90px 110px 110px;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .event-actions>* {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .btn-event-view,
+        .btn-event-nav,
+        .btn-event-register,
+        .btn-event-registered,
+        .btn-event-past {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 0;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: none;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .btn-event-view {
+            background-color: #e0e0e0;
+            color: #222;
+        }
+
+        .btn-event-view:hover {
+            background-color: #cfcfcf;
+        }
+
+        .btn-event-nav {
+            background-color: var(--bg-yellow);
+            color: #222;
+        }
+
+        .btn-event-nav:hover {
+            background-color: #e6c23a;
+            text-decoration: none;
+        }
+
+        .btn-event-register {
+            background-color: var(--bg-yellow);
+            color: #222;
+        }
+
+        .btn-event-register:hover {
+            background-color: #e6c23a;
+        }
+
+        .btn-event-registered {
+            background-color: #c8f7c5;
+            color: #1e7e34;
+            cursor: not-allowed;
+        }
+
+        .btn-event-past {
+            background-color: #e0e0e0;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .event-register-form {
+            display: contents;
+        }
+
+        @media (max-width: 768px) {
+            .event-actions {
+                grid-template-columns: 1fr 1fr 1fr;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <a href="<?php echo $dashboardPage; ?>">
@@ -84,7 +167,6 @@ unset($_SESSION['search_keyword']);
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="dashboard">
 
         <div class="profile-header"
@@ -94,7 +176,6 @@ unset($_SESSION['search_keyword']);
             <div style="width: 80px;"></div>
         </div>
 
-        <!-- Search Bar (Server-side) -->
         <form action="../controller/searchEventController.php" method="GET" class="event-search-bar">
             <input type="text" id="eventSearchInput" name="keyword"
                 placeholder="Search events by name, date, or venue..."
@@ -102,11 +183,9 @@ unset($_SESSION['search_keyword']);
             <button type="submit" name="search" class="btn-search">Search</button>
         </form>
 
-        <!-- Hidden flag: 1 if a search was performed -->
         <input type="hidden" id="searchPerformed" value="<?php echo $searchPerformed; ?>">
 
         <?php
-        // Show any search-related messages
         if (isset($_SESSION['search_error'])) {
             echo '<div class="error-message" style="max-width:900px;margin:0 auto 15px auto;">'
                 . $_SESSION['search_error'] . '</div>';
@@ -120,11 +199,9 @@ unset($_SESSION['search_keyword']);
         ?>
 
         <?php if ($eventsToDisplay === false): ?>
-            <!-- Alt flow: unable to load -->
             <p class="error-message">Unable to retrieve events. Please try again later.</p>
 
         <?php elseif (empty($eventsToDisplay)): ?>
-            <!-- Alt flow: no events -->
             <p class="no-notifications">No upcoming events available.</p>
 
         <?php else: ?>
@@ -141,26 +218,28 @@ unset($_SESSION['search_keyword']);
                     $day = date('d', $startDate);
                     $time = date('g:iA', $startDate) . ' - ' . date('g:iA', $endDate);
 
-                    // Check if event is past
                     $isPast = $startDate < time();
+                    $isRegistered = in_array($event['id'], $registeredIds);
                     ?>
 
                     <div class="event-item" data-title="<?php echo htmlspecialchars(strtolower($event['title'])); ?>">
 
-                        <!-- Date badge -->
                         <div class="event-date-badge">
                             <span class="event-month"><?php echo $month; ?></span>
                             <span class="event-day"><?php echo $day; ?></span>
                         </div>
 
-                        <!-- Event info -->
                         <div class="event-info">
                             <h3><?php echo htmlspecialchars($event['title']); ?></h3>
                             <p><?php echo htmlspecialchars($time); ?> · <?php echo htmlspecialchars($event['location']); ?></p>
                         </div>
 
-                        <!-- Action buttons -->
                         <div class="event-actions">
+
+                            <button type="button" class="btn-event-view"
+                                onclick='openEventView(<?php echo htmlspecialchars(json_encode($event), ENT_QUOTES); ?>)'>
+                                View
+                            </button>
 
                             <a href="viewEventNavigationPage.php?eventId=<?php echo urlencode($event['id']); ?>"
                                 class="btn-event-nav">
@@ -169,6 +248,8 @@ unset($_SESSION['search_keyword']);
 
                             <?php if ($isPast): ?>
                                 <button class="btn-event-past" disabled>Past Event</button>
+                            <?php elseif ($isRegistered): ?>
+                                <button class="btn-event-registered" disabled>Registered</button>
                             <?php else: ?>
                                 <form action="../controller/registerEventController.php" method="POST" class="event-register-form">
                                     <input type="hidden" name="eventId" value="<?php echo htmlspecialchars($event['id']); ?>">
@@ -188,7 +269,21 @@ unset($_SESSION['search_keyword']);
 
     </main>
 
-    <!-- Success Modal -->
+    <div class="modal-overlay" id="eventViewModal" style="display:none;">
+        <div class="modal-box" style="padding: 30px 35px; text-align: left; max-width: 560px;">
+            <span class="modal-close" onclick="closeEventView()">&times;</span>
+            <h3 id="eventViewTitle" style="margin:0 0 10px; font-size:1.15rem;"></h3>
+            <p id="eventViewMeta" style="color:#666; font-size:0.85rem; margin:0 0 14px;"></p>
+            <p id="eventViewDesc" style="font-size:0.9rem; line-height:1.5; margin:0 0 20px; color:#333;"></p>
+            <div style="text-align: right;">
+                <button type="button" onclick="closeEventView()"
+                    style="padding: 9px 22px; border: none; border-radius: 20px; background: #e0e0e0; color: #333; font-weight: 700; cursor: pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <?php if (isset($_SESSION['register_success'])): ?>
         <div class="modal-overlay" id="successModal">
             <div class="modal-box">
@@ -199,7 +294,6 @@ unset($_SESSION['search_keyword']);
         <?php unset($_SESSION['register_success']); ?>
     <?php endif; ?>
 
-    <!-- Error Modal -->
     <?php if (isset($_SESSION['register_error'])): ?>
         <div class="modal-overlay" id="errorModal">
             <div class="modal-box">
@@ -210,7 +304,6 @@ unset($_SESSION['search_keyword']);
         <?php unset($_SESSION['register_error']); ?>
     <?php endif; ?>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.
@@ -218,7 +311,6 @@ unset($_SESSION['search_keyword']);
     </footer>
 
     <script>
-        // Modal close functions
         function closeModal() {
             var modal = document.getElementById("successModal");
             if (modal) modal.style.display = "none";
@@ -229,7 +321,22 @@ unset($_SESSION['search_keyword']);
             if (modal) modal.style.display = "none";
         }
 
-        // Auto-close modals after 3 seconds
+        function openEventView(data) {
+            document.getElementById('eventViewTitle').textContent = data.title || '';
+            var start = new Date((data.startDatetime || '').replace(' ', 'T'));
+            var end = new Date((data.endDatetime || '').replace(' ', 'T'));
+            var opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+            var meta = start.toLocaleString('en-SG', opts) + ' — ' + end.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit' });
+            if (data.location) meta += ' · ' + data.location;
+            document.getElementById('eventViewMeta').textContent = meta;
+            document.getElementById('eventViewDesc').textContent = data.description || 'No description provided.';
+            document.getElementById('eventViewModal').style.display = 'flex';
+        }
+
+        function closeEventView() {
+            document.getElementById('eventViewModal').style.display = 'none';
+        }
+
         setTimeout(function () {
             var success = document.getElementById("successModal");
             var error = document.getElementById("errorModal");
@@ -237,7 +344,6 @@ unset($_SESSION['search_keyword']);
             if (error) error.style.display = "none";
         }, 3000);
 
-        // Auto-reload when search input becomes empty
         document.addEventListener("DOMContentLoaded", function () {
             var searchInput = document.getElementById("eventSearchInput");
             var searchFlag = document.getElementById("searchPerformed");

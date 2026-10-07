@@ -21,24 +21,16 @@ class StudentDashboardController
 
     private function getUser($userId)
     {
-        // Database retrieval will be implemented later
         return null;
     }
 
-    /**
-     * Get the next upcoming class for a student.
-     * @param int $studentId
-     * @return array|null|false
-     */
     public function getNextClass($studentId)
     {
-        // Guard: invalid ID
         if (!$studentId || !is_numeric($studentId)) {
             return null;
         }
 
         try {
-            // Get today's short day (mon, tue, wed, ...)
             $today = strtolower(date('D'));
             $now = date('H:i:s');
 
@@ -58,26 +50,26 @@ class StudentDashboardController
                 return null;
             }
 
-            // 1. Look for a class TODAY that hasn't started yet
             foreach ($classes as $c) {
                 if (strtolower($c['dayOfWeek']) === $today && $c['startTime'] > $now) {
+                    $c['nextDate'] = date('Y-m-d');
                     return $c;
                 }
             }
 
-            // 2. No more classes today — find the next class on a later day
             for ($i = 1; $i <= 7; $i++) {
                 $nextDayIndex = ($todayIndex + $i) % 7;
                 $nextDay = $dayOrder[$nextDayIndex];
 
                 foreach ($classes as $c) {
                     if (strtolower($c['dayOfWeek']) === $nextDay) {
+                        $c['nextDate'] = date('Y-m-d', strtotime("+$i days"));
                         return $c;
                     }
                 }
             }
 
-            return null; // No upcoming class this week
+            return null;
 
         } catch (PDOException $e) {
             error_log("getNextClass error: " . $e->getMessage());
@@ -85,11 +77,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Get unread notification count + latest notification for a user.
-     * @param int $userId
-     * @return array ['unreadCount' => int, 'latest' => array|null] | false
-     */
     public function getNotificationSummary($userId)
     {
         if (!$userId || !is_numeric($userId)) {
@@ -97,14 +84,12 @@ class StudentDashboardController
         }
 
         try {
-            // Unread count
             $sql = "SELECT COUNT(*) FROM Notifications
                     WHERE userId = ? AND isRead = 0";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
             $unreadCount = (int) $stmt->fetchColumn();
 
-            // Latest notification
             $sql = "SELECT title, message, createdAt
                     FROM Notifications
                     WHERE userId = ?
@@ -125,12 +110,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Get the next upcoming campus event the student has registered for.
-     * @param int $studentId
-     * @param int $universityId
-     * @return array|null|false
-     */
     public function getNextEvent($studentId, $universityId)
     {
         if (!$studentId || !is_numeric($studentId)) {
@@ -162,11 +141,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Count how many classes the student is actively enrolled in.
-     * @param int $studentId
-     * @return int
-     */
     public function getEnrolledCoursesCount($studentId)
     {
         if (!$studentId || !is_numeric($studentId)) {
@@ -187,11 +161,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Count how many active (pending or confirmed) facility bookings the student has.
-     * @param int $userId
-     * @return int
-     */
     public function getActiveBookingsCount($userId)
     {
         if (!$userId || !is_numeric($userId)) {
@@ -212,11 +181,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Count how many study groups the student is currently an active member of.
-     * @param int $studentId
-     * @return int
-     */
     public function getGroupsJoinedCount($studentId)
     {
         if (!$studentId || !is_numeric($studentId)) {
@@ -237,11 +201,6 @@ class StudentDashboardController
         }
     }
 
-    /**
-     * Count upcoming active events for a university.
-     * @param int $universityId
-     * @return int
-     */
     public function getUpcomingEventsCount($universityId)
     {
         if (!$universityId || !is_numeric($universityId)) {

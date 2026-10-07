@@ -18,21 +18,11 @@ class ViewEventsController
         $this->eventEntity = new Event(null, null, null, null, null, null, null, null, null, null, null, null, $this->db);
     }
 
-    /**
-     * Get all active events for a university
-     * @param int $universityId
-     * @return array|false
-     */
     public function getEventList($universityId)
     {
         return $this->eventEntity->getEventList($universityId);
     }
 
-    /**
-     * Get all registered events for a specific user to display in personal timetable
-     * @param int|string $userId
-     * @return array
-     */
     public function getUserRegisteredEvents($userId)
     {
         try {
@@ -49,5 +39,18 @@ class ViewEventsController
             return [];
         }
     }
+
+    public function getUserRegisteredEventIds($userId)
+    {
+        try {
+            $sql = "SELECT eventId FROM EventRegistrations 
+                    WHERE userId = ? AND status IN ('registered', 'attended')";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (Exception $e) {
+            error_log("getUserRegisteredEventIds error: " . $e->getMessage());
+            return [];
+        }
+    }
 }
-?>

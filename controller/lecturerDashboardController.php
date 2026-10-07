@@ -12,9 +12,6 @@ class LecturerDashboardController
         $this->db = $database->connect();
     }
 
-    /**
-     * Fetch count of active upcoming events for the university
-     */
     public function getUpcomingEventsCount($universityId)
     {
         try {
@@ -31,9 +28,6 @@ class LecturerDashboardController
         }
     }
 
-    /**
-     * Fetch the next upcoming class for the lecturer based on current day and time
-     */
     public function getNextClass($userId)
     {
         try {
@@ -49,7 +43,7 @@ class LecturerDashboardController
             }
 
             $daysMap = ['mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6, 'sun' => 7];
-            $currentDayNum = (int) date('N'); // 1 (Mon) to 7 (Sun)
+            $currentDayNum = (int) date('N');
             $currentTimeStr = date('H:i:s');
 
             $nextClass = null;
@@ -60,17 +54,16 @@ class LecturerDashboardController
                 $classDayNum = $daysMap[$dayStr] ?? 1;
                 $classTime = $c['startTime'];
 
-                // Calculate days until class
                 $dayDiff = $classDayNum - $currentDayNum;
                 if ($dayDiff < 0 || ($dayDiff === 0 && $classTime < $currentTimeStr)) {
-                    $dayDiff += 7; // Class is next week
+                    $dayDiff += 7;
                 }
 
-                // Total seconds from current time
                 $timeDiffSeconds = ($dayDiff * 86400) + (strtotime($classTime) - strtotime($currentTimeStr));
 
                 if ($timeDiffSeconds < $minTimeDiff) {
                     $minTimeDiff = $timeDiffSeconds;
+                    $c['nextDate'] = date('Y-m-d', strtotime("+$dayDiff days"));
                     $nextClass = $c;
                 }
             }
@@ -82,9 +75,6 @@ class LecturerDashboardController
         }
     }
 
-    /**
-     * Fetch unread notification count and latest message snippet
-     */
     public function getNotificationSummary($userId)
     {
         try {
@@ -110,21 +100,21 @@ class LecturerDashboardController
         }
     }
 
-    /**
-     * Fetch the single earliest upcoming active event
-     */
-    public function getNextUpcomingEvent($universityId)
+    public function getNextUpcomingEvent($userId, $universityId)
     {
         try {
-            $sql = "SELECT title, location, startDatetime 
-                    FROM Events 
-                    WHERE universityId = ? 
-                      AND status = 'active' 
-                      AND startDatetime >= NOW() 
-                    ORDER BY startDatetime ASC 
+            $sql = "SELECT e.title, e.location, e.startDatetime 
+                    FROM Events e
+                    JOIN EventRegistrations er ON er.eventId = e.id
+                    WHERE e.universityId = ? 
+                      AND e.status = 'active' 
+                      AND e.startDatetime >= NOW() 
+                      AND er.userId = ?
+                      AND er.status IN ('registered', 'attended')
+                    ORDER BY e.startDatetime ASC 
                     LIMIT 1";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId]);
+            $stmt->execute([$universityId, $userId]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
         } catch (Exception $e) {
             error_log("getNextUpcomingEvent error: " . $e->getMessage());

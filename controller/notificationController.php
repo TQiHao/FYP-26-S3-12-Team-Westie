@@ -15,13 +15,10 @@ class NotificationController
         $this->db = $database->connect();
     }
 
-    /**
-     * Generate dynamic notifications for upcoming joined events & teaching lectures
-     */
     private function checkAndGenerateReminders($userId)
     {
         try {
-            // 1. Check joined events starting within the next 3 days
+            // 1. Event starting within 3 days (must be registered)
             $eventSql = "SELECT e.id, e.title, e.startDatetime, e.location 
                          FROM EventRegistrations er
                          JOIN Events e ON er.eventId = e.id
@@ -36,7 +33,6 @@ class NotificationController
                 $title = "Upcoming Event Reminder: " . $ev['title'];
                 $msg = "Rmb to join the event '" . $ev['title'] . "' at " . $ev['location'] . " on " . date('M d, g:i A', strtotime($ev['startDatetime'])) . ".";
 
-                // Prevent duplicate notifications
                 $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ?";
                 $checkStmt = $this->db->prepare($checkSql);
                 $checkStmt->execute([$userId, $title]);
@@ -48,23 +44,63 @@ class NotificationController
                 }
             }
 
-            // 2. Check teaching classes scheduled for today
-            $todayDay = strtolower(date('D')); // e.g. 'mon', 'tue'
-            $classSql = "SELECT className, startTime, room FROM Classes WHERE staffId = ? AND LOWER(dayOfWeek) = ?";
+            // 2. Class starting within next 5 hours
+            $classSql = "SELECT className, startTime, room, dayOfWeek FROM Classes WHERE staffId = ? AND status = 'active'";
             $stmtClass = $this->db->prepare($classSql);
-            $stmtClass->execute([$userId, $todayDay]);
-            $todayClasses = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
+            $stmtClass->execute([$userId]);
+            $allClasses = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
 
-            foreach ($todayClasses as $cls) {
-                $title = "Lecture Conduct Reminder: " . $cls['className'];
-                $msg = "Reminder: You have to conduct lecture '" . $cls['className'] . "' today at " . date('g:i A', strtotime($cls['startTime'])) . " in Room " . $cls['room'] . ".";
+            $daysMap = ['mon' => 1, 'tue' => 2, 'wed' => 3, 'thu' => 4, 'fri' => 5, 'sat' => 6, 'sun' => 7];
+            $currentDayNum = (int) date('N');
+            $now = new DateTime();
+            $fiveHoursLater = new DateTime('+5 hours');
 
-                $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ? AND DATE(createdAt) = CURDATE()";
+            foreach ($allClasses as $cls) {
+                $dayStr = strtolower(trim($cls['dayOfWeek']));
+                $classDayNum = $daysMap[$dayStr] ?? 1;
+                $dayDiff = $classDayNum - $currentDayNum;
+                if ($dayDiff < 0) {
+                    $dayDiff += 7;
+                }
+
+                $classDateStr = date('Y-m-d', strtotime("+$dayDiff days"));
+                $classDt = new DateTime($classDateStr . ' ' . $cls['startTime']);
+
+                if ($classDt >= $now && $classDt <= $fiveHoursLater) {
+                    $title = "Lecture Conduct Reminder: " . $cls['className'];
+                    $msg = "Reminder: Conduct lecture '" . $cls['className'] . "' at " . date('g:i A', strtotime($cls['startTime'])) . " in Room " . $cls['room'] . ".";
+
+                    $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ? AND DATE(createdAt) = CURDATE()";
+                    $checkStmt = $this->db->prepare($checkSql);
+                    $checkStmt->execute([$userId, $title]);
+
+                    if ((int) $checkStmt->fetchColumn() === 0) {
+                        $insSql = "INSERT INTO Notifications (userId, type, title, message) VALUES (?, 'class', ?, ?)";
+                        $insStmt = $this->db->prepare($insSql);
+                        $insStmt->execute([$userId, $title, $msg]);
+                    }
+                }
+            }
+
+            // 3. System update (AI model deployed within last 7 days)
+            $sysSql = "SELECT modelName, version, deployedAt FROM AIModelVersions 
+                       WHERE status = 'deployed' 
+                         AND deployedAt IS NOT NULL 
+                         AND deployedAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            $sysStmt = $this->db->prepare($sysSql);
+            $sysStmt->execute();
+            $sysUpdates = $sysStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($sysUpdates as $up) {
+                $title = "System Update: " . $up['modelName'] . " " . $up['version'];
+                $msg = $up['modelName'] . " " . $up['version'] . " has been deployed on " . date('M d, Y', strtotime($up['deployedAt'])) . ".";
+
+                $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ?";
                 $checkStmt = $this->db->prepare($checkSql);
                 $checkStmt->execute([$userId, $title]);
 
                 if ((int) $checkStmt->fetchColumn() === 0) {
-                    $insSql = "INSERT INTO Notifications (userId, type, title, message) VALUES (?, 'class', ?, ?)";
+                    $insSql = "INSERT INTO Notifications (userId, type, title, message) VALUES (?, 'system', ?, ?)";
                     $insStmt = $this->db->prepare($insSql);
                     $insStmt->execute([$userId, $title, $msg]);
                 }
@@ -74,9 +110,6 @@ class NotificationController
         }
     }
 
-    /**
-     * Get all notifications for a user
-     */
     public function getNotification($userId)
     {
         try {
@@ -98,4 +131,3 @@ class NotificationController
         }
     }
 }
-?>

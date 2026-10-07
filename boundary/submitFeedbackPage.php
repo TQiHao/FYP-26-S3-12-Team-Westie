@@ -6,7 +6,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-// Role Filter: Allow Student, Lecturer, Course Coordinator, and University Admin
 $user_role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
 $allowed_roles = ['student', 'lecturer', 'course_coordinator', 'course coordinator', 'university_admin', 'university admin'];
 
@@ -15,7 +14,6 @@ if (!in_array($user_role, $allowed_roles)) {
     exit();
 }
 
-// Determine role-specific dashboard link
 switch ($user_role) {
     case 'lecturer':
         $dashboardPage = "lecturerDashboardPage.php";
@@ -33,6 +31,8 @@ switch ($user_role) {
         $dashboardPage = "studentDashboardPage.php";
         break;
 }
+
+$showNotificationBell = in_array($user_role, ['student', 'lecturer']);
 ?>
 
 <!DOCTYPE html>
@@ -44,7 +44,6 @@ switch ($user_role) {
     <title>Submit Feedback - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        /* Profile Header matched to Feedback Box Width */
         .profile-header {
             position: relative;
             display: flex;
@@ -52,7 +51,6 @@ switch ($user_role) {
             justify-content: center;
             width: 100%;
             max-width: 800px;
-            /* Matches feedback form width */
             margin: 15px auto 25px auto;
             min-height: 40px;
         }
@@ -73,7 +71,6 @@ switch ($user_role) {
             white-space: nowrap;
         }
 
-        /* Friendly Reminder Box */
         .feedback-notice-box {
             background-color: #fffbeb;
             border: 1px solid #fde68a;
@@ -128,7 +125,6 @@ switch ($user_role) {
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <a href="<?php echo htmlspecialchars($dashboardPage); ?>">
@@ -142,9 +138,11 @@ switch ($user_role) {
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
-                <img src="../images/notification.png" alt="Notifications">
-            </a>
+            <?php if ($showNotificationBell): ?>
+                <a href="NotificationPage.php" class="header-icon">
+                    <img src="../images/notification.png" alt="Notifications">
+                </a>
+            <?php endif; ?>
 
             <div class="profile-dropdown">
                 <div class="profile-container" onclick="toggleDropdown()">
@@ -177,10 +175,8 @@ switch ($user_role) {
         </div>
     </header>
 
-    <!-- Submit Feedback Section -->
     <main class="dashboard">
 
-        <!-- Top Header Aligned with Feedback Box Width -->
         <div class="profile-header">
             <a href="<?php echo htmlspecialchars($dashboardPage); ?>" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Submit Feedback</h2>
@@ -188,7 +184,6 @@ switch ($user_role) {
 
         <form action="../controller/SubmitFeedbackController.php" method="POST" class="feedback-form">
 
-            <!-- ===== FRIENDLY REMINDER NOTICE ===== -->
             <div class="feedback-notice-box">
                 <div class="notice-header">
                     <span>💡</span> Friendly Reminder
@@ -205,7 +200,6 @@ switch ($user_role) {
                 </div>
             </div>
 
-            <!-- ===== STAR RATING ===== -->
             <div class="form-group">
                 <label>How would you rate your experience?</label>
 
@@ -227,7 +221,6 @@ switch ($user_role) {
                 </div>
             </div>
 
-            <!-- ===== MESSAGE ===== -->
             <div class="form-group">
                 <label for="message">Feedback</label>
                 <textarea id="message" name="message" rows="8" placeholder="Write your feedback here..."
@@ -240,7 +233,6 @@ switch ($user_role) {
 
     </main>
 
-    <!-- Success Modal -->
     <?php if (isset($_SESSION['feedback_success'])): ?>
         <div class="modal-overlay" id="successModal">
             <div class="modal-box">
@@ -251,7 +243,6 @@ switch ($user_role) {
         <?php unset($_SESSION['feedback_success']); ?>
     <?php endif; ?>
 
-    <!-- Error Message -->
     <?php if (isset($_SESSION['feedback_error'])): ?>
         <div class="error-message" style="max-width:800px; margin: 20px auto;">
             <?php echo htmlspecialchars($_SESSION['feedback_error']); ?>
@@ -259,7 +250,6 @@ switch ($user_role) {
         <?php unset($_SESSION['feedback_error']); ?>
     <?php endif; ?>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.

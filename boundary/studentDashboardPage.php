@@ -112,7 +112,7 @@ $fullName = $_SESSION['user_name'];
                 <?php else: ?>
                     <h2>
                         <?php echo htmlspecialchars($nextClass['title']); ?>,
-                        <?php echo htmlspecialchars(date('g:ia', strtotime($nextClass['startTime']))); ?>
+                        <?php echo htmlspecialchars(date('D j M, g:ia', strtotime($nextClass['nextDate'] . ' ' . $nextClass['startTime']))); ?>
                     </h2>
                     <p><?php echo htmlspecialchars($nextClass['location']); ?></p>
                 <?php endif; ?>
