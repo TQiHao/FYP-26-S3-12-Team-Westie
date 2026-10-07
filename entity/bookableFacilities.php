@@ -1,5 +1,7 @@
 <?php
 
+require_once "../database/database.php";
+
 class BookableFacilities
 {
     private $id;
@@ -38,15 +40,606 @@ class BookableFacilities
     }
 
     // Getters
-    public function getId() { return $this->id; }
-    public function getFacilityId() { return $this->facilityId; }
-    public function getIsBookable() { return $this->isBookable; }
-    public function getSlotDuration() { return $this->slotDuration; }
-    public function getBookingCapacity() { return $this->bookingCapacity; }
-    public function getOpenTime() { return $this->openTime; }
-    public function getCloseTime() { return $this->closeTime; }
-    public function getStatus() { return $this->status; }
-    public function getCreatedAt() { return $this->createdAt; }
-    public function getUpdatedAt() { return $this->updatedAt; }
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function getFacilityId()
+    {
+        return $this->facilityId;
+    }
+
+    public function getIsBookable()
+    {
+        return $this->isBookable;
+    }
+
+    public function getSlotDuration()
+    {
+        return $this->slotDuration;
+    }
+
+    public function getBookingCapacity()
+    {
+        return $this->bookingCapacity;
+    }
+
+    public function getOpenTime()
+    {
+        return $this->openTime;
+    }
+
+    public function getCloseTime()
+    {
+        return $this->closeTime;
+    }
+
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    // Get facilities that are not bookable yet
+    public function getAvailableFacilities($universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT
+                        f.id,
+                        f.universityId,
+                        f.name,
+                        f.type,
+                        f.description,
+                        f.location,
+                        f.blockFloor,
+                        f.capacity,
+                        f.status
+                    FROM Facilities f
+
+                    LEFT JOIN BookableFacilities bf
+                        ON bf.facilityId = f.id
+
+                    WHERE f.universityId = ?
+                      AND f.status = 'active'
+                      AND bf.id IS NULL
+
+                    ORDER BY f.type ASC,
+                             f.name ASC";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId
+            ]);
+
+            return $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            );
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Get available bookable facilities error: "
+                . $e->getMessage()
+            );
+
+            return [];
+        }
+    }
+
+    // Check whether facility is already bookable
+    public function bookableFacilityExists($facilityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT id
+                    FROM BookableFacilities
+                    WHERE facilityId = ?
+                    LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $facilityId
+            ]);
+
+            return $stmt->fetch(
+                PDO::FETCH_ASSOC
+            ) !== false;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Check bookable facility error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    // Create bookable facility
+    public function createBookableFacility($facilityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "INSERT INTO BookableFacilities
+                    (
+                        facilityId,
+                        isBookable,
+                        bookingCapacity,
+                        status
+                    )
+                    SELECT
+                        id,
+                        TRUE,
+                        capacity,
+                        'available'
+                    FROM Facilities
+                    WHERE id = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $facilityId
+            ]);
+
+            return $db->lastInsertId();
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Create bookable facility error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    // Get all bookable facilities
+    public function getBookableFacilitiesByUniversity(
+        $universityId
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT
+                        bf.id,
+                        bf.facilityId,
+                        bf.isBookable,
+                        bf.slotDuration,
+                        bf.bookingCapacity,
+                        bf.openTime,
+                        bf.closeTime,
+                        bf.status,
+                        bf.createdAt,
+                        bf.updatedAt,
+
+                        f.name,
+                        f.type,
+                        f.location,
+                        f.blockFloor,
+                        f.capacity
+
+                    FROM BookableFacilities bf
+
+                    INNER JOIN Facilities f
+                        ON f.id = bf.facilityId
+
+                    WHERE f.universityId = ?
+
+                    ORDER BY f.type ASC,
+                             f.name ASC";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId
+            ]);
+
+            return $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            );
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Get bookable facilities error: "
+                . $e->getMessage()
+            );
+
+            return [];
+        }
+    }
+
+    public function getFacilityUtilisationReport(
+        $universityId,
+        $facilityType = '',
+        $usageType = ''
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $params = [
+                $universityId
+            ];
+
+            $sql = "SELECT
+                    f.id AS facilityId,
+                    f.name AS facilityName,
+                    f.roomCode,
+                    f.type,
+                    f.location,
+                    f.blockFloor,
+                    bf.openTime,
+                    bf.closeTime,
+
+                    COUNT(
+                        CASE
+                            WHEN fb.status IN (
+                                'pending',
+                                'confirmed',
+                                'completed'
+                            )
+                            THEN fb.id
+                        END
+                    ) AS studentBookings,
+
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN fb.status IN (
+                                    'pending',
+                                    'confirmed',
+                                    'completed'
+                                )
+                                THEN TIMESTAMPDIFF(
+                                    MINUTE,
+                                    fb.startTime,
+                                    fb.endTime
+                                ) / 60
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS studentHours
+
+                FROM Facilities f
+
+                INNER JOIN BookableFacilities bf
+                    ON bf.facilityId = f.id
+
+                LEFT JOIN FacilityBookings fb
+                    ON fb.facilityId = bf.id
+
+                WHERE f.universityId = ?
+                  AND bf.isBookable = TRUE";
+
+
+            if ($facilityType !== '') {
+
+                $sql .= "
+                AND f.type = ?
+            ";
+
+                $params[] = $facilityType;
+            }
+
+
+            $sql .= "
+            GROUP BY
+                f.id,
+                f.name,
+                f.roomCode,
+                f.type,
+                f.location,
+                f.blockFloor,
+                bf.openTime,
+                bf.closeTime
+
+            ORDER BY f.name ASC
+        ";
+
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute($params);
+
+            $rows =
+                $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+            /*
+             * Get event usage separately because Events
+             * do not contain facilityId.
+             * They store the facility location as text.
+             */
+
+            foreach ($rows as &$row) {
+
+                $row['eventCount'] = 0;
+                $row['eventHours'] = 0;
+
+                if (
+                    $usageType === '' ||
+                    $usageType === 'event'
+                ) {
+
+                    $eventLocation =
+                        $row['facilityName']
+                        . ' — '
+                        . $row['location']
+                        . ', '
+                        . $row['blockFloor'];
+
+
+                    $eventSql = "
+                    SELECT
+                        COUNT(*) AS eventCount,
+
+                        COALESCE(
+                            SUM(
+                                TIMESTAMPDIFF(
+                                    MINUTE,
+                                    startDatetime,
+                                    endDatetime
+                                ) / 60
+                            ),
+                            0
+                        ) AS eventHours
+
+                    FROM Events
+
+                    WHERE universityId = ?
+                      AND location = ?
+                      AND status IN (
+                          'completed',
+                          'active'
+                      )
+                ";
+
+
+                    $eventStmt =
+                        $db->prepare($eventSql);
+
+                    $eventStmt->execute([
+                        $universityId,
+                        $eventLocation
+                    ]);
+
+                    $eventData =
+                        $eventStmt->fetch(
+                            PDO::FETCH_ASSOC
+                        );
+
+
+                    if ($eventData) {
+
+                        $row['eventCount'] =
+                            (int) $eventData['eventCount'];
+
+                        $row['eventHours'] =
+                            (float) $eventData['eventHours'];
+                    }
+                }
+            }
+
+            unset($row);
+
+
+            /*
+             * Calculate totals
+             */
+
+            foreach ($rows as &$row) {
+
+                $studentBookings =
+                    (int) $row['studentBookings'];
+
+                $eventCount =
+                    (int) $row['eventCount'];
+
+                $studentHours =
+                    (float) $row['studentHours'];
+
+                $eventHours =
+                    (float) $row['eventHours'];
+
+
+                if ($usageType === 'student') {
+
+                    $row['totalBookings'] =
+                        $studentBookings;
+
+                    $row['hoursUsed'] =
+                        $studentHours;
+
+                } elseif ($usageType === 'event') {
+
+                    $row['totalBookings'] =
+                        $eventCount;
+
+                    $row['hoursUsed'] =
+                        $eventHours;
+
+                } else {
+
+                    $row['totalBookings'] =
+                        $studentBookings
+                        + $eventCount;
+
+                    $row['hoursUsed'] =
+                        $studentHours
+                        + $eventHours;
+                }
+
+
+                /*
+                 * Weekly available hours.
+                 *
+                 * Assumes the same opening/closing
+                 * time every day.
+                 */
+
+                if (
+                    !empty($row['openTime']) &&
+                    !empty($row['closeTime'])
+                ) {
+
+                    $open =
+                        strtotime(
+                            $row['openTime']
+                        );
+
+                    $close =
+                        strtotime(
+                            $row['closeTime']
+                        );
+
+                    if ($close > $open) {
+
+                        $dailyHours =
+                            (
+                                $close - $open
+                            ) / 3600;
+
+                        $availableHours =
+                            $dailyHours * 7;
+
+                    } else {
+
+                        $availableHours = 0;
+                    }
+
+                } else {
+
+                    $availableHours = 0;
+                }
+
+
+                $row['availableHours'] =
+                    $availableHours;
+
+
+                if ($availableHours > 0) {
+
+                    $row['utilisationRate'] =
+                        (
+                            $row['hoursUsed']
+                            / $availableHours
+                        ) * 100;
+
+                } else {
+
+                    $row['utilisationRate'] = 0;
+                }
+            }
+
+            unset($row);
+
+
+            return $rows;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Facility utilisation report error: "
+                . $e->getMessage()
+            );
+
+            return [];
+        }
+    }
+
+    public function getFacilityUtilisationSummary(
+        $universityId
+    ) {
+        $report =
+            $this->getFacilityUtilisationReport(
+                $universityId
+            );
+
+        $totalBookings = 0;
+        $totalHours = 0;
+
+        $mostUsedFacility = '-';
+        $highestRate = -1;
+
+
+        foreach ($report as $row) {
+
+            $totalBookings +=
+                (int) $row['totalBookings'];
+
+            $totalHours +=
+                (float) $row['hoursUsed'];
+
+
+            if (
+                (float) $row['utilisationRate']
+                > $highestRate
+            ) {
+
+                $highestRate =
+                    (float) 
+                    $row['utilisationRate'];
+
+                $mostUsedFacility =
+                    $row['facilityName'];
+            }
+        }
+
+        $averageRate = 0;
+
+        if (!empty($report)) {
+
+            $averageRate =
+                array_sum(
+                    array_column(
+                        $report,
+                        'utilisationRate'
+                    )
+                ) / count($report);
+        }
+
+        return [
+            'totalBookings' =>
+                $totalBookings,
+
+            'totalHours' =>
+                round($totalHours, 1),
+
+            'averageRate' =>
+                round($averageRate, 1),
+
+            'mostUsedFacility' =>
+                $mostUsedFacility
+        ];
+    }
 }
 ?>

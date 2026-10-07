@@ -206,39 +206,6 @@ class Event
         }
     }
 
-    public function locationExistsInActiveEvent(
-        $universityId,
-        $location
-    ) {
-        try {
-
-            $sql = "SELECT id
-                FROM Events
-                WHERE universityId = ?
-                  AND location = ?
-                  AND status = 'active'
-                LIMIT 1";
-
-            $stmt = $this->db->prepare($sql);
-
-            $stmt->execute([
-                $universityId,
-                $location
-            ]);
-
-            return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
-
-        } catch (Exception $e) {
-
-            error_log(
-                "Active event location check error: "
-                . $e->getMessage()
-            );
-
-            return false;
-        }
-    }
-
     public function getAllEvents($universityId)
     {
         try {
@@ -499,6 +466,101 @@ class Event
             error_log(
                 "Complete past events error: " .
                 $e->getMessage()
+            );
+
+            return [];
+        }
+    }
+
+    public function getRecommendedFacilities(
+        $universityId,
+        $capacity,
+        $startDatetime,
+        $endDatetime
+    ) {
+        try {
+
+            $bufferStart = date(
+                'Y-m-d H:i:s',
+                strtotime($startDatetime . ' -30 minutes')
+            );
+
+            $bufferEnd = date(
+                'Y-m-d H:i:s',
+                strtotime($endDatetime . ' +30 minutes')
+            );
+
+            $sql = "
+            SELECT
+                bf.id AS bookableFacilityId,
+                f.id AS facilityId,
+                f.name,
+                f.roomCode,
+                f.type,
+                f.description,
+                f.location,
+                f.blockFloor,
+                f.capacity,
+                bf.isBookable,
+                bf.status AS bookableStatus,
+                bf.slotDuration,
+                bf.bookingCapacity,
+                bf.openTime,
+                bf.closeTime
+            FROM BookableFacilities bf
+            INNER JOIN Facilities f
+                ON f.id = bf.facilityId
+            WHERE f.universityId = ?
+              AND f.status = 'active'
+              AND f.capacity >= ?
+              AND bf.isBookable = TRUE
+              AND bf.status = 'available'
+
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM Events e
+                  WHERE e.facilityId = bf.id
+                    AND e.status = 'active'
+                    AND e.startDatetime < ?
+                    AND e.endDatetime > ?
+              )
+
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM FacilityBookings fb
+                  WHERE fb.facilityId = bf.id
+                    AND fb.status IN ('pending', 'confirmed')
+                    AND TIMESTAMP(
+                        fb.bookingDate,
+                        fb.startTime
+                    ) < ?
+                    AND TIMESTAMP(
+                        fb.bookingDate,
+                        fb.endTime
+                    ) > ?
+              )
+
+            ORDER BY f.capacity ASC, f.name ASC
+        ";
+
+            $stmt = $this->db->prepare($sql);
+
+            $stmt->execute([
+                $universityId,
+                $capacity,
+                $bufferEnd,
+                $bufferStart,
+                $bufferEnd,
+                $bufferStart
+            ]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        } catch (Exception $e) {
+
+            error_log(
+                "Get recommended facilities error: "
+                . $e->getMessage()
             );
 
             return [];

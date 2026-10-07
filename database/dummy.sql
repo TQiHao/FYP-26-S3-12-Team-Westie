@@ -42,14 +42,14 @@ WHERE NOT EXISTS (SELECT 1 FROM Users WHERE email = 'cc@unibee.com');
 -- ============================================
 INSERT INTO Facilities (universityId, name, roomCode, type, description, location, blockFloor, capacity, status)
 VALUES
-    (1, 'Lecture Room B201', 'B201', 'classroom', 'Standard lecture room', 'Block B', 'B2', 70, 'active'),
-    (1, 'Lecture Room B202', 'B202', 'classroom', 'Standard lecture room', 'Block B', 'B2', 70, 'active'),
-    (1, 'Lecture Room B203', 'B203', 'classroom', 'Standard lecture room', 'Block B', 'B2', 60, 'active'),
-    (1, 'Lecture Room C101', 'C101', 'classroom', 'Standard lecture room', 'Block C', 'C1', 80, 'active'),
-    (1, 'Lecture Room D3', 'D3', 'classroom', 'Small lecture room', 'Block D', 'D1', 50, 'active'),
-    (1, 'Lecture Room A101', 'A101', 'classroom', 'Large lecture hall', 'Block A', 'A1', 150, 'active'),
-    (1, 'Lecture Room A102', 'A102', 'classroom', 'Large lecture hall', 'Block A', 'A1', 120, 'active'),
-    (1, 'Lecture Room E201', 'E201', 'classroom', 'Computer lab classroom', 'Block E', 'E2', 40, 'active')
+    (1, 'Lecture Room B201', 'B201', 'lecture hall', 'Standard lecture room', 'Block B', 'B2', 70, 'active'),
+    (1, 'Lecture Room B202', 'B202', 'lecture hall', 'Standard lecture room', 'Block B', 'B2', 70, 'active'),
+    (1, 'Lecture Room B203', 'B203', 'lecture hall', 'Standard lecture room', 'Block B', 'B2', 60, 'active'),
+    (1, 'Lecture Room C101', 'C101', 'lecture hall', 'Standard lecture room', 'Block C', 'C1', 80, 'active'),
+    (1, 'Lecture Room D3', 'D3', 'lecture hall', 'Small lecture room', 'Block D', 'D1', 50, 'active'),
+    (1, 'Lecture Room A101', 'A101', 'lecture hall', 'Large lecture hall', 'Block A', 'A1', 150, 'active'),
+    (1, 'Lecture Room A102', 'A102', 'lecture hall', 'Large lecture hall', 'Block A', 'A1', 120, 'active'),
+    (1, 'Lecture Room E201', 'E201', 'lecture hall', 'Computer lab classroom', 'Block E', 'E2', 40, 'active')
 ON DUPLICATE KEY UPDATE name = VALUES(name), capacity = VALUES(capacity);
 
 -- ============================================

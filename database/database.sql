@@ -284,8 +284,14 @@ CREATE TABLE BookableFacilities (
     closeTime TIME,
     status ENUM('available', 'unavailable') DEFAULT 'available',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (facilityId) REFERENCES Facilities(id) ON DELETE CASCADE
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (facilityId)
+        REFERENCES Facilities(id)
+        ON DELETE CASCADE,
+
+    UNIQUE (facilityId)
 );
 
 -- Facility Bookings Table
@@ -328,17 +334,20 @@ CREATE TABLE Events (
     id INT PRIMARY KEY AUTO_INCREMENT,
     universityId INT NOT NULL,
     createdBy INT,
+    facilityId INT NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    location VARCHAR(255),
-    startDatetime DATETIME,
-    endDatetime DATETIME,
-    capacity INT,
-    status ENUM('active', 'suspended', 'cancelled', 'completed') DEFAULT 'active',
+    startDatetime DATETIME NOT NULL,
+    endDatetime DATETIME NOT NULL,
+    capacity INT NOT NULL,
+    eventPoster VARCHAR(500) NULL,
+    eventInfo TEXT NULL,
+    status ENUM('active','suspended','cancelled','completed') DEFAULT 'active',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE,
-    FOREIGN KEY (createdBy) REFERENCES Users(id) ON DELETE SET NULL
+    FOREIGN KEY (createdBy) REFERENCES Users(id) ON DELETE SET NULL,
+    FOREIGN KEY (facilityId) REFERENCES BookableFacilities(id) ON DELETE RESTRICT
 );
 
 -- Event Registrations Table

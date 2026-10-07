@@ -60,7 +60,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     </header>
 
     <!-- University Admin Dashboard -->
-    <main class="dashboard university-admin-dashboard">
+    <main class="dashboard">
 
         <!-- Explore -->
         <section class="dashboard-section">
@@ -84,16 +84,16 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </a>
 
                 <!-- Manage University Events -->
-                <a href="createUniversityEventPage.php" class="dashboard-card">
+                <a href="manageUniversityEventPage.php" class="dashboard-card">
                     <img src="../images/campusEvent.png" alt="Manage University Events" class="card-icon">
                     <h2>Manage University Events</h2>
                     <p>4 Ongoing Events</p>
                 </a>
 
-                <!-- Manage Facilities Booking -->
-                <a href="manageFacilitiesBookingPage.php" class="dashboard-card">
+                <!-- Manage Facilities -->
+                <a href="manageBookableFacilitiesPage.php" class="dashboard-card">
                     <img src="../images/facilityBooking.png" alt="Manage Facilities Booking" class="card-icon">
-                    <h2>Manage Facilities Booking</h2>
+                    <h2>Manage Bookable Facilities</h2>
                     <p>30 Active Bookable Facilities</p>
                 </a>
 
