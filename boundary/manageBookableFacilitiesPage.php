@@ -85,7 +85,9 @@ if ($universityId !== null) {
 
         $utilisationSummary =
             $controller->getFacilityUtilisationSummary(
-                $universityId
+                $universityId,
+                $facilityType,
+                $usageType
             );
     }
 }

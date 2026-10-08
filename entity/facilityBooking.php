@@ -1,5 +1,7 @@
 <?php
 
+require_once "../database/database.php";
+
 class FacilityBooking
 {
     private $id;
@@ -41,7 +43,13 @@ class FacilityBooking
         $this->cancelledAt = $cancelledAt;
         $this->createdAt = $createdAt;
         $this->updatedAt = $updatedAt;
-        $this->db = $db;
+
+        if ($db !== null) {
+            $this->db = $db;
+        } else {
+            $database = new Database();
+            $this->db = $database->connect();
+        }
     }
 
     // Getters (existing)
@@ -130,6 +138,61 @@ class FacilityBooking
 
         } catch (Exception $e) {
             error_log("cancelBooking error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /* Create a facility booking for a university event */
+    public function createEventBooking(
+        $facilityId,
+        $userId,
+        $bookingDate,
+        $startTime,
+        $endTime,
+        $purpose
+    ) {
+        try {
+
+            $sql = "INSERT INTO FacilityBookings
+                (
+                    facilityId,
+                    userId,
+                    bookingDate,
+                    startTime,
+                    endTime,
+                    purpose,
+                    status,
+                    createdAt,
+                    updatedAt
+                )
+                VALUES
+                (
+                    ?, ?, ?, ?, ?, ?,
+                    'confirmed',
+                    NOW(),
+                    NOW()
+                )";
+
+            $stmt = $this->db->prepare($sql);
+
+            $stmt->execute([
+                $facilityId,
+                $userId,
+                $bookingDate,
+                $startTime,
+                $endTime,
+                $purpose
+            ]);
+
+            return $this->db->lastInsertId();
+
+        } catch (Exception $e) {
+
+            error_log(
+                "createEventBooking error: "
+                . $e->getMessage()
+            );
+
             return false;
         }
     }

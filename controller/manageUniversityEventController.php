@@ -7,20 +7,21 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once "../entity/event.php";
 require_once "../entity/facilities.php";
 require_once "../entity/bookableFacilities.php";
+require_once "../entity/facilityBooking.php";
 
 class ManageUniversityEventController
 {
     private $event;
     private $facilities;
     private $bookableFacilities;
-
+    private $facilityBooking;
 
     public function __construct()
     {
         $this->event = new Event();
         $this->facilities = new Facilities();
-        $this->bookableFacilities =
-            new BookableFacilities();
+        $this->bookableFacilities = new BookableFacilities();
+        $this->facilityBooking = new FacilityBooking();
     }
 
 
@@ -560,11 +561,27 @@ class ManageUniversityEventController
                 "Unable to create the university event.";
         }
 
+        // Create FacilityBooking for the event
+        $facilityBookingId =
+            $this->facilityBooking
+                ->createEventBooking(
+                    $facilityId,
+                    $createdBy,
+                    $startDate,
+                    $startTime . ':00',
+                    $endTime . ':00',
+                    'Event: ' . $title
+                );
 
-        // -------------------------------------------------
+
+        if ($facilityBookingId === false) {
+
+            return
+                "Event was created, but the "
+                . "facility booking could not be created.";
+        }
+
         // Mark physical Facility as occupied
-        // -------------------------------------------------
-
         $facilityUpdated =
             $this->facilities
                 ->updateFacilityStatus(
@@ -587,7 +604,6 @@ class ManageUniversityEventController
 
         return true;
     }
-
 
     // =====================================================
     // GET UNIVERSITY EVENTS

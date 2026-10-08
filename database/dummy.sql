@@ -117,19 +117,27 @@ SELECT u.id, 4, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.co
 -- ============================================
 -- 6c. BOOKABLE FACILITIES
 -- ============================================
-INSERT INTO BookableFacilities (id, facilityId, isBookable, slotDuration, bookingCapacity, openTime, closeTime, status)
+INSERT INTO BookableFacilities
+(id, facilityId, isBookable, slotDuration, bookingCapacity, openTime, closeTime, status)
 VALUES
 (1, 1, TRUE, 60, 70, '08:00:00', '18:00:00', 'available'),
 (2, 5, TRUE, 60, 80, '08:00:00', '18:00:00', 'available')
-ON DUPLICATE KEY UPDATE isBookable = VALUES(isBookable), bookingCapacity = VALUES(bookingCapacity);
+ON DUPLICATE KEY UPDATE
+    isBookable = VALUES(isBookable),
+    bookingCapacity = VALUES(bookingCapacity),
+    openTime = VALUES(openTime),
+    closeTime = VALUES(closeTime);
 
 -- ============================================
 -- 7. EVENTS
 -- ============================================
-INSERT IGNORE INTO Events (id, universityId, createdBy, facilityId, title, description, startDatetime, endDatetime, capacity, status)
-VALUES 
-(101, 1, 1, 1, 'AI Innovation Seminar', 'A seminar on the latest AI trends and innovations.', '2026-12-10 10:00:00', '2026-12-10 11:30:00', 50, 'active'),
-(102, 1, 1, 2, 'Algorithms Workshop', 'Hands-on workshop on advanced algorithm design.', '2026-12-15 14:00:00', '2026-12-15 15:30:00', 30, 'active');
+
+INSERT IGNORE INTO Events
+(id, universityId, createdBy, facilityId, title, description,
+ startDatetime, endDatetime, capacity, eventInfo, status)
+VALUES
+(101, 1, 1, 1, 'AI Innovation Seminar', 'A seminar on the latest AI trends and innovations.', '2026-12-10 10:00:00', '2026-12-10 11:30:00', 50, 'A seminar covering the latest developments in artificial intelligence.', 'active'),
+(102, 1, 1, 2, 'Algorithms Workshop', 'Hands-on workshop on advanced algorithm design.', '2026-12-15 14:00:00', '2026-12-15 15:30:00', 30, 'Participants will work through advanced algorithm design exercises.', 'active');
 
 -- ============================================
 -- 8. BSCS STUDENTS (S1 2026/2027)

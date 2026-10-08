@@ -148,29 +148,42 @@ if (
         .university-event-page {
             width: 80%;
             max-width: 1050px;
+            min-height: calc(100vh - 150px);
             margin: 0 auto;
-            padding: 30px 0 60px;
+            padding: 35px 0 70px;
             box-sizing: border-box;
         }
 
-        /* HEADER */
+        .event-container {
+            width: 100%;
+            max-width: none;
+            margin: 0 auto;
+        }
+
         .profile-header {
             position: relative;
             display: flex;
             align-items: center;
+            justify-content: center;
             width: 100%;
+            max-width: none;
             min-height: 45px;
-            margin: 15px 0 25px 0;
+            margin: 15px 0 35px 0;
+            box-sizing: border-box;
+        }
+
+        .profile-header .btn-back {
+            position: absolute;
+            left: 0;
         }
 
         .profile-header .section-label {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
+            position: static;
+            transform: none;
             margin: 0 !important;
             text-align: center !important;
             white-space: nowrap;
-            font-size: 1.3rem;
+            font-size: 1.35rem;
             font-weight: 700;
         }
 
@@ -178,23 +191,32 @@ if (
         .event-tabs {
             display: flex;
             gap: 40px;
+            width: 100%;
             border-bottom: 1px solid #ddd;
             margin-bottom: 26px;
         }
 
         .event-tab {
-            padding: 10px 4px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #888;
+            padding: 0 0 8px;
+            color: #222;
             text-decoration: none;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -1px;
+            font-size: 1rem;
+            font-weight: 400;
+            position: relative;
         }
 
         .event-tab.active {
-            color: #000;
-            border-bottom-color: var(--bg-yellow);
+            font-weight: 700;
+        }
+
+        .event-tab.active::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 5px;
+            background-color: var(--bg-yellow);
         }
 
         .event-tab:hover {
@@ -408,20 +430,32 @@ if (
         }
 
         .event-list {
+            width: 100%;
+            max-width: none;
+            margin: 0;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
 
         .event-view-card {
+            width: 100%;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             gap: 20px;
             border: 1px solid #ccc;
             border-radius: 10px;
             padding: 18px 22px;
             background: #fff;
+            box-sizing: border-box;
+        }
+
+        .event-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         .event-view-info {
@@ -537,6 +571,218 @@ if (
 
         }
 
+        /* POSTER BUTTON */
+
+        .btn-event-poster {
+            background: #e5e7eb;
+            color: #222;
+        }
+
+        .btn-event-poster:hover {
+            background: #d1d5db;
+        }
+
+        /* POSTER MODAL */
+
+        .poster-event-modal {
+            position: relative;
+            width: 600px;
+            max-width: 90vw;
+            max-height: 90vh;
+            padding: 25px;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .poster-event-modal h2 {
+            margin: 0 0 18px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .poster-event-modal img {
+            display: block;
+            max-width: 100%;
+            max-height: 70vh;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+
+        /* EVENT MODAL */
+        .event-modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
+
+        /* EDIT MODAL */
+        .edit-event-modal {
+            position: relative;
+            width: 550px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 30px;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
+
+        .edit-event-modal h2 {
+            margin: 0 0 20px;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .event-modal-close {
+            position: absolute;
+            top: 8px;
+            right: 14px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            cursor: pointer;
+        }
+
+        .event-modal-close:hover {
+            opacity: 0.6;
+        }
+
+        /* EDIT FORM */
+        .edit-event-form {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .edit-event-form label {
+            margin-top: 7px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .edit-event-form input,
+        .edit-event-form textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #999;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 0.75rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .edit-event-form textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+
+        .edit-event-form input:focus,
+        .edit-event-form textarea:focus {
+            border-color: var(--bg-yellow);
+        }
+
+        .edit-event-submit {
+            width: 120px;
+            margin-top: 18px;
+            padding: 9px 15px;
+            border: 1px solid #000;
+            border-radius: 4px;
+            background: var(--bg-yellow);
+            color: #000;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .edit-event-submit:hover {
+            background: #e6c23a;
+        }
+
+        /* SUSPEND CONFIRMATION */
+        .suspend-event-modal {
+            position: relative;
+            width: 420px;
+            padding: 35px 30px;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .suspend-event-modal h2 {
+            margin: 0 0 25px;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .suspend-event-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .suspend-cancel-button,
+        .suspend-confirm-button {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .suspend-cancel-button {
+            background: #6b3200;
+        }
+
+        .suspend-cancel-button:hover {
+            background: #522500;
+        }
+
+        .suspend-confirm-button {
+            background: #d00000;
+        }
+
+        .suspend-confirm-button:hover {
+            background: #ae0000;
+        }
+
+        /* SUCCESS POPUP */
+
+        .event-success-modal {
+            position: relative;
+            width: 425px;
+            min-height: 175px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .event-success-modal h2 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #000;
+        }
+
     </style>
 
 </head>
@@ -606,35 +852,58 @@ if (
 
 <main class="university-event-page">
 
-    <!-- HEADER -->
-    <div class="profile-header">
+    <div class="event-container">
 
-        <a
-            href="universityAdminDashboardPage.php"
-            class="btn-back"
-        >
-            &#8592; Back
-        </a>
+        <div class="profile-header">
 
-        <h1 class="section-label">
-            Manage University Events
-        </h1>
+            <a
+                href="universityAdminDashboardPage.php"
+                class="btn-back"
+            >
+                &#8592; Back
+            </a>
 
-    </div>
+            <h1 class="section-label">
+                Manage University Events
+            </h1>
+
+        </div>
 
     <!-- FLASH MESSAGES -->
     <?php if ($success): ?>
 
-        <div class="event-message event-success">
+        <div
+            class="event-modal-overlay"
+            id="eventSuccessPopup"
+        >
 
-            <?php
+            <div class="event-success-modal">
 
-            echo htmlspecialchars($success);
-            ?>
+                <button
+                    type="button"
+                    class="event-modal-close"
+                    onclick="
+                        document
+                            .getElementById('eventSuccessPopup')
+                            .remove();
+                    "
+                >
+                    &times;
+                </button>
+
+                <h2>
+                    <?php
+
+                    echo htmlspecialchars($success);
+                    ?>
+                </h2>
+
+            </div>
 
         </div>
 
     <?php endif; ?>
+
 
     <?php if ($error): ?>
 
@@ -1296,7 +1565,7 @@ if (
                             <?php
 
                             echo htmlspecialchars(
-                                $event['status']
+                                ucfirst($event['status'])
                             );
                             ?>
 
@@ -1304,21 +1573,35 @@ if (
 
                         <div class="event-actions">
 
-                            <button
-                                type="button"
-                                class="btn-event-edit"
-                            >
-                                Edit
-                            </button>
+                            <?php if (strtolower($event['status']) === 'active'): ?>
 
-                            <?php if (
-                                strtolower($event['status'])
-                                === 'active'
-                            ): ?>
+                                <?php if (!empty($event['eventPoster'])): ?>
+                                    <button
+                                        type="button"
+                                        class="btn-event-poster"
+                                        onclick='openPosterModal(
+                                            "../<?php echo htmlspecialchars($event["eventPoster"], ENT_QUOTES); ?>",
+                                            <?php echo json_encode($event["title"]); ?>
+                                        )'
+                                    >
+                                        View Poster
+                                    </button>
+                                <?php endif; ?>
+
+                                <button
+                                    type="button"
+                                    class="btn-event-edit"
+                                    onclick='openEditEventModal(
+                                        <?php echo json_encode($event, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
+                                    )'
+                                >
+                                    Edit
+                                </button>
 
                                 <button
                                     type="button"
                                     class="btn-event-suspend"
+                                    onclick="openSuspendEventModal(<?php echo (int) $event['id']; ?>)"
                                 >
                                     Suspend
                                 </button>
@@ -1337,6 +1620,256 @@ if (
 
     <?php endif; ?>
 
+    <!-- EDIT EVENT MODAL -->
+    <div
+        class="event-modal-overlay"
+        id="editEventPopup"
+        style="display: none;"
+    >
+
+        <div class="edit-event-modal">
+
+            <button
+                type="button"
+                class="event-modal-close"
+                onclick="closeEditEventModal()"
+            >
+                &times;
+            </button>
+
+            <h2>
+                Edit University Event
+            </h2>
+
+            <form
+                method="POST"
+                action="../controller/manageUniversityEventController.php"
+                enctype="multipart/form-data"
+                class="edit-event-form"
+            >
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="updateUniversityEvent"
+                >
+
+                <input
+                    type="hidden"
+                    id="editEventId"
+                    name="eventId"
+                >
+
+                <input
+                    type="hidden"
+                    id="editFacilityId"
+                    name="facilityId"
+                >
+
+                <label for="editTitle">
+                    Event Title
+                </label>
+
+                <input
+                    type="text"
+                    id="editTitle"
+                    name="title"
+                    required
+                >
+
+                <label for="editDescription">
+                    Description
+                </label>
+
+                <textarea
+                    id="editDescription"
+                    name="description"
+                    required
+                ></textarea>
+
+                <label for="editCapacity">
+                    Event Capacity
+                </label>
+
+                <input
+                    type="number"
+                    id="editCapacity"
+                    name="capacity"
+                    min="1"
+                    required
+                >
+
+                <label for="editStartDate">
+                    Start Date
+                </label>
+
+                <input
+                    type="date"
+                    id="editStartDate"
+                    name="startDate"
+                    required
+                >
+
+                <label for="editStartTime">
+                    Start Time
+                </label>
+
+                <input
+                    type="time"
+                    id="editStartTime"
+                    name="startTime"
+                    required
+                >
+
+                <label for="editEndDate">
+                    End Date
+                </label>
+
+                <input
+                    type="date"
+                    id="editEndDate"
+                    name="endDate"
+                    required
+                >
+
+                <label for="editEndTime">
+                    End Time
+                </label>
+
+                <input
+                    type="time"
+                    id="editEndTime"
+                    name="endTime"
+                    required
+                >
+
+                <label for="editEventInfo">
+                    Event Information
+                </label>
+
+                <textarea
+                    id="editEventInfo"
+                    name="eventInfo"
+                ></textarea>
+
+                <label for="editEventPoster">
+                    Event Poster
+                </label>
+
+                <input
+                    type="file"
+                    id="editEventPoster"
+                    name="eventPoster"
+                    accept=".jpg,.jpeg,.png,.webp"
+                >
+
+                <button
+                    type="submit"
+                    class="edit-event-submit"
+                >
+                    Update Event
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- SUSPEND EVENT MODAL -->
+    <div
+        class="event-modal-overlay"
+        id="suspendEventPopup"
+        style="display: none;"
+    >
+
+        <div class="suspend-event-modal">
+
+            <button
+                type="button"
+                class="event-modal-close"
+                onclick="closeSuspendEventModal()"
+            >
+                &times;
+            </button>
+
+            <h2>
+                Are you sure you want to suspend this university event?
+            </h2>
+
+            <form
+                method="POST"
+                action="../controller/manageUniversityEventController.php"
+            >
+
+                <input
+                    type="hidden"
+                    name="action"
+                    value="suspendUniversityEvent"
+                >
+
+                <input
+                    type="hidden"
+                    id="suspendEventId"
+                    name="eventId"
+                >
+
+                <div class="suspend-event-buttons">
+
+                    <button
+                        type="button"
+                        class="suspend-cancel-button"
+                        onclick="closeSuspendEventModal()"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="suspend-confirm-button"
+                    >
+                        Confirm
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- VIEW POSTER MODAL -->
+    <div
+        class="event-modal-overlay"
+        id="posterEventPopup"
+        style="display: none;"
+    >
+
+        <div class="poster-event-modal">
+
+            <button
+                type="button"
+                class="event-modal-close"
+                onclick="closePosterModal()"
+            >
+                &times;
+            </button>
+
+            <h2 id="posterEventTitle">
+                Event Poster
+            </h2>
+
+            <img
+                id="posterEventImage"
+                src=""
+                alt="Event Poster"
+            >
+
+        </div>
+
+    </div>
+
 </main>
 
 <footer>
@@ -1350,38 +1883,216 @@ if (
 
 </footer>
 
-    <script>
+ <script>
 
-        window.addEventListener(
-            'load',
-            function () {
+    /* FIND AVAILABLE FACILITIES SCROLL */
+    window.addEventListener(
+        'load',
+        function () {
 
-                const params =
-                    new URLSearchParams(
-                        window.location.search
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            if (
+                params.get('findFacilities') === '1'
+            ) {
+
+                const section =
+                    document.getElementById(
+                        'recommendedFacilities'
                     );
 
-                if (
-                    params.get('findFacilities') === '1'
-                ) {
+                if (section) {
 
-                    const section =
-                        document.getElementById(
-                            'recommendedFacilities'
-                        );
+                    section.scrollIntoView({
+                        behavior: 'smooth'
+                    });
 
-                    if (section) {
-
-                        section.scrollIntoView({
-                            behavior: 'smooth'
-                        });
-
-                    }
                 }
             }
-        );
+        }
+    );
 
-    </script>
+    /* EDIT EVENT MODAL */
+    function openEditEventModal(event)
+    {
+        document.getElementById(
+            'editEventPopup'
+        ).style.display = 'flex';
+
+        document.getElementById(
+            'editEventId'
+        ).value = event.id;
+
+        document.getElementById(
+            'editFacilityId'
+        ).value = event.facilityId;
+
+        document.getElementById(
+            'editTitle'
+        ).value = event.title || '';
+
+        document.getElementById(
+            'editDescription'
+        ).value = event.description || '';
+
+        document.getElementById(
+            'editCapacity'
+        ).value = event.capacity || '';
+
+        document.getElementById(
+            'editEventInfo'
+        ).value = event.eventInfo || '';
+
+        if (event.startDatetime) {
+
+            document.getElementById(
+                'editStartDate'
+            ).value =
+                event.startDatetime.substring(
+                    0,
+                    10
+                );
+
+            document.getElementById(
+                'editStartTime'
+            ).value =
+                event.startDatetime.substring(
+                    11,
+                    16
+                );
+        }
+
+        if (event.endDatetime) {
+
+            document.getElementById(
+                'editEndDate'
+            ).value =
+                event.endDatetime.substring(
+                    0,
+                    10
+                );
+
+            document.getElementById(
+                'editEndTime'
+            ).value =
+                event.endDatetime.substring(
+                    11,
+                    16
+                );
+        }
+    }
+
+    function closeEditEventModal()
+    {
+        document.getElementById(
+            'editEventPopup'
+        ).style.display = 'none';
+    }
+
+    /* SUSPEND MODAL */
+    function openSuspendEventModal(eventId)
+    {
+        document.getElementById(
+            'suspendEventId'
+        ).value = eventId;
+
+        document.getElementById(
+            'suspendEventPopup'
+        ).style.display = 'flex';
+    }
+
+    function closeSuspendEventModal()
+    {
+        document.getElementById(
+            'suspendEventPopup'
+        ).style.display = 'none';
+    }
+
+    /* POSTER MODAL */
+    function openPosterModal(
+        posterPath,
+        eventTitle
+    )
+    {
+        document.getElementById(
+            'posterEventImage'
+        ).src = posterPath;
+
+        document.getElementById(
+            'posterEventTitle'
+        ).textContent =
+            eventTitle + ' - Event Poster';
+
+        document.getElementById(
+            'posterEventPopup'
+        ).style.display = 'flex';
+    }
+
+    function closePosterModal()
+    {
+        document.getElementById(
+            'posterEventPopup'
+        ).style.display = 'none';
+
+        document.getElementById(
+            'posterEventImage'
+        ).src = '';
+    }
+
+    /* CLOSE MODALS BY CLICKING OUTSIDE */
+    document.addEventListener(
+        'click',
+        function (event) {
+
+            const editPopup =
+                document.getElementById(
+                    'editEventPopup'
+                );
+
+            const suspendPopup =
+                document.getElementById(
+                    'suspendEventPopup'
+                );
+
+            const posterPopup =
+                document.getElementById(
+                    'posterEventPopup'
+                );
+
+
+            if (
+                event.target === editPopup
+            ) {
+
+                closeEditEventModal();
+
+            }
+
+
+            if (
+                event.target === suspendPopup
+            ) {
+
+                closeSuspendEventModal();
+
+            }
+
+
+            if (
+                event.target === posterPopup
+            ) {
+
+                closePosterModal();
+
+            }
+
+        }
+    );
+
+</script>
 
 </body>
 

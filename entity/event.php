@@ -144,13 +144,14 @@ class Event
     public function eventExists($universityId, $title, $startDatetime, $endDatetime)
     {
         try {
-            $sql = "SELECT id
-                    FROM Events
-                    WHERE universityId = ?
-                      AND title = ?
-                      AND startDatetime = ?
-                      AND endDatetime = ?
-                    LIMIT 1";
+
+            $sql = "SELECT id FROM Events
+                WHERE universityId = ?
+                  AND title = ?
+                  AND startDatetime = ?
+                  AND endDatetime = ?
+                LIMIT 1";
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId, $title, $startDatetime, $endDatetime]);
             return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
@@ -161,13 +162,28 @@ class Event
         }
     }
 
-    public function createUniversityEvent($universityId, $createdBy, $facilityId, $title, $description, $startDatetime, $endDatetime, $capacity)
-    {
+    public function createUniversityEvent(
+        $universityId,
+        $createdBy,
+        $facilityId,
+        $title,
+        $description,
+        $startDatetime,
+        $endDatetime,
+        $capacity,
+        $posterPath = null,
+        $eventInfo = null
+    ) {
         try {
-            $sql = "INSERT INTO Events
-                    (universityId, createdBy, facilityId, title, description,
-                     startDatetime, endDatetime, capacity, status)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')";
+
+            $sql = "INSERT INTO Events (universityId, createdBy, facilityId, title, description,
+                    startDatetime, endDatetime, capacity, eventPoster, eventInfo, status)
+                    VALUES
+                    (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        'active'
+                    )";
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $universityId,
@@ -177,7 +193,9 @@ class Event
                 $description,
                 $startDatetime,
                 $endDatetime,
-                $capacity
+                $capacity,
+                $posterPath,
+                $eventInfo
             ]);
             return $this->db->lastInsertId();
 
@@ -190,20 +208,28 @@ class Event
     public function getAllEvents($universityId)
     {
         try {
-            $sql = "SELECT e.id, e.universityId, e.createdBy, e.facilityId,
-                           e.title, e.description,
-                           e.startDatetime, e.endDatetime, e.capacity,
-                           e.eventPoster, e.eventInfo, e.status,
-                           e.createdAt, e.updatedAt,
-                           f.location AS location,
-                           f.name AS facilityName
+
+            $sql = "SELECT e.id, e.universityId, e.createdBy, e.facilityId, e.title, e.description,
+                    CONCAT(f.name, ' - ', f.location, ' - ', f.blockFloor) AS location,
+                    e.startDatetime,
+                    e.endDatetime,
+                    e.capacity,
+                    e.eventPoster,
+                    e.eventInfo,
+                    e.status,
+                    e.createdAt,
+                    e.updatedAt,
+                    f.name AS facilityName
                     FROM Events e
-                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
-                    INNER JOIN Facilities f ON bf.facilityId = f.id
+                    INNER JOIN BookableFacilities bf ON bf.id = e.facilityId
+                    INNER JOIN Facilities f ON f.id = bf.facilityId
                     WHERE e.universityId = ?
                     ORDER BY e.startDatetime ASC";
+
             $stmt = $this->db->prepare($sql);
+
             $stmt->execute([$universityId]);
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (Exception $e) {
@@ -212,31 +238,56 @@ class Event
         }
     }
 
-    public function searchAllEvents($universityId, $keyword)
+    public function searchAllEvents($universityId, $keyword) 
     {
         try {
+
             $sql = "SELECT e.id, e.universityId, e.createdBy, e.facilityId,
-                           e.title, e.description,
-                           e.startDatetime, e.endDatetime, e.capacity,
-                           e.eventPoster, e.eventInfo, e.status,
-                           e.createdAt, e.updatedAt,
-                           f.location AS location,
-                           f.name AS facilityName
+                    e.title, e.description,
+                    CONCAT(f.name, ' - ', f.location, ' - ', f.blockFloor) AS location,
+                    e.startDatetime,
+                    e.endDatetime,
+                    e.capacity,
+                    e.eventPoster,
+                    e.eventInfo,
+                    e.status,
+                    e.createdAt,
+                    e.updatedAt,
+                    f.name AS facilityName
                     FROM Events e
-                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
-                    INNER JOIN Facilities f ON bf.facilityId = f.id
+                    INNER JOIN BookableFacilities bf ON bf.id = e.facilityId
+                    INNER JOIN Facilities f ON f.id = bf.facilityId
                     WHERE e.universityId = ?
-                      AND (
-                          e.title LIKE ?
-                          OR e.description LIKE ?
-                          OR f.location LIKE ?
-                          OR DATE(e.startDatetime) LIKE ?
-                      )
+                    AND (
+                        e.title LIKE ?
+                        OR e.description LIKE ?
+                        OR f.name LIKE ?
+                        OR f.roomCode LIKE ?
+                        OR f.location LIKE ?
+                        OR f.blockFloor LIKE ?
+                        OR DATE(e.startDatetime) LIKE ?
+                    )
                     ORDER BY e.startDatetime ASC";
-            $searchTerm = '%' . $keyword . '%';
+
+            $searchTerm =
+                '%' . $keyword . '%';
+
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmt->execute([
+                $universityId,
+                $searchTerm,
+                $searchTerm,
+                $searchTerm,
+                $searchTerm,
+                $searchTerm,
+                $searchTerm,
+                $searchTerm
+            ]);
+
+            return $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            );
 
         } catch (Exception $e) {
             error_log("Search all events error: " . $e->getMessage());
@@ -244,25 +295,43 @@ class Event
         }
     }
 
-    public function getEventByIdAndUniversity($eventId, $universityId)
+    public function getEventByIdAndUniversity($eventId, $universityId) 
     {
         try {
-            $sql = "SELECT e.id, e.universityId, e.createdBy, e.facilityId,
-                           e.title, e.description,
-                           e.startDatetime, e.endDatetime, e.capacity,
-                           e.eventPoster, e.eventInfo, e.status,
-                           e.createdAt, e.updatedAt,
-                           f.location AS location,
-                           f.name AS facilityName
-                    FROM Events e
-                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
-                    INNER JOIN Facilities f ON bf.facilityId = f.id
-                    WHERE e.id = ?
-                      AND e.universityId = ?
-                    LIMIT 1";
+
+            $sql = "SELECT e.id, e.universityId, e.createdBy, e.facilityId, e.title, e.description,
+                    CONCAT(f.name, ' - ', f.location, ', ', f.blockFloor) AS location,
+                    f.id AS physicalFacilityId,
+                    f.name AS facilityName,
+                    f.roomCode,
+                    f.type AS facilityType,
+                    f.location AS facilityLocation,
+                    f.blockFloor,
+                    f.capacity AS facilityCapacity,
+
+                    e.startDatetime,
+                    e.endDatetime,
+                    e.capacity,
+                    e.eventPoster,
+                    e.eventInfo,
+                    e.status,
+                    e.createdAt,
+                    e.updatedAt
+                FROM Events e
+                INNER JOIN BookableFacilities bf ON bf.id = e.facilityId
+                INNER JOIN Facilities f ON f.id = bf.facilityId
+                WHERE e.id = ? AND e.universityId = ?
+                LIMIT 1";
+
             $stmt = $this->db->prepare($sql);
+
             $stmt->execute([$eventId, $universityId]);
-            $event = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $event =
+                $stmt->fetch(
+                    PDO::FETCH_ASSOC
+                );
+
             return $event ?: false;
 
         } catch (Exception $e) {
@@ -271,8 +340,17 @@ class Event
         }
     }
 
-    public function updateUniversityEvent($eventId, $universityId, $facilityId, $title, $description, $startDatetime, $endDatetime, $capacity)
-    {
+    public function updateUniversityEvent(
+        $eventId,
+        $universityId,
+        $facilityId,
+        $title,
+        $description,
+        $startDatetime,
+        $endDatetime,
+        $capacity,
+        $eventInfo = null
+    ) {
         try {
             $sql = "UPDATE Events
                     SET facilityId = ?,
@@ -281,9 +359,11 @@ class Event
                         startDatetime = ?,
                         endDatetime = ?,
                         capacity = ?,
+                        eventInfo = ?,
                         updatedAt = NOW()
                     WHERE id = ?
                       AND universityId = ?";
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $facilityId,
@@ -292,6 +372,7 @@ class Event
                 $startDatetime,
                 $endDatetime,
                 $capacity,
+                $eventInfo,
                 $eventId,
                 $universityId
             ]);
@@ -299,6 +380,37 @@ class Event
 
         } catch (Exception $e) {
             error_log("Update event error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateEventPoster($eventId, $universityId, $posterPath) 
+    {
+        try {
+
+            $sql = "UPDATE Events
+                    SET eventPoster = ?,
+                        updatedAt = NOW()
+                    WHERE id = ?
+                      AND universityId = ?";
+
+            $stmt = $this->db->prepare($sql);
+
+            $stmt->execute([
+                $posterPath,
+                $eventId,
+                $universityId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (Exception $e) {
+
+            error_log(
+                "Update event poster error: "
+                . $e->getMessage()
+            );
+
             return false;
         }
     }
@@ -325,18 +437,26 @@ class Event
     public function completePastEvents($universityId)
     {
         try {
+
             $sql = "SELECT id, facilityId
                     FROM Events
                     WHERE universityId = ?
                       AND status = 'active'
                       AND endDatetime < NOW()";
+
             $stmt = $this->db->prepare($sql);
+
             $stmt->execute([$universityId]);
-            $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $events = 
+                $stmt->fetchAll(
+                    PDO::FETCH_ASSOC
+                );
 
             if (!$events) {
                 return [];
             }
+
 
             $sql = "UPDATE Events
                     SET status = 'completed',
@@ -344,7 +464,9 @@ class Event
                     WHERE universityId = ?
                       AND status = 'active'
                       AND endDatetime < NOW()";
+
             $stmt = $this->db->prepare($sql);
+
             $stmt->execute([$universityId]);
 
             return $events;

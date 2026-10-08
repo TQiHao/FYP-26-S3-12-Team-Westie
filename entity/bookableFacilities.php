@@ -175,6 +175,70 @@ class BookableFacilities
         }
     }
 
+    // Get one bookable facility by ID and university
+    public function getBookableFacilityByIdAndUniversity(
+        $bookableFacilityId,
+        $universityId
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT
+                    bf.id,
+                    bf.facilityId,
+                    bf.isBookable,
+                    bf.slotDuration,
+                    bf.bookingCapacity,
+                    bf.openTime,
+                    bf.closeTime,
+                    bf.status,
+                    bf.createdAt,
+                    bf.updatedAt,
+
+                    f.name,
+                    f.roomCode,
+                    f.type,
+                    f.description,
+                    f.location,
+                    f.blockFloor,
+                    f.capacity,
+                    f.status AS facilityStatus
+
+                FROM BookableFacilities bf
+
+                INNER JOIN Facilities f
+                    ON f.id = bf.facilityId
+
+                WHERE bf.id = ?
+                  AND f.universityId = ?
+
+                LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $bookableFacilityId,
+                $universityId
+            ]);
+
+            $result =
+                $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ?: false;
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Get bookable facility by ID error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
     // Create bookable facility
     public function createBookableFacility($facilityId)
     {
@@ -289,6 +353,15 @@ class BookableFacilities
                 $universityId
             ];
 
+            /*
+             * FacilityBookings contains both:
+             * 1. Student bookings
+             * 2. Event bookings
+             *
+             * Event bookings are identified by:
+             * purpose LIKE 'Event:%'
+             */
+
             $sql = "SELECT
                     f.id AS facilityId,
                     f.name AS facilityName,
@@ -299,6 +372,7 @@ class BookableFacilities
                     bf.openTime,
                     bf.closeTime,
 
+                    /* STUDENT BOOKINGS */
                     COUNT(
                         CASE
                             WHEN fb.status IN (
@@ -306,10 +380,12 @@ class BookableFacilities
                                 'confirmed',
                                 'completed'
                             )
+                            AND fb.purpose NOT LIKE 'Event:%'
                             THEN fb.id
                         END
                     ) AS studentBookings,
 
+                    /* STUDENT HOURS */
                     COALESCE(
                         SUM(
                             CASE
@@ -318,6 +394,7 @@ class BookableFacilities
                                     'confirmed',
                                     'completed'
                                 )
+                                AND fb.purpose NOT LIKE 'Event:%'
                                 THEN TIMESTAMPDIFF(
                                     MINUTE,
                                     fb.startTime,
@@ -327,7 +404,41 @@ class BookableFacilities
                             END
                         ),
                         0
-                    ) AS studentHours
+                    ) AS studentHours,
+
+                    /* EVENT BOOKINGS */
+                    COUNT(
+                        CASE
+                            WHEN fb.status IN (
+                                'pending',
+                                'confirmed',
+                                'completed'
+                            )
+                            AND fb.purpose LIKE 'Event:%'
+                            THEN fb.id
+                        END
+                    ) AS eventCount,
+
+                    /* EVENT HOURS */
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN fb.status IN (
+                                    'pending',
+                                    'confirmed',
+                                    'completed'
+                                )
+                                AND fb.purpose LIKE 'Event:%'
+                                THEN TIMESTAMPDIFF(
+                                    MINUTE,
+                                    fb.startTime,
+                                    fb.endTime
+                                ) / 60
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS eventHours
 
                 FROM Facilities f
 
@@ -340,7 +451,9 @@ class BookableFacilities
                 WHERE f.universityId = ?
                   AND bf.isBookable = TRUE";
 
-
+            /*
+             * Facility type filter
+             */
             if ($facilityType !== '') {
 
                 $sql .= "
@@ -350,7 +463,9 @@ class BookableFacilities
                 $params[] = $facilityType;
             }
 
-
+            /*
+             * Group facilities
+             */
             $sql .= "
             GROUP BY
                 f.id,
@@ -365,97 +480,18 @@ class BookableFacilities
             ORDER BY f.name ASC
         ";
 
-
             $stmt = $db->prepare($sql);
 
             $stmt->execute($params);
 
-            $rows =
-                $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            );
 
 
             /*
-             * Get event usage separately because Events
-             * do not contain facilityId.
-             * They store the facility location as text.
+             * Calculate final totals
              */
-
-            foreach ($rows as &$row) {
-
-                $row['eventCount'] = 0;
-                $row['eventHours'] = 0;
-
-                if (
-                    $usageType === '' ||
-                    $usageType === 'event'
-                ) {
-
-                    $eventLocation =
-                        $row['facilityName']
-                        . ' — '
-                        . $row['location']
-                        . ', '
-                        . $row['blockFloor'];
-
-
-                    $eventSql = "
-                    SELECT
-                        COUNT(*) AS eventCount,
-
-                        COALESCE(
-                            SUM(
-                                TIMESTAMPDIFF(
-                                    MINUTE,
-                                    startDatetime,
-                                    endDatetime
-                                ) / 60
-                            ),
-                            0
-                        ) AS eventHours
-
-                    FROM Events
-
-                    WHERE universityId = ?
-                      AND location = ?
-                      AND status IN (
-                          'completed',
-                          'active'
-                      )
-                ";
-
-
-                    $eventStmt =
-                        $db->prepare($eventSql);
-
-                    $eventStmt->execute([
-                        $universityId,
-                        $eventLocation
-                    ]);
-
-                    $eventData =
-                        $eventStmt->fetch(
-                            PDO::FETCH_ASSOC
-                        );
-
-
-                    if ($eventData) {
-
-                        $row['eventCount'] =
-                            (int) $eventData['eventCount'];
-
-                        $row['eventHours'] =
-                            (float) $eventData['eventHours'];
-                    }
-                }
-            }
-
-            unset($row);
-
-
-            /*
-             * Calculate totals
-             */
-
             foreach ($rows as &$row) {
 
                 $studentBookings =
@@ -471,6 +507,9 @@ class BookableFacilities
                     (float) $row['eventHours'];
 
 
+                /*
+                 * STUDENT ONLY
+                 */
                 if ($usageType === 'student') {
 
                     $row['totalBookings'] =
@@ -479,6 +518,10 @@ class BookableFacilities
                     $row['hoursUsed'] =
                         $studentHours;
 
+
+                    /*
+                     * EVENT ONLY
+                     */
                 } elseif ($usageType === 'event') {
 
                     $row['totalBookings'] =
@@ -487,6 +530,10 @@ class BookableFacilities
                     $row['hoursUsed'] =
                         $eventHours;
 
+
+                    /*
+                     * ALL USAGE
+                     */
                 } else {
 
                     $row['totalBookings'] =
@@ -505,7 +552,6 @@ class BookableFacilities
                  * Assumes the same opening/closing
                  * time every day.
                  */
-
                 if (
                     !empty($row['openTime']) &&
                     !empty($row['closeTime'])
@@ -529,7 +575,7 @@ class BookableFacilities
                             ) / 3600;
 
                         $availableHours =
-                            $dailyHours * 7;
+                            $dailyHours * 5;
 
                     } else {
 
@@ -546,6 +592,9 @@ class BookableFacilities
                     $availableHours;
 
 
+                /*
+                 * Utilisation percentage
+                 */
                 if ($availableHours > 0) {
 
                     $row['utilisationRate'] =
@@ -562,7 +611,6 @@ class BookableFacilities
 
             unset($row);
 
-
             return $rows;
 
         } catch (PDOException $e) {
@@ -577,11 +625,15 @@ class BookableFacilities
     }
 
     public function getFacilityUtilisationSummary(
-        $universityId
+        $universityId,
+        $facilityType = '',
+        $usageType = ''
     ) {
         $report =
             $this->getFacilityUtilisationReport(
-                $universityId
+                $universityId,
+                $facilityType,
+                $usageType
             );
 
         $totalBookings = 0;
@@ -599,8 +651,12 @@ class BookableFacilities
             $totalHours +=
                 (float) $row['hoursUsed'];
 
-
+            /*
+             * Only consider facilities that have
+             * available operating hours.
+             */
             if (
+                (float) $row['availableHours'] > 0 &&
                 (float) $row['utilisationRate']
                 > $highestRate
             ) {
