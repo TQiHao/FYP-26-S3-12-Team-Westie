@@ -103,7 +103,7 @@ SELECT id, 'CSIT111 - System Security', 'thu', '10:00:00', '13:00:00', 'D3'
 FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
 
 -- ============================================
--- 6b. STUDENT ENROLMENTS（for student Evan Lu)
+-- 6b. STUDENT ENROLMENTS (for student Evan Lu)
 -- ============================================
 INSERT INTO StudentEnrolments (studentId, classId, enrolledBy, status)
 SELECT u.id, 1, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.com';
@@ -115,14 +115,21 @@ INSERT INTO StudentEnrolments (studentId, classId, enrolledBy, status)
 SELECT u.id, 4, u.id, 'enrolled' FROM Users u WHERE u.email = 'student@unibee.com';
 
 -- ============================================
--- 7. EVENTS  
+-- 6c. BOOKABLE FACILITIES
 -- ============================================
-INSERT IGNORE INTO Events (id, universityId, createdBy, title, description, location, startDatetime, endDatetime, capacity, status)
+INSERT INTO BookableFacilities (id, facilityId, isBookable, slotDuration, bookingCapacity, openTime, closeTime, status)
+VALUES
+(1, 1, TRUE, 60, 70, '08:00:00', '18:00:00', 'available'),
+(2, 5, TRUE, 60, 80, '08:00:00', '18:00:00', 'available')
+ON DUPLICATE KEY UPDATE isBookable = VALUES(isBookable), bookingCapacity = VALUES(bookingCapacity);
+
+-- ============================================
+-- 7. EVENTS
+-- ============================================
+INSERT IGNORE INTO Events (id, universityId, createdBy, facilityId, title, description, startDatetime, endDatetime, capacity, status)
 VALUES 
-(101, 1, 1, 'AI Innovation Seminar', 'A seminar on the latest AI trends and innovations.', 'Auditorium A',
-    '2026-12-10 10:00:00', '2026-12-10 11:30:00', 50, 'active'),
-(102, 1, 1, 'Algorithms Workshop', 'Hands-on workshop on advanced algorithm design.', 'Lab C101',
-    '2026-12-15 14:00:00', '2026-12-15 15:30:00', 30, 'active');
+(101, 1, 1, 1, 'AI Innovation Seminar', 'A seminar on the latest AI trends and innovations.', '2026-12-10 10:00:00', '2026-12-10 11:30:00', 50, 'active'),
+(102, 1, 1, 2, 'Algorithms Workshop', 'Hands-on workshop on advanced algorithm design.', '2026-12-15 14:00:00', '2026-12-15 15:30:00', 30, 'active');
 
 -- ============================================
 -- 8. BSCS STUDENTS (S1 2026/2027)
@@ -159,10 +166,9 @@ ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 -- ============================================
 -- 9. SYSTEM ADMIN
 -- ============================================
--- System Admin (PW: SystemAdmin123!)
 INSERT INTO SystemAdmins (email, passwordHash, fullName, status)
 VALUES
-( 'systemadmin@unibee.com', '$2y$12$0yPsP1593ENJj.gDG/5FD.6rva8FZgf0R0BKHW3MuUo0p.yvlWHYy', 'Sarah Tan', 'active');
+('systemadmin@unibee.com', '$2y$12$0yPsP1593ENJj.gDG/5FD.6rva8FZgf0R0BKHW3MuUo0p.yvlWHYy', 'Sarah Tan', 'active');
 
 -- ============================================
 -- 10. LICENSES
@@ -177,5 +183,40 @@ ON DUPLICATE KEY UPDATE name = VALUES(name), durationYears = VALUES(durationYear
 INSERT INTO UniversityLicenses (universityId, licenseId, startDate, expiryDate, status)
 SELECT 1, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'
 WHERE NOT EXISTS (SELECT 1 FROM UniversityLicenses WHERE universityId = 1);
+
+-- ============================================
+-- 11. LANDING PAGE CONTENT
+-- ============================================
+INSERT INTO LandingPageContent (sectionKey, title, subtitle, content, imagePath)
+VALUES
+('hero',
+ 'Connect Smarter,<br>Bee Smarter.',
+ 'Your smart campus hub for effortless learning, schedules, and collaboration.',
+ NULL,
+ '../images/landingpgCampus.avif'),
+
+('feature_admin',
+ 'Features for University Admin',
+ NULL,
+ '[{"title":"Manage Facilities Booking","desc":"Manage facilities to enable students to book campus space."},{"title":"Manage University Information","desc":"Manage and update university information to keep campus resources accurate and accessible."}]',
+ NULL),
+
+('feature_cc',
+ 'Features for Course Coordinator',
+ NULL,
+ '[{"title":"Manage Classes","desc":"Create and manage class information and schedules for students and lecturers."},{"title":"AI Chatbot","desc":"Get quick answers and smart classroom suggestions for class scheduling."}]',
+ NULL),
+
+('feature_student',
+ 'Features for Students',
+ NULL,
+ '[{"title":"Campus Navigation","desc":"Help navigate campus easily and find classrooms, facilities and other important locations."},{"title":"Organise Study Groups","desc":"Create or join study groups, find students with similar academic interests, and make studying more engaging and productive."}]',
+ NULL),
+
+('feature_lecturer',
+ 'Features for Lecturers',
+ NULL,
+ '[{"title":"Event Reminder","desc":"Keep lecturers informed with timely reminders about upcoming university events."},{"title":"Participate in events","desc":"Explore upcoming university events and discover new activities, experiences, and opportunities to get involved."}]',
+ NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -1,294 +1,11 @@
 <?php
-require_once '../database/database.php';
+require_once '../controller/ViewLandingPageController.php';
 
-/* ============================================================
- * Filter lists 
- * ============================================================ */
+$controller = new ViewLandingPageController();
 
-$BAD_WORDS = [
-    // Profanity
-    'fuck',
-    'fucking',
-    'fucked',
-    'fucker',
-    'shit',
-    'shitty',
-    'bullshit',
-    'damn',
-    'dammit',
-    'goddamn',
-    'ass',
-    'asshole',
-    'arse',
-    'arsehole',
-    'bitch',
-    'bastard',
-    'crap',
-    'crappy',
-    'dick',
-    'prick',
-    'cock',
-    'pussy',
-    'cunt',
-    'slut',
-    'whore',
-    'hoe',
-    'wtf',
-    'stfu',
-    'omfg',
-    'idiot',
-    'moron',
-    'retard',
-    'retarded',
-    'stupid',
-    'dumb',
-    'dumbass',
-    'dumbo',
-    'piss',
-    'pissed',
-    'frick',
-    'fricking',
-];
-
-$NEGATIVE_WORDS = [
-    // Strong negatives
-    'terrible',
-    'awful',
-    'horrible',
-    'horrendous',
-    'atrocious',
-    'dreadful',
-    'appalling',
-    'worst',
-    'worse',
-    'bad',
-    'poor',
-    'poorly',
-    'lousy',
-    'mediocre',
-    'meh',
-    'garbage',
-    'trash',
-    'rubbish',
-    'useless',
-    'worthless',
-    'pointless',
-    'broken',
-    'buggy',
-    'glitchy',
-    'crash',
-    'crashes',
-    'crashed',
-    'freeze',
-    'freezing',
-    'froze',
-    'frozen',
-    'laggy',
-    'slow',
-    'unresponsive',
-    'scam',
-    'fraud',
-    'fake',
-    'misleading',
-    'deceptive',
-    'disappointing',
-    'disappointed',
-    'disappointment',
-    'unusable',
-    'unreliable',
-    'unstable',
-    'unhelpful',
-    'pathetic',
-    'disgusting',
-    'disgust',
-    'repulsive',
-    'annoying',
-    'annoyed',
-    'frustrating',
-    'frustrated',
-    'confusing',
-    'confused',
-    'complicated',
-    'messy',
-    'cluttered',
-    'refund',
-    'cancel',
-    'uninstall',
-    'unsubscribe',
-    'hate',
-    'hatred',
-    'loathe',
-    'avoid',
-    'skip',
-    'boycott',
-    'suck',
-    'sucks',
-    'sucked',
-    'sucky',
-    'waste',
-    'wasted',
-    'wasteful',
-    'regret',
-    'rip off',
-    'ripoff',
-    'disgrace',
-    'shameful',
-    // Phrasal negatives (no apostrophe — apostrophes are normalized away)
-    'dont use',
-    'dont buy',
-    'dont recommend',
-    'dont like',
-    'do not use',
-    'do not buy',
-    'do not recommend',
-    'does not work',
-    'doesnt work',
-    'not recommended',
-    'not worth',
-    'not good',
-    'not great',
-    'not useful',
-    'not helpful',
-    'not working',
-    'never use',
-    'never again',
-    'never buy',
-    'no good',
-    'no thanks',
-    'no thank you',
-    'bad to use',
-    'bad app',
-    'bad experience',
-    'stop using',
-    'stay away',
-];
-
-$MIN_LENGTH = 20;
-$MAX_LENGTH = 400;
-
-
-function isCleanTestimonial($message, $badWords, $negativeWords, $minLen, $maxLen)
-{
-    $msg = trim($message);
-
-    if ($msg === '')
-        return false;
-    if (mb_strlen($msg) < $minLen)
-        return false;
-    if (mb_strlen($msg) > $maxLen)
-        return false;
-
-    // Reject URLs / emails
-    if (preg_match('/https?:\/\/|www\.|\.com|\.net|\.org/i', $msg))
-        return false;
-    if (preg_match('/\S+@\S+\.\S+/', $msg))
-        return false;
-
-    // Reject repeated characters (e.g. "aaaaaaa", "!!!!!!")
-    if (preg_match('/(.)\1{5,}/u', $msg))
-        return false;
-
-    // Reject ALL CAPS
-    $letters = preg_replace('/[^a-zA-Z]/', '', $msg);
-    if (strlen($letters) >= 10 && strtoupper($letters) === $letters)
-        return false;
-
-    // Normalize: lowercase, convert curly apostrophes, collapse whitespace
-    $norm = mb_strtolower($msg);
-    $norm = str_replace(['’', '‘', '`', '´'], "'", $norm);
-    $norm = preg_replace('/\s+/', ' ', $norm);
-
-    // ===== Repeated word (3+ times in a row) — "nice nice nice nice" =====
-    if (preg_match('/\b(\w+)\b(?:\s+\1\b){2,}/iu', $norm)) {
-        return false;
-    }
-
-    // ===== Check word boundaries with apostrophe AND without apostrophe =====
-    // e.g. "don't use" and "dont use" both map to "dont use"
-    $noApostrophe = str_replace("'", '', $norm);
-
-    $haystacks = [$norm, $noApostrophe];
-
-    foreach (array_merge($badWords, $negativeWords) as $w) {
-        $w = mb_strtolower(trim($w));
-        if ($w === '')
-            continue;
-
-        // Try both with and without apostrophes
-        $needle = $w;
-        $needleNoApos = str_replace("'", '', $w);
-
-        foreach ($haystacks as $hay) {
-            // Word-boundary match; use \b except for phrases with spaces
-            if (strpos($needle, ' ') !== false || strpos($needleNoApos, ' ') !== false) {
-                if (strpos($hay, $needle) !== false || strpos($hay, $needleNoApos) !== false) {
-                    return false;
-                }
-            } else {
-                if (preg_match('/\b' . preg_quote($needle, '/') . '\b/u', $hay))
-                    return false;
-                if (preg_match('/\b' . preg_quote($needleNoApos, '/') . '\b/u', $hay))
-                    return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-/* ============================================================
- * Fetch + filter
- * ============================================================ */
-
-$testimonials = [];
-
-try {
-    $db = new Database();
-    $pdo = $db->connect();
-
-    // Grab more rows than needed so we still have 3 after filtering
-    $stmt = $pdo->prepare("
-        SELECT 
-            f.id,
-            f.message,
-            f.rating,
-            f.category,
-            f.createdAt,
-            u.fullName
-        FROM Feedback f
-        JOIN Users u ON f.userId = u.id
-        WHERE f.rating >= 4
-          AND f.message IS NOT NULL
-          AND TRIM(f.message) != ''
-        ORDER BY f.createdAt DESC
-        LIMIT 30
-    ");
-    $stmt->execute();
-    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($rows as $row) {
-        if (isCleanTestimonial($row['message'], $BAD_WORDS, $NEGATIVE_WORDS, $MIN_LENGTH, $MAX_LENGTH)) {
-            $testimonials[] = $row;
-            if (count($testimonials) >= 3)
-                break;
-        }
-    }
-} catch (Exception $e) {
-    error_log("Landing testimonials error: " . $e->getMessage());
-}
-
-// Fallback if no qualifying feedback
-if (empty($testimonials)) {
-    $testimonials = [
-        ["message" => "The platform is really easy, and I love how everything is organised in one place!", "rating" => 5, "fullName" => "UniBee User", "createdAt" => null],
-        ["message" => "It makes managing my university activities much more convenient and saves me a lot of time.", "rating" => 5, "fullName" => "UniBee User", "createdAt" => null],
-        ["message" => "I really like the clean and colorful design. The features are useful and easy to understand.", "rating" => 5, "fullName" => "UniBee User", "createdAt" => null]
-    ];
-}
-
-/* ============================================================
- * Helpers
- * ============================================================ */
+$hero = $controller->getHeroContent();
+$featureSlides = $controller->getFeatureSlides();
+$testimonials = $controller->getTestimonials();
 
 function cleanInput($data)
 {
@@ -312,7 +29,6 @@ function formatTestimonialDate($datetime)
         return floor($diff / 3600) . ' hour' . (floor($diff / 3600) === 1 ? '' : 's') . ' ago';
     if ($diff < 604800)
         return floor($diff / 86400) . ' day' . (floor($diff / 86400) === 1 ? '' : 's') . ' ago';
-
     return date('d M Y', $ts);
 }
 
@@ -359,15 +75,22 @@ function getInitials($fullName)
         </nav>
     </header>
 
-    <section class="hero" style="background: url('../images/landingpgCampus.avif') center/cover no-repeat;">
+    <?php
+    $heroTitle = $hero ? $hero->getTitle() : 'Connect Smarter,<br>Bee Smarter.';
+    $heroSubtitle = $hero ? $hero->getSubtitle() : 'Your smart campus hub for effortless learning, schedules, and collaboration.';
+    $heroImage = $hero ? $hero->getImagePath() : '../images/landingpgCampus.avif';
+    ?>
+
+    <section class="hero"
+        style="background: url('<?php echo htmlspecialchars($heroImage); ?>') center/cover no-repeat;">
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <div class="hero-left">
-                <h1>Connect Smarter,<br>Bee Smarter.</h1>
+                <h1><?php echo $heroTitle; ?></h1>
             </div>
             <div class="hero-divider"></div>
             <div class="hero-right">
-                <p>Your smart campus hub for effortless learning, schedules, and collaboration.</p>
+                <p><?php echo htmlspecialchars($heroSubtitle); ?></p>
                 <a href="universityRegistrationPage.php" class="btn-primary">Get Started Today</a>
             </div>
         </div>
@@ -375,7 +98,7 @@ function getInitials($fullName)
 
     <section class="video-section">
         <div class="video-container">
-            <video controls poster="../images/landingpgCampus.avif">
+            <video controls poster="<?php echo htmlspecialchars($heroImage); ?>">
                 <source src="" type="video/mp4">
                 Your browser does not support video playback.
             </video>
@@ -385,89 +108,25 @@ function getInitials($fullName)
     <section class="features-section">
         <div class="features-wrapper">
 
-            <div class="role-slide active">
-                <h2 class="features-title">Features for University Admin</h2>
-                <div class="features-card">
-                    <button class="arrow-btn prev-btn" onclick="changeSlide(-1)">&#9664;</button>
-                    <div class="features-grid">
-                        <div class="feature-box">
-                            <h3>Manage Facilities Booking</h3>
-                            <div class="dashed-line"></div>
-                            <p>Manage facilities to enable students to book campus space.</p>
+            <?php foreach ($featureSlides as $i => $slide): ?>
+                <?php $boxes = $slide->getFeatureBoxes(); ?>
+                <div class="role-slide <?php echo $i === 0 ? 'active' : ''; ?>">
+                    <h2 class="features-title"><?php echo htmlspecialchars($slide->getTitle()); ?></h2>
+                    <div class="features-card">
+                        <button class="arrow-btn prev-btn" onclick="changeSlide(-1)">&#9664;</button>
+                        <div class="features-grid">
+                            <?php foreach ($boxes as $box): ?>
+                                <div class="feature-box">
+                                    <h3><?php echo htmlspecialchars($box['title'] ?? ''); ?></h3>
+                                    <div class="dashed-line"></div>
+                                    <p><?php echo htmlspecialchars($box['desc'] ?? ''); ?></p>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-                        <div class="feature-box">
-                            <h3>Manage University Information</h3>
-                            <div class="dashed-line"></div>
-                            <p>Manage and update university information to keep campus resources accurate and
-                                accessible.</p>
-                        </div>
+                        <button class="arrow-btn next-btn" onclick="changeSlide(1)">&#9654;</button>
                     </div>
-                    <button class="arrow-btn next-btn" onclick="changeSlide(1)">&#9654;</button>
                 </div>
-            </div>
-
-            <div class="role-slide">
-                <h2 class="features-title">Features for Course Coordinator</h2>
-                <div class="features-card">
-                    <button class="arrow-btn prev-btn" onclick="changeSlide(-1)">&#9664;</button>
-                    <div class="features-grid">
-                        <div class="feature-box">
-                            <h3>Manage Classes</h3>
-                            <div class="dashed-line"></div>
-                            <p>Create and manage class information and schedules for students and lecturers.</p>
-                        </div>
-                        <div class="feature-box">
-                            <h3>AI Chatbot</h3>
-                            <div class="dashed-line"></div>
-                            <p>Get quick answers and smart classroom suggestions for class scheduling.</p>
-                        </div>
-                    </div>
-                    <button class="arrow-btn next-btn" onclick="changeSlide(1)">&#9654;</button>
-                </div>
-            </div>
-
-            <div class="role-slide">
-                <h2 class="features-title">Features for Students</h2>
-                <div class="features-card">
-                    <button class="arrow-btn prev-btn" onclick="changeSlide(-1)">&#9664;</button>
-                    <div class="features-grid">
-                        <div class="feature-box">
-                            <h3>Campus Navigation</h3>
-                            <div class="dashed-line"></div>
-                            <p>Help navigate campus easily and find classrooms, facilities and other important
-                                locations.</p>
-                        </div>
-                        <div class="feature-box">
-                            <h3>Organise Study Groups</h3>
-                            <div class="dashed-line"></div>
-                            <p>Create or join study groups, find students with similar academic interests, and make
-                                studying more engaging and productive.</p>
-                        </div>
-                    </div>
-                    <button class="arrow-btn next-btn" onclick="changeSlide(1)">&#9654;</button>
-                </div>
-            </div>
-
-            <div class="role-slide">
-                <h2 class="features-title">Features for Lecturers</h2>
-                <div class="features-card">
-                    <button class="arrow-btn prev-btn" onclick="changeSlide(-1)">&#9664;</button>
-                    <div class="features-grid">
-                        <div class="feature-box">
-                            <h3>Event Reminder</h3>
-                            <div class="dashed-line"></div>
-                            <p>Keep lecturers informed with timely reminders about upcoming university events.</p>
-                        </div>
-                        <div class="feature-box">
-                            <h3>Participate in events</h3>
-                            <div class="dashed-line"></div>
-                            <p>Explore upcoming university events and discover new activities, experiences, and
-                                opportunities to get involved.</p>
-                        </div>
-                    </div>
-                    <button class="arrow-btn next-btn" onclick="changeSlide(1)">&#9654;</button>
-                </div>
-            </div>
+            <?php endforeach; ?>
 
         </div>
     </section>

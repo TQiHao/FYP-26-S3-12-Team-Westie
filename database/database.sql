@@ -78,6 +78,20 @@ CREATE TABLE SystemAdminProfiles (
 );
 
 -- ============================================
+-- LANDING PAGE CONTENT TABLE
+-- ============================================
+
+CREATE TABLE LandingPageContent (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    sectionKey VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(500),
+    subtitle TEXT,
+    content TEXT,
+    imagePath VARCHAR(500),
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- ============================================
 -- UNIVERSITY & REGISTRATION TABLES
 -- ============================================
 
@@ -576,3 +590,4 @@ CREATE TABLE Students (
         REFERENCES Programmes(id)
         ON DELETE CASCADE
 );
+
