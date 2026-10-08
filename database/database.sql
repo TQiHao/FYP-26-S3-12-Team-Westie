@@ -276,7 +276,7 @@ CREATE TABLE Facilities (
     universityId INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     roomCode VARCHAR(100),
-    type ENUM('study room', 'gym', 'lecture hall', 'lab') DEFAULT 'study room',
+    type ENUM('study room', 'gym', 'lecture hall', 'lab', 'classroom') DEFAULT 'study room',
     description TEXT,
     location VARCHAR(255),
     blockFloor VARCHAR(100),

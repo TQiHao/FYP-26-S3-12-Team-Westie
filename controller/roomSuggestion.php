@@ -64,7 +64,7 @@ function handleFindRooms($db, $universityId)
 
     if (empty($rooms)) {
         $occupied = findOccupiedRooms($db, $universityId, $day, $startTime, $endTime);
-        $message = "No free classroom fits $capacity students on " . ucfirst($day) . " $startTime-$endTime.";
+        $message = "No free classroom/lecture hall/lab fits $capacity students on " . ucfirst($day) . " $startTime-$endTime.";
         if (!empty($occupied)) {
             $message .= " Occupied at that time: " . implode(', ', array_column($occupied, 'roomCode')) . ".";
         }
@@ -83,7 +83,7 @@ function handleFindRooms($db, $universityId)
 
     echo json_encode([
         'status' => 'ok',
-        'message' => 'Found ' . count($rooms) . ' classroom(s) that fit ' . $capacity . ' students.',
+        'message' => 'Found ' . count($rooms) . ' room(s) that fit ' . $capacity . ' students.',
         'rooms' => $rooms,
     ]);
 }
@@ -111,7 +111,7 @@ function handleFindExamVenues($db, $universityId)
 
     if (empty($venues)) {
         $occupied = findOccupiedExamVenues($db, $examDate, $startTime, $endTime, $excludeClassId);
-        $message = "No free venue fits $capacity students on $examDate $startTime-$endTime.";
+        $message = "No free lecture hall or classroom fits $capacity students on $examDate $startTime-$endTime.";
         if (!empty($occupied)) {
             $names = array_unique(array_column($occupied, 'venue'));
             $message .= " Occupied at that time: " . implode(', ', $names) . ".";
@@ -156,7 +156,7 @@ function findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $min
         $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
                 FROM Facilities f
                 WHERE f.universityId = ?
-                  AND f.type = 'classroom'
+                  AND f.type IN ('lecture hall', 'classroom', 'lab')
                   AND f.status = 'active'
                   AND f.roomCode IS NOT NULL
                   AND f.capacity >= ?
@@ -188,7 +188,7 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
                 FROM Facilities f
                 JOIN Classes c ON c.room = f.roomCode
                 WHERE f.universityId = ?
-                  AND f.type = 'classroom'
+                  AND f.type IN ('lecture hall', 'classroom', 'lab')
                   AND c.dayOfWeek = ?
                   AND c.status = 'active'
                   AND c.startTime < ?
@@ -276,3 +276,4 @@ function buildReason($room, $requestedCapacity)
     }
     return 'Large room with ' . $diff . ' spare seats.';
 }
+

@@ -97,7 +97,11 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                     <span>Notifications</span>
                 </div>
 
-                <h2><?php echo $notiSummary['unreadCount']; ?> unread</h2>
+                <h2>
+                    <a href="notificationPage.php" class="summary-link">
+                        <?php echo $notiSummary['unreadCount']; ?> unread
+                    </a>
+                </h2>
                 <p><?php echo htmlspecialchars($notiSummary['latestMessage']); ?></p>
             </div>
 

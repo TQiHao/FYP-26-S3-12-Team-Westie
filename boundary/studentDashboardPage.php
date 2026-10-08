@@ -132,7 +132,11 @@ $fullName = $_SESSION['user_name'];
                     <h2>Unable to load</h2>
                     <p>Please try again later</p>
                 <?php else: ?>
-                    <h2><?php echo (int) $notificationSum['unreadCount']; ?> unread</h2>
+                    <h2>
+                        <a href="notificationPage.php" class="summary-link">
+                            <?php echo (int) $notificationSum['unreadCount']; ?> unread
+                        </a>
+                    </h2>
                     <?php if (!empty($notificationSum['latest'])): ?>
                         <p><?php echo htmlspecialchars($notificationSum['latest']['title']); ?></p>
                     <?php else: ?>

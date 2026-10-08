@@ -31,6 +31,7 @@ $studentFiles = $controller->getUniversityStudentFiles($universityId);
 
 foreach ($classList as &$cls) {
     $cls['enrolledStudents'] = $controller->getEnrolledStudents($cls['id']);
+    $cls['examList'] = $controller->getExamsByClassId($cls['id']);
 }
 unset($cls);
 
@@ -46,7 +47,6 @@ if (!empty($_SESSION['auto_open_edit'])) {
     }
 }
 
-// Read prefill data from URL (sent by AI Chatbot)
 $prefill = null;
 if (!empty($_GET['prefill'])) {
     $decoded = base64_decode($_GET['prefill']);
@@ -58,18 +58,14 @@ if (!empty($_GET['prefill'])) {
     }
 }
 
-// --- Flash messages FIRST, so $flashError exists before we use it ---
 $flashMessage = $_SESSION['flash_message'] ?? null;
 $flashError = $_SESSION['flash_error'] ?? null;
 unset($_SESSION['flash_message'], $_SESSION['flash_error']);
 
-// --- Then read reopen state ---
 $reopenMode = $_SESSION['reopen_class_form'] ?? null;
 $reopenData = $_SESSION['class_form_data'] ?? null;
 unset($_SESSION['reopen_class_form'], $_SESSION['class_form_data']);
 
-// If we are reopening the modal due to a validation error,
-// move the flash error inside the modal so the user actually sees it.
 $reopenError = null;
 if ($reopenMode !== null && $flashError !== null) {
     $reopenError = $flashError;
@@ -121,7 +117,6 @@ $formActionQs = $formActionParams ? '?' . http_build_query($formActionParams) : 
 
 $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => '']);
 
-// Count classes per module (used for "apply to all" checkbox)
 $moduleClassCounts = [];
 foreach ($classList as $c) {
     $mid = (int) $c['moduleId'];
@@ -703,6 +698,68 @@ foreach ($classList as $c) {
             color: #991b1b;
             line-height: 1.4;
         }
+
+        .field-hint {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 3px;
+            display: block;
+            font-weight: 400;
+        }
+
+        .exam-block {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            position: relative;
+        }
+
+        .exam-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .exam-block-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .btn-remove-exam {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .btn-remove-exam:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-add-exam {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .btn-add-exam:hover {
+            background: #bfdbfe;
+        }
     </style>
 </head>
 
@@ -880,8 +937,8 @@ foreach ($classList as $c) {
                     <div class="student-list-box" id="viewStudentList"></div>
                 </div>
                 <div class="info-group">
-                    <label>Exam Details</label>
-                    <p id="viewExamInfo"></p>
+                    <label>Exam Schedule</label>
+                    <div id="viewExamList"></div>
                 </div>
             </div>
             <div style="margin-top: 20px; text-align: right;">
@@ -926,7 +983,7 @@ foreach ($classList as $c) {
                         <input type="text" name="className" id="modalClassName" required>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group form-group-full">
                         <label>Day Of Week</label>
                         <select name="dayOfWeek" id="modalDayOfWeek" required>
                             <option value="mon">Monday</option>
@@ -937,6 +994,8 @@ foreach ($classList as $c) {
                             <option value="sat">Saturday</option>
                             <option value="sun">Sunday</option>
                         </select>
+                        <span class="field-hint">Each class runs on one day. If the same class runs on multiple days,
+                            create a separate class entry for each day.</span>
                     </div>
 
                     <div class="form-group form-group-full">
@@ -968,20 +1027,14 @@ foreach ($classList as $c) {
                         <label>Academic Year</label>
                         <input type="text" name="academicYear" id="modalAcademicYear" placeholder="e.g. 2026/2027"
                             required>
+                        <span class="field-hint">Free text. e.g. 2026/2027, 2027/2028.</span>
                     </div>
 
                     <div class="form-group">
                         <label>Semester / Term</label>
-                        <input type="text" name="semester" id="modalSemester" list="semesterList"
-                            placeholder="e.g. 1, 2, Special Term 1" required>
-                        <datalist id="semesterList">
-                            <option value="1">Semester 1</option>
-                            <option value="2">Semester 2</option>
-                            <option value="3">Semester 3</option>
-                            <option value="Special Term 1">Special Term 1</option>
-                            <option value="Special Term 2">Special Term 2</option>
-                            <option value="Summer Term">Summer Term</option>
-                        </datalist>
+                        <input type="text" name="semester" id="modalSemester" placeholder="e.g. 1, 2, Special Term 1"
+                            required>
+                        <span class="field-hint">Free text. Follow your university's naming.</span>
                     </div>
 
                     <div class="form-group form-group-full">
@@ -1058,30 +1111,10 @@ foreach ($classList as $c) {
 
                 <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
                     <h4 style="margin-bottom: 10px; color: #1e293b;">Exam Schedule</h4>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Exam Date</label>
-                            <input type="date" name="examDate" id="modalExamDate">
-                        </div>
-                        <div class="form-group form-group-full">
-                            <label>Exam Venue</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" name="examVenue" id="modalExamVenue" placeholder="e.g. Hall A"
-                                    style="flex: 1;">
-                                <button type="button" class="btn-secondary-small"
-                                    onclick="suggestExamVenues()">Suggest</button>
-                            </div>
-                            <div id="modalExamSuggestions" class="modal-room-suggestions"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Exam Start Time</label>
-                            <input type="time" name="examStartTime" id="modalExamStartTime">
-                        </div>
-                        <div class="form-group">
-                            <label>Exam End Time</label>
-                            <input type="time" name="examEndTime" id="modalExamEndTime">
-                        </div>
-                    </div>
+
+                    <div id="examBlocksContainer"></div>
+
+                    <button type="button" class="btn-add-exam" onclick="addExamBlock()">+ Add Exam</button>
 
                     <div id="applyExamWrap"
                         style="display:none; margin-top: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;">
@@ -1089,7 +1122,7 @@ foreach ($classList as $c) {
                             style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #1e40af; cursor: pointer; margin: 0;">
                             <input type="checkbox" name="apply_to_module" id="applyToModule" value="1"
                                 style="width: auto; margin: 0;">
-                            <span id="applyToModuleLabel">Apply this exam schedule to all other classes of this
+                            <span id="applyToModuleLabel">Apply these exam schedules to all other classes of this
                                 module</span>
                         </label>
                     </div>
@@ -1130,6 +1163,7 @@ foreach ($classList as $c) {
 
         let currentSelectedClassData = null;
         let currentEnrolledCount = 0;
+        let examBlockCounter = 0;
 
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
@@ -1143,7 +1177,6 @@ foreach ($classList as $c) {
             updateRatioDisplay();
         });
 
-        // ===== Module searchable dropdown =====
         const moduleSearch = document.getElementById('modalModuleSearch');
         const moduleDropdown = document.getElementById('modalModuleDropdown');
         const moduleHidden = document.getElementById('modalModuleId');
@@ -1232,7 +1265,6 @@ foreach ($classList as $c) {
             }
         });
 
-        // ===== Student searchable dropdown =====
         const studentSearch = document.getElementById('studentSearch');
         const studentDropdown = document.getElementById('studentDropdown');
         const studentHidden = document.getElementById('singleStudentId');
@@ -1320,7 +1352,6 @@ foreach ($classList as $c) {
             }
         });
 
-        // ===== Enrolment tabs =====
         function switchEnrolTab(tab) {
             if (tab === 'single') {
                 document.getElementById('tabSingleContent').style.display = 'block';
@@ -1389,10 +1420,17 @@ foreach ($classList as $c) {
                 viewStudentContainer.innerHTML = '<div style="color: #64748b; padding: 6px; font-size: 13px;">No enrolled students found.</div>';
             }
 
-            if (data.examDate) {
-                document.getElementById('viewExamInfo').textContent = data.examDate + " (" + (data.examStartTime || '') + " - " + (data.examEndTime || '') + ") @ " + (data.examVenue || 'TBA');
+            const examListContainer = document.getElementById('viewExamList');
+            examListContainer.innerHTML = '';
+            if (data.examList && data.examList.length > 0) {
+                data.examList.forEach(ex => {
+                    const div = document.createElement('div');
+                    div.className = 'student-item';
+                    div.textContent = ex.examDate + " (" + (ex.startTime || '').substring(0, 5) + " - " + (ex.endTime || '').substring(0, 5) + ") @ " + (ex.venue || 'TBA');
+                    examListContainer.appendChild(div);
+                });
             } else {
-                document.getElementById('viewExamInfo').textContent = 'No Exam Scheduled';
+                examListContainer.innerHTML = '<div style="color: #64748b; padding: 6px; font-size: 13px;">No Exam Scheduled</div>';
             }
 
             openModal('viewModal');
@@ -1405,8 +1443,123 @@ foreach ($classList as $c) {
             }
         }
 
+        function addExamBlock(date, venue, start, end) {
+            examBlockCounter++;
+            const id = 'examBlock_' + examBlockCounter;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'exam-block';
+            wrap.id = id;
+
+            wrap.innerHTML =
+                '<div class="exam-block-header">' +
+                '<span class="exam-block-title">Exam</span>' +
+                '<button type="button" class="btn-remove-exam" onclick="removeExamBlock(\'' + id + '\')">Remove</button>' +
+                '</div>' +
+                '<div class="form-grid">' +
+                '<div class="form-group">' +
+                '<label>Exam Date</label>' +
+                '<input type="date" name="examDate[]" value="' + (date || '') + '">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>Exam Start Time</label>' +
+                '<input type="time" name="examStartTime[]" value="' + (start || '') + '">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>Exam End Time</label>' +
+                '<input type="time" name="examEndTime[]" value="' + (end || '') + '">' +
+                '</div>' +
+                '<div class="form-group form-group-full">' +
+                '<label>Exam Venue</label>' +
+                '<div style="display: flex; gap: 8px;">' +
+                '<input type="text" name="examVenue[]" value="' + (venue || '') + '" placeholder="e.g. Hall A" style="flex: 1;">' +
+                '<button type="button" class="btn-secondary-small" onclick="suggestExamVenueForBlock(this)">Suggest</button>' +
+                '</div>' +
+                '<div class="modal-room-suggestions exam-venue-suggestions"></div>' +
+                '</div>' +
+                '</div>';
+
+            document.getElementById('examBlocksContainer').appendChild(wrap);
+        }
+
+        function removeExamBlock(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function clearExamBlocks() {
+            document.getElementById('examBlocksContainer').innerHTML = '';
+            examBlockCounter = 0;
+        }
+
+        function suggestExamVenueForBlock(btn) {
+            const block = btn.closest('.exam-block');
+            const dateInput = block.querySelector('input[name="examDate[]"]');
+            const startInput = block.querySelector('input[name="examStartTime[]"]');
+            const endInput = block.querySelector('input[name="examEndTime[]"]');
+            const venueInput = block.querySelector('input[name="examVenue[]"]');
+
+            const examDate = dateInput.value;
+            const startTime = startInput.value;
+            const endTime = endInput.value;
+            const capacity = document.getElementById('modalCapacity').value;
+            const classId = document.getElementById('classId').value || 0;
+
+            if (!examDate || !startTime || !endTime || !capacity) {
+                alert('Please fill in Exam Date, Exam Start Time, Exam End Time, and Capacity first.');
+                return;
+            }
+
+            const box = block.querySelector('.exam-venue-suggestions');
+            if (!box) return;
+
+            document.querySelectorAll('.exam-venue-suggestions').forEach(function (b) {
+                if (b !== box) {
+                    b.style.display = 'none';
+                    b.innerHTML = '';
+                }
+            });
+
+            box.style.display = 'block';
+            box.innerHTML = '<div class="room-sug-msg">Searching...</div>';
+
+            const fd = new FormData();
+            fd.append('action', 'find_exam_venues');
+            fd.append('examDate', examDate);
+            fd.append('startTime', startTime);
+            fd.append('endTime', endTime);
+            fd.append('capacity', capacity);
+            fd.append('excludeClassId', classId);
+
+            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
+                        box.innerHTML = '';
+                        data.rooms.forEach(function (r) {
+                            const item = document.createElement('div');
+                            item.className = 'room-sug-item';
+                            item.innerHTML = '<strong>' + r.roomCode + '</strong> - ' + r.name
+                                + ' <span style="color:#64748b;">(Cap: ' + r.capacity + ')</span><br>'
+                                + '<span class="room-sug-reason">' + (r.reason || '') + '</span>';
+                            item.onclick = function () {
+                                venueInput.value = r.roomCode;
+                                box.style.display = 'none';
+                                box.innerHTML = '';
+                            };
+                            box.appendChild(item);
+                        });
+                    } else {
+                        box.innerHTML = '<div class="room-sug-msg">' + (data.message || 'No venues found.') + '</div>';
+                    }
+                })
+                .catch(function () {
+                    box.innerHTML = '<div class="room-sug-msg" style="color:#991b1b;">Network error.</div>';
+                });
+        }
+
         function openCreateModal() {
-            clearModalError();   // ← added
+            clearModalError();
             document.getElementById('classFormAction').value = 'create_class';
             document.getElementById('classId').value = '';
             document.getElementById('classModalTitle').textContent = 'Create New Class';
@@ -1421,12 +1574,11 @@ foreach ($classList as $c) {
             document.getElementById('modalAcademicYear').value = '2026/2027';
             document.getElementById('modalSemester').value = '1';
             document.getElementById('modalStaffId').value = '';
-            document.getElementById('modalExamDate').value = '';
-            document.getElementById('modalExamVenue').value = '';
-            document.getElementById('modalExamStartTime').value = '';
-            document.getElementById('modalExamEndTime').value = '';
             document.getElementById('applyExamWrap').style.display = 'none';
             document.getElementById('applyToModule').checked = false;
+
+            clearExamBlocks();
+            addExamBlock();
 
             const sug = document.getElementById('modalRoomSuggestions');
             sug.style.display = 'none';
@@ -1448,7 +1600,7 @@ foreach ($classList as $c) {
         }
 
         function openEditModal(data) {
-            clearModalError();   // ← added
+            clearModalError();
             currentSelectedClassData = data;
             document.getElementById('classFormAction').value = 'update_class';
             document.getElementById('classId').value = data.id;
@@ -1464,12 +1616,7 @@ foreach ($classList as $c) {
             document.getElementById('modalAcademicYear').value = data.academicYear || '2026/2027';
             document.getElementById('modalSemester').value = data.semester || '1';
             document.getElementById('modalStaffId').value = data.staffId || '';
-            document.getElementById('modalExamDate').value = data.examDate || '';
-            document.getElementById('modalExamVenue').value = data.examVenue || '';
-            document.getElementById('modalExamStartTime').value = data.examStartTime || '';
-            document.getElementById('modalExamEndTime').value = data.examEndTime || '';
 
-            // Show "apply to all" checkbox if module has more than 1 class
             const mid = String(data.moduleId);
             const totalInModule = MODULE_CLASS_COUNTS[mid] || 1;
             const otherCount = totalInModule - 1;
@@ -1477,11 +1624,25 @@ foreach ($classList as $c) {
             if (otherCount > 0) {
                 applyWrap.style.display = 'block';
                 document.getElementById('applyToModuleLabel').textContent =
-                    'Apply this exam schedule to all other classes of this module (' + otherCount + ' more)';
+                    'Apply these exam schedules to all other classes of this module (' + otherCount + ' more)';
             } else {
                 applyWrap.style.display = 'none';
             }
             document.getElementById('applyToModule').checked = false;
+
+            clearExamBlocks();
+            if (data.examList && data.examList.length > 0) {
+                data.examList.forEach(function (ex) {
+                    addExamBlock(
+                        ex.examDate || '',
+                        ex.venue || '',
+                        ex.startTime ? ex.startTime.substring(0, 5) : '',
+                        ex.endTime ? ex.endTime.substring(0, 5) : ''
+                    );
+                });
+            } else {
+                addExamBlock();
+            }
 
             const sug = document.getElementById('modalRoomSuggestions');
             sug.style.display = 'none';
@@ -1533,7 +1694,6 @@ foreach ($classList as $c) {
             }
         }
 
-        // ===== Inline Suggest rooms in modal =====
         function suggestRoomsInline() {
             const day = document.getElementById('modalDayOfWeek').value;
             const startTime = document.getElementById('modalStartTime').value;
@@ -1582,58 +1742,6 @@ foreach ($classList as $c) {
                 });
         }
 
-        // ===== Suggest exam venues in modal =====
-        function suggestExamVenues() {
-            const examDate = document.getElementById('modalExamDate').value;
-            const startTime = document.getElementById('modalExamStartTime').value;
-            const endTime = document.getElementById('modalExamEndTime').value;
-            const capacity = document.getElementById('modalCapacity').value;
-            const classId = document.getElementById('classId').value || 0;
-
-            if (!examDate || !startTime || !endTime || !capacity) {
-                alert('Please fill in Exam Date, Exam Start Time, Exam End Time, and Capacity first.');
-                return;
-            }
-
-            const box = document.getElementById('modalExamSuggestions');
-            box.style.display = 'block';
-            box.innerHTML = '<div class="room-sug-msg">Searching...</div>';
-
-            const fd = new FormData();
-            fd.append('action', 'find_exam_venues');
-            fd.append('examDate', examDate);
-            fd.append('startTime', startTime);
-            fd.append('endTime', endTime);
-            fd.append('capacity', capacity);
-            fd.append('excludeClassId', classId);
-
-            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
-                        box.innerHTML = '';
-                        data.rooms.forEach(function (r) {
-                            const item = document.createElement('div');
-                            item.className = 'room-sug-item';
-                            item.innerHTML = '<strong>' + r.roomCode + '</strong> - ' + r.name
-                                + ' <span style="color:#64748b;">(Cap: ' + r.capacity + ')</span><br>'
-                                + '<span class="room-sug-reason">' + (r.reason || '') + '</span>';
-                            item.onclick = function () {
-                                document.getElementById('modalExamVenue').value = r.roomCode;
-                                box.style.display = 'none';
-                            };
-                            box.appendChild(item);
-                        });
-                    } else {
-                        box.innerHTML = '<div class="room-sug-msg">' + (data.message || 'No venues found.') + '</div>';
-                    }
-                })
-                .catch(function () {
-                    box.innerHTML = '<div class="room-sug-msg" style="color:#991b1b;">Network error.</div>';
-                });
-        }
-
-        // ===== Apply prefill from AI Chatbot =====
         function applyPrefill(data) {
             if (!data) return;
 
@@ -1674,7 +1782,6 @@ foreach ($classList as $c) {
             updateRatioDisplay();
         }
 
-        // ===== Fill form from session data (after validation error) =====
         function fillFormFromData(data) {
             if (!data) return;
 
@@ -1691,14 +1798,21 @@ foreach ($classList as $c) {
             if (data.academicYear) document.getElementById('modalAcademicYear').value = data.academicYear;
             if (data.semester) document.getElementById('modalSemester').value = data.semester;
             if (data.staffId) document.getElementById('modalStaffId').value = data.staffId;
-            if (data.examDate) document.getElementById('modalExamDate').value = data.examDate;
-            if (data.examVenue) document.getElementById('modalExamVenue').value = data.examVenue;
-            if (data.examStartTime) document.getElementById('modalExamStartTime').value = data.examStartTime;
-            if (data.examEndTime) document.getElementById('modalExamEndTime').value = data.examEndTime;
 
             if (data.apply_to_module) {
                 var applyBox = document.getElementById('applyToModule');
                 if (applyBox) applyBox.checked = true;
+            }
+
+            if (data.examDate && Array.isArray(data.examDate)) {
+                clearExamBlocks();
+                const dates = data.examDate;
+                const venues = data.examVenue || [];
+                const starts = data.examStartTime || [];
+                const ends = data.examEndTime || [];
+                dates.forEach(function (d, i) {
+                    addExamBlock(d, venues[i] || '', starts[i] || '', ends[i] || '');
+                });
             }
 
             updateRatioDisplay();

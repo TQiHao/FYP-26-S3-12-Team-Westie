@@ -24,6 +24,11 @@ class ManageClassController
         return $this->classEntity->getEnrolledStudents($classId);
     }
 
+    public function getExamsByClassId($classId)
+    {
+        return $this->classEntity->getExamsByClassId($classId);
+    }
+
     public function getAllModules()
     {
         return $this->classEntity->getAllModules();
@@ -46,22 +51,75 @@ class ManageClassController
 
     public function createClass($data, $coordinatorId)
     {
-        return $this->classEntity->createClass($data, $coordinatorId);
+        $result = $this->classEntity->createClass($data, $coordinatorId);
+
+        if (is_array($result) && ($result['status'] ?? '') === 'SUCCESS_CREATE') {
+            $newId = (int) ($result['newId'] ?? 0);
+            $staffId = !empty($data['staffId']) ? (int) $data['staffId'] : 0;
+
+            if ($newId > 0 && $staffId > 0) {
+                $this->notifyLecturerAssignment($staffId, $newId);
+            }
+
+            if ($newId > 0 && $this->hasExamData($data)) {
+                $this->notifyExamSchedule($newId);
+            }
+        }
+
+        return $result;
     }
 
     public function updateClass($classId, $data, $currentUserId)
     {
-        return $this->classEntity->updateClass($classId, $data, $currentUserId);
+        $oldStaffId = 0;
+        try {
+            $db = (new Database())->connect();
+            $stmt = $db->prepare("SELECT staffId FROM Classes WHERE id = ?");
+            $stmt->execute([$classId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $oldStaffId = (int) ($row['staffId'] ?? 0);
+            }
+        } catch (Exception $e) {
+            error_log("Fetch old staffId error: " . $e->getMessage());
+        }
+
+        $result = $this->classEntity->updateClass($classId, $data, $currentUserId);
+
+        if (is_array($result) && ($result['status'] ?? '') === 'SUCCESS_UPDATE') {
+            $newStaffId = !empty($data['staffId']) ? (int) $data['staffId'] : 0;
+            if ($newStaffId > 0 && $newStaffId !== $oldStaffId) {
+                $this->notifyLecturerAssignment($newStaffId, $classId);
+            }
+
+            if ($this->hasExamData($data)) {
+                $this->notifyExamSchedule($classId);
+            }
+        }
+
+        return $result;
     }
 
     public function toggleClassStatus($classId, $targetStatus)
     {
-        return $this->classEntity->toggleClassStatus($classId, $targetStatus);
+        $result = $this->classEntity->toggleClassStatus($classId, $targetStatus);
+
+        if ($result === "SUCCESS_STATUS") {
+            $this->notifyClassStatusChange($classId, $targetStatus);
+        }
+
+        return $result;
     }
 
     public function enrollStudentSingle($classId, $studentId, $enrolledBy)
     {
-        return $this->classEntity->enrollStudentSingle($classId, $studentId, $enrolledBy);
+        $result = $this->classEntity->enrollStudentSingle($classId, $studentId, $enrolledBy);
+
+        if ($result === "SUCCESS_ENROLL") {
+            $this->notifyStudentEnrolment($studentId, $classId);
+        }
+
+        return $result;
     }
 
     public function removeStudentFromClass($classId, $studentId)
@@ -102,6 +160,7 @@ class ManageClassController
             $res = $this->classEntity->enrollStudentSingle($classId, $student['id'], $enrolledBy);
             if ($res === "SUCCESS_ENROLL") {
                 $enrolledCount++;
+                $this->notifyStudentEnrolment($student['id'], $classId);
             } elseif (strpos($res, "STUDENT_CLASH:") === 0) {
                 $skippedClash[] = [
                     'identifier' => $identifier,
@@ -117,6 +176,183 @@ class ManageClassController
             'skippedClash' => $skippedClash,
             'skippedMissing' => $skippedMissing,
         ];
+    }
+
+    private function hasExamData($data)
+    {
+        if (empty($data['examDate']) || !is_array($data['examDate'])) {
+            return false;
+        }
+        foreach ($data['examDate'] as $d) {
+            if (trim($d) !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function getClassInfo($classId)
+    {
+        try {
+            $db = (new Database())->connect();
+            $stmt = $db->prepare(
+                "SELECT c.className, c.classCode, c.dayOfWeek, c.startTime, c.endTime, c.room,
+                        c.academicYear, c.semester, c.staffId,
+                        m.name AS moduleName, m.code AS moduleCode
+                 FROM Classes c
+                 JOIN Modules m ON m.id = c.moduleId
+                 WHERE c.id = ?"
+            );
+            $stmt->execute([$classId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("getClassInfo error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function buildTermLabel($info)
+    {
+        $ay = trim($info['academicYear'] ?? '');
+        $sem = trim($info['semester'] ?? '');
+        $parts = [];
+        if ($ay !== '') {
+            $parts[] = 'AY' . $ay;
+        }
+        if ($sem !== '') {
+            $parts[] = 'Semester ' . $sem;
+        }
+        return $parts ? ' (' . implode(', ', $parts) . ')' : '';
+    }
+
+    private function notifyStudentEnrolment($studentId, $classId)
+    {
+        $info = $this->getClassInfo($classId);
+        if (!$info)
+            return;
+
+        $title = "New module enrolment: " . $info['moduleCode'] . " - " . $info['moduleName'];
+        $message = "You have been enrolled in " . $info['moduleCode'] . " - " . $info['moduleName']
+            . " (Class " . $info['classCode'] . ")" . $this->buildTermLabel($info) . ".";
+
+        $this->insertNotification($studentId, 'class', $title, $message);
+    }
+
+    private function notifyLecturerAssignment($staffId, $classId)
+    {
+        $info = $this->getClassInfo($classId);
+        if (!$info)
+            return;
+
+        $title = "New module assignment: " . $info['moduleCode'] . " - " . $info['moduleName'];
+        $message = "You have been assigned to teach " . $info['moduleCode'] . " - " . $info['moduleName']
+            . " (Class " . $info['classCode'] . ") on " . ucfirst($info['dayOfWeek'])
+            . " " . substr($info['startTime'], 0, 5) . "-" . substr($info['endTime'], 0, 5)
+            . " in Room " . $info['room'] . $this->buildTermLabel($info) . ".";
+
+        $this->insertNotification($staffId, 'class', $title, $message);
+    }
+
+    private function notifyClassStatusChange($classId, $targetStatus)
+    {
+        $info = $this->getClassInfo($classId);
+        if (!$info)
+            return;
+
+        $label = ($targetStatus === 'suspended') ? 'suspended' : 'reactivated';
+        $title = "Class " . $label . ": " . $info['classCode'];
+        $baseMessage = "Class " . $info['classCode'] . " (" . $info['moduleCode'] . " - " . $info['moduleName']
+            . ")" . $this->buildTermLabel($info) . " has been " . $label . " by the Course Coordinator.";
+
+        try {
+            $db = (new Database())->connect();
+
+            $stmt = $db->prepare(
+                "SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'"
+            );
+            $stmt->execute([$classId]);
+            $students = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            foreach ($students as $sid) {
+                $this->insertNotification((int) $sid, 'class', $title, $baseMessage);
+            }
+
+            if (!empty($info['staffId'])) {
+                $this->insertNotification((int) $info['staffId'], 'class', $title, $baseMessage);
+            }
+        } catch (Exception $e) {
+            error_log("notifyClassStatusChange error: " . $e->getMessage());
+        }
+    }
+
+    private function notifyExamSchedule($classId)
+    {
+        $info = $this->getClassInfo($classId);
+        if (!$info)
+            return;
+
+        $exams = $this->classEntity->getExamsByClassId($classId);
+        if (empty($exams))
+            return;
+
+        $db = (new Database())->connect();
+
+        $firstExam = $exams[0];
+        $examCount = count($exams);
+        $firstDate = date('d M Y', strtotime($firstExam['examDate']));
+
+        if ($examCount === 1) {
+            $title = "Exam scheduled: " . $info['moduleCode'] . " - " . $firstDate;
+        } else {
+            $title = "Exams scheduled: " . $info['moduleCode'] . " - " . $examCount . " exams";
+        }
+
+        $lines = [];
+        foreach ($exams as $ex) {
+            $dateStr = date('d M Y', strtotime($ex['examDate']));
+            $timeStr = substr($ex['startTime'], 0, 5) . "-" . substr($ex['endTime'], 0, 5);
+            $lines[] = "- " . $dateStr . " (" . $timeStr . ") at " . $ex['venue'];
+        }
+
+        $message = "Exam schedule for " . $info['moduleCode'] . " - " . $info['moduleName']
+            . " (Class " . $info['classCode'] . ")" . $this->buildTermLabel($info) . ":\n"
+            . implode("\n", $lines);
+
+        try {
+            $stmt = $db->prepare(
+                "SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'"
+            );
+            $stmt->execute([$classId]);
+            $students = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            foreach ($students as $sid) {
+                $this->insertNotification((int) $sid, 'exam', $title, $message);
+            }
+
+            if (!empty($info['staffId'])) {
+                $this->insertNotification((int) $info['staffId'], 'exam', $title, $message);
+            }
+        } catch (Exception $e) {
+            error_log("notifyExamSchedule error: " . $e->getMessage());
+        }
+    }
+
+    private function insertNotification($userId, $type, $title, $message)
+    {
+        try {
+            $db = (new Database())->connect();
+            $check = $db->prepare("SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ?");
+            $check->execute([$userId, $title]);
+            if ((int) $check->fetchColumn() > 0) {
+                return;
+            }
+            $ins = $db->prepare(
+                "INSERT INTO Notifications (userId, type, title, message) VALUES (?, ?, ?, ?)"
+            );
+            $ins->execute([$userId, $type, $title, $message]);
+        } catch (Exception $e) {
+            error_log("insertNotification error: " . $e->getMessage());
+        }
     }
 }
 

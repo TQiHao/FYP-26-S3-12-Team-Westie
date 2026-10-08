@@ -19,14 +19,12 @@ class ClassEntity
                            m.name AS moduleName,
                            f.name AS facultyName,
                            u_staff.fullName AS lecturerName,
-                           (SELECT COUNT(*) FROM StudentEnrolments se WHERE se.classId = c.id AND se.status = 'enrolled') AS enrolledCount,
-                           e.examDate, e.startTime AS examStartTime, e.endTime AS examEndTime, e.venue AS examVenue
+                           (SELECT COUNT(*) FROM StudentEnrolments se WHERE se.classId = c.id AND se.status = 'enrolled') AS enrolledCount
                     FROM Classes c
                     JOIN Modules m ON c.moduleId = m.id
                     LEFT JOIN Programmes p ON m.programmeId = p.id
                     LEFT JOIN Faculties f ON p.facultyId = f.id
                     LEFT JOIN Users u_staff ON c.staffId = u_staff.id
-                    LEFT JOIN Exam e ON e.classId = c.id
                     WHERE 1=1";
 
             $params = [];
@@ -49,6 +47,22 @@ class ClassEntity
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Get Classes Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getExamsByClassId($classId)
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT id, examDate, startTime, endTime, venue
+                 FROM Exam
+                 WHERE classId = ?
+                 ORDER BY examDate ASC, startTime ASC"
+            );
+            $stmt->execute([$classId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
             return [];
         }
     }
@@ -103,14 +117,24 @@ class ClassEntity
 
     public function getStudentFilesFromFolder($universityId)
     {
-        $folder = __DIR__ . "/../csv/";
-        if (!is_dir($folder))
+        $baseFolder = __DIR__ . "/../csv/";
+        if (!is_dir($baseFolder)) {
             return [];
+        }
+
+        $uniFolder = $baseFolder . "U" . str_pad((int) $universityId, 2, '0', STR_PAD_LEFT);
+        if (!is_dir($uniFolder)) {
+            return [];
+        }
 
         $result = [];
-        foreach (glob($folder . "*.csv") as $path) {
+        foreach (glob($uniFolder . "/*.csv") as $path) {
+            $base = basename($path);
+            if (stripos($base, 'StudentList') === false) {
+                continue;
+            }
             $result[] = [
-                'fileName' => basename($path),
+                'fileName' => $base,
                 'fullPath' => $path,
                 'uploadedAt' => date('Y-m-d H:i:s', filemtime($path)),
             ];
@@ -122,18 +146,24 @@ class ClassEntity
 
         return $result;
     }
+
     public function readStudentFileByFilename($fileName, $universityId)
     {
         $fileName = basename($fileName);
-        $folder = __DIR__ . "/../csv/";
-        $fullPath = $folder . $fileName;
 
-        if (!file_exists($fullPath))
+        if (stripos($fileName, 'StudentList') === false) {
             return null;
+        }
+
+        $uniFolder = __DIR__ . "/../csv/U" . str_pad((int) $universityId, 2, '0', STR_PAD_LEFT);
+        $fullPath = $uniFolder . "/" . $fileName;
+
+        if (!file_exists($fullPath)) {
+            return null;
+        }
+
         return ['fileName' => $fileName, 'fullPath' => $fullPath];
     }
-
-
     public function checkClassConflict($moduleId, $classCode, $dayOfWeek, $room, $startTime, $endTime, $excludeClassId = null)
     {
         $sqlDup = "SELECT id FROM Classes WHERE moduleId = ? AND classCode = ?";
@@ -163,9 +193,6 @@ class ClassEntity
         return "OK";
     }
 
-    /**
-     * Returns the first conflicting class for the lecturer, or null.
-     */
     public function findLecturerClash($staffId, $dayOfWeek, $startTime, $endTime, $excludeClassId = null)
     {
         if (empty($staffId))
@@ -192,9 +219,6 @@ class ClassEntity
         }
     }
 
-    /**
-     * Returns the first conflicting class for the student, or null.
-     */
     public function findStudentClash($studentId, $targetClassId)
     {
         try {
@@ -265,8 +289,8 @@ class ClassEntity
 
             $newClassId = (int) $this->db->lastInsertId();
 
-            if (!empty($data['examDate'])) {
-                $this->saveExamPlan($newClassId, $data['examDate'], $data['examStartTime'], $data['examEndTime'], $data['examVenue'], $coordinatorId);
+            if (!empty($data['examDate']) && is_array($data['examDate'])) {
+                $this->saveExamPlans($newClassId, $data, $coordinatorId);
             }
 
             return ['status' => 'SUCCESS_CREATE', 'newId' => $newClassId];
@@ -311,25 +335,19 @@ class ClassEntity
                 $classId
             ]);
 
-            if (!empty($data['examDate'])) {
-                $this->saveExamPlan($classId, $data['examDate'], $data['examStartTime'], $data['examEndTime'], $data['examVenue'], $currentUserId);
+            $this->saveExamPlans($classId, $data, $currentUserId);
 
-                // If CC ticked "apply to all other classes of this module"
-                if (!empty($data['apply_to_module'])) {
-                    $stmt = $this->db->prepare("SELECT moduleId FROM Classes WHERE id = ?");
-                    $stmt->execute([$classId]);
-                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if ($row) {
-                        $this->applyExamToModuleClasses(
-                            (int) $row['moduleId'],
-                            $classId,
-                            $data['examDate'],
-                            $data['examStartTime'],
-                            $data['examEndTime'],
-                            $data['examVenue'],
-                            $currentUserId
-                        );
-                    }
+            if (!empty($data['apply_to_module'])) {
+                $stmt = $this->db->prepare("SELECT moduleId FROM Classes WHERE id = ?");
+                $stmt->execute([$classId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $this->applyExamToModuleClasses(
+                        (int) $row['moduleId'],
+                        $classId,
+                        $data,
+                        $currentUserId
+                    );
                 }
             }
 
@@ -351,14 +369,6 @@ class ClassEntity
         }
     }
 
-    /**
-     * Returns one of:
-     *   SUCCESS_ENROLL
-     *   CAPACITY_FULL
-     *   ALREADY_ENROLLED
-     *   STUDENT_CLASH:<classCode>
-     *   DB_ERROR
-     */
     public function enrollStudentSingle($classId, $studentId, $enrolledBy)
     {
         try {
@@ -419,41 +429,75 @@ class ClassEntity
         }
     }
 
-    public function saveExamPlan($classId, $examDate, $startTime, $endTime, $venue, $createdBy)
+    public function saveExamPlans($classId, $data, $createdBy)
     {
         try {
-            $check = $this->db->prepare("SELECT id FROM Exam WHERE classId = ?");
-            $check->execute([$classId]);
-            if ($check->fetch(PDO::FETCH_ASSOC)) {
-                $sql = "UPDATE Exam SET examDate = ?, startTime = ?, endTime = ?, venue = ?, createdBy = ?, updatedAt = NOW() WHERE classId = ?";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute([$examDate, $startTime, $endTime, $venue, $createdBy, $classId]);
-            } else {
-                $sql = "INSERT INTO Exam (classId, examDate, startTime, endTime, venue, createdBy, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute([$classId, $examDate, $startTime, $endTime, $venue, $createdBy]);
+            $del = $this->db->prepare("DELETE FROM Exam WHERE classId = ?");
+            $del->execute([$classId]);
+
+            $dates = $data['examDate'] ?? [];
+            $venues = $data['examVenue'] ?? [];
+            $starts = $data['examStartTime'] ?? [];
+            $ends = $data['examEndTime'] ?? [];
+
+            if (!is_array($dates)) {
+                return "SUCCESS_EXAM";
             }
+
+            $ins = $this->db->prepare(
+                "INSERT INTO Exam (classId, examDate, startTime, endTime, venue, createdBy, createdAt, updatedAt)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())"
+            );
+
+            foreach ($dates as $i => $d) {
+                $d = trim($d);
+                $v = trim($venues[$i] ?? '');
+                $s = trim($starts[$i] ?? '');
+                $e = trim($ends[$i] ?? '');
+                if ($d === '' || $s === '' || $e === '' || $v === '') {
+                    continue;
+                }
+                $ins->execute([$classId, $d, $s, $e, $v, $createdBy]);
+            }
+
             return "SUCCESS_EXAM";
-        } catch (Exception $e) {
-            error_log("Save Exam Error: " . $e->getMessage());
+        } catch (Exception $ex) {
+            error_log("Save Exam Plans Error: " . $ex->getMessage());
             return "DB_ERROR";
         }
     }
 
-    /**
-     * Copy the same exam schedule to every other class of the same module.
-     * Returns number of classes updated.
-     */
-    public function applyExamToModuleClasses($moduleId, $excludeClassId, $examDate, $startTime, $endTime, $venue, $createdBy)
+    public function applyExamToModuleClasses($moduleId, $excludeClassId, $data, $createdBy)
     {
         try {
             $stmt = $this->db->prepare("SELECT id FROM Classes WHERE moduleId = ? AND id != ?");
             $stmt->execute([$moduleId, $excludeClassId]);
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            $dates = $data['examDate'] ?? [];
+            $venues = $data['examVenue'] ?? [];
+            $starts = $data['examStartTime'] ?? [];
+            $ends = $data['examEndTime'] ?? [];
+
+            $del = $this->db->prepare("DELETE FROM Exam WHERE classId = ?");
+            $ins = $this->db->prepare(
+                "INSERT INTO Exam (classId, examDate, startTime, endTime, venue, createdBy, createdAt, updatedAt)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())"
+            );
+
             $count = 0;
             foreach ($classes as $c) {
-                $this->saveExamPlan($c['id'], $examDate, $startTime, $endTime, $venue, $createdBy);
+                $del->execute([$c['id']]);
+                foreach ($dates as $i => $d) {
+                    $d = trim($d);
+                    $v = trim($venues[$i] ?? '');
+                    $s = trim($starts[$i] ?? '');
+                    $e = trim($ends[$i] ?? '');
+                    if ($d === '' || $s === '' || $e === '' || $v === '') {
+                        continue;
+                    }
+                    $ins->execute([$c['id'], $d, $s, $e, $v, $createdBy]);
+                }
                 $count++;
             }
             return $count;
@@ -463,3 +507,4 @@ class ClassEntity
         }
     }
 }
+?>
