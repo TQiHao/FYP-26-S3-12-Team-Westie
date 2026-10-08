@@ -730,17 +730,21 @@ class AIChatbotController
     private function handleEvents($universityId)
     {
         try {
-            $sql = "SELECT id, title, location, startDatetime
-                    FROM Events
-                    WHERE universityId = ?
-                      AND status = 'active'
-                      AND startDatetime >= NOW()
-                    ORDER BY startDatetime ASC
+            $sql = "SELECT e.id, e.title, e.startDatetime,
+                           f.location AS location
+                    FROM Events e
+                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
+                    INNER JOIN Facilities f ON bf.facilityId = f.id
+                    WHERE e.universityId = ?
+                      AND e.status = 'active'
+                      AND e.startDatetime >= NOW()
+                    ORDER BY e.startDatetime ASC
                     LIMIT 3";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId]);
             $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
+            error_log("handleEvents error: " . $e->getMessage());
             $events = [];
         }
 
@@ -749,12 +753,12 @@ class AIChatbotController
             : "Here are the next upcoming events:";
 
         return [
-            'answer' => $answer,
-            'source' => 'faq',
-            'events' => $events,
-            'action' => [
+            'answer'  => $answer,
+            'source'  => 'faq',
+            'events'  => $events,
+            'action'  => [
                 'label' => 'View Campus Events',
-                'url' => 'viewEventsPage.php'
+                'url'   => 'viewEventsPage.php'
             ]
         ];
     }
