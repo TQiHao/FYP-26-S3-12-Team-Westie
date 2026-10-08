@@ -7,6 +7,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+date_default_timezone_set('Asia/Singapore');
+
 require_once "../controller/studentDashboardController.php";
 
 $dashboardController = new StudentDashboardController();

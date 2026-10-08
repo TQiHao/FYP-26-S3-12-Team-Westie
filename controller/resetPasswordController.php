@@ -3,7 +3,11 @@
 require_once "../database/database.php";
 require_once "../entity/users.php";
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+date_default_timezone_set('Asia/Singapore');
 
 class ResetPasswordController
 {

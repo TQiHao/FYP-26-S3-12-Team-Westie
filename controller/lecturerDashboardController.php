@@ -2,6 +2,8 @@
 require_once "../entity/users.php";
 require_once "../database/database.php";
 
+date_default_timezone_set('Asia/Singapore');
+
 class LecturerDashboardController
 {
     private $db;
