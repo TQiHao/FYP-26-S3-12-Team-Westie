@@ -2,6 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    $_SESSION['login_error'] = "Session expired. Please log in again.";
     header("Location: LoginPage.php");
     exit();
 }
