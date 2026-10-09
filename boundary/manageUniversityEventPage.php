@@ -829,19 +829,11 @@ if (
 
             </div>
 
-            <div
-                id="profileMenu"
-                class="dropdown-menu"
-            >
-
-                <a href="universityAdminDashboardPage.php">
-                    Dashboard
-                </a>
-
-                <a href="../controller/logoutController.php">
-                    Log Out
-                </a>
-
+            <div id="profileMenu" class="dropdown-menu">
+                <a href="renewLicensePage.php">Renew License</a>
+                <a href="aiChatbotPage.php">AI Chatbot</a>
+                <a href="submitFeedbackPage.php">Submit Feedback</a>
+                <a href="../controller/logoutController.php">Log Out</a>
             </div>
 
         </div>

@@ -496,29 +496,11 @@ if ($universityId !== null) {
 
             </div>
 
-            <div
-                id="profileMenu"
-                class="dropdown-menu"
-            >
-
-                <a
-                    href="UniversityAdminDashboardPage.php"
-                >
-                    Dashboard
-                </a>
-
-                <a
-                    href="UniversityAdminDashboardPage.php"
-                >
-                    Manage Facilities Booking
-                </a>
-
-                <a
-                    href="../controller/logoutController.php"
-                >
-                    Log Out
-                </a>
-
+            <div id="profileMenu" class="dropdown-menu">
+                <a href="renewLicensePage.php">Renew License</a>
+                <a href="aiChatbotPage.php">AI Chatbot</a>
+                <a href="submitFeedbackPage.php">Submit Feedback</a>
+                <a href="../controller/logoutController.php">Log Out</a>
             </div>
 
         </div>
@@ -613,9 +595,7 @@ if ($universityId !== null) {
 
         <?php endif; ?>
 
-
         <!-- CREATE -->
-
         <?php if ($tab === 'create'): ?>
 
             <form
@@ -642,6 +622,7 @@ if ($universityId !== null) {
                         id="facilityType"
                         name="facilityType"
                         onchange="filterFacilities()"
+                        required
                     >
 
                         <option value="">
@@ -668,6 +649,7 @@ if ($universityId !== null) {
 
                 </div>
 
+
                 <!-- FACILITY NAME -->
 
                 <div class="form-group">
@@ -690,45 +672,39 @@ if ($universityId !== null) {
                         </option>
 
 
-                        <?php
-
-                        foreach (
-                            $facilities
-                            as $facility
-                        ): ?>
+                        <?php foreach ($facilities as $facility): ?>
 
                             <option
                                 value="<?php
-
-                                echo (int) 
-                                    $facility['id'];
+                                    echo (int) $facility['id'];
                                 ?>"
                                 data-type="<?php
-
-                                echo htmlspecialchars(
-                                    $facility['type']
-                                );
+                                    echo htmlspecialchars(
+                                        $facility['type']
+                                    );
                                 ?>"
                             >
-                                <?php
 
-                                echo htmlspecialchars(
-                                    $facility['name']
-                                );
+                                <?php
+                                    echo htmlspecialchars(
+                                        $facility['name']
+                                    );
                                 ?>
+
                                 —
-                                <?php
 
-                                echo htmlspecialchars(
-                                    $facility['location']
-                                );
+                                <?php
+                                    echo htmlspecialchars(
+                                        $facility['location']
+                                    );
                                 ?>,
-                                <?php
 
-                                echo htmlspecialchars(
-                                    $facility['blockFloor']
-                                );
+                                <?php
+                                    echo htmlspecialchars(
+                                        $facility['blockFloor']
+                                    );
                                 ?>
+
                             </option>
 
                         <?php endforeach; ?>
@@ -736,6 +712,45 @@ if ($universityId !== null) {
                     </select>
 
                 </div>
+
+
+                <!-- OPEN TIME -->
+
+                <div class="form-group">
+
+                    <label for="openTime">
+                        Open Time
+                    </label>
+
+                    <input
+                        type="time"
+                        id="openTime"
+                        name="openTime"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- END TIME -->
+
+                <div class="form-group">
+
+                    <label for="closeTime">
+                        End Time
+                    </label>
+
+                    <input
+                        type="time"
+                        id="closeTime"
+                        name="closeTime"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- CREATE BUTTON -->
 
                 <div class="create-button-area">
 

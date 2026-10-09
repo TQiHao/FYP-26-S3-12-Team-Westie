@@ -14,7 +14,8 @@ CREATE TABLE Universities (
     suspensionReason TEXT,
     registrationDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    subscriptionPlan VARCHAR(50)
+    subscriptionPlan VARCHAR(50),
+    campusMapPath VARCHAR(500) NULL
 );
 
 -- Users Table
@@ -270,10 +271,37 @@ CREATE TABLE Exam (
 -- FACILITIES & BOOKING TABLES
 -- ============================================
 
+-- Campus Building Table
+CREATE TABLE CampusBuildings (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    universityId INT NOT NULL,
+    buildingName VARCHAR(255) NOT NULL,
+    buildingCode VARCHAR(50),
+    description TEXT,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE
+);
+
+-- Campus Floor Table
+CREATE TABLE CampusFloors (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    buildingId INT NOT NULL,
+    floorName VARCHAR(100) NOT NULL,
+    floorNumber INT NOT NULL,
+    description TEXT,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (buildingId) REFERENCES CampusBuildings(id) ON DELETE CASCADE
+);
+
 -- Facilities Table
 CREATE TABLE Facilities (
     id INT PRIMARY KEY AUTO_INCREMENT,
     universityId INT NOT NULL,
+    floorId INT,
     name VARCHAR(255) NOT NULL,
     roomCode VARCHAR(100),
     type ENUM('study room', 'gym', 'lecture hall', 'lab', 'classroom') DEFAULT 'study room',
@@ -284,7 +312,8 @@ CREATE TABLE Facilities (
     status VARCHAR(50) DEFAULT 'active',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE
+    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE,
+    FOREIGN KEY (floorId) REFERENCES CampusFloors(id) ON DELETE SET NULL
 );
 
 -- Bookable Facilities Table
@@ -298,13 +327,8 @@ CREATE TABLE BookableFacilities (
     closeTime TIME,
     status ENUM('available', 'unavailable') DEFAULT 'available',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (facilityId)
-        REFERENCES Facilities(id)
-        ON DELETE CASCADE,
-
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (facilityId) REFERENCES Facilities(id) ON DELETE CASCADE,
     UNIQUE (facilityId)
 );
 
@@ -328,14 +352,14 @@ CREATE TABLE FacilityBookings (
 -- Floor Plans Table
 CREATE TABLE FloorPlans (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    universityId INT NOT NULL,
-    buildingName VARCHAR(255),
-    fileName VARCHAR(255),
-    filePath VARCHAR(500),
+    floorId INT NOT NULL,
+    fileName VARCHAR(255) NOT NULL,
+    filePath VARCHAR(500) NOT NULL,
+    description TEXT,
     uploadedBy INT,
     uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (universityId) REFERENCES Universities(id) ON DELETE CASCADE,
+    FOREIGN KEY (floorId) REFERENCES CampusFloors(id) ON DELETE CASCADE,
     FOREIGN KEY (uploadedBy) REFERENCES Users(id) ON DELETE SET NULL
 );
 

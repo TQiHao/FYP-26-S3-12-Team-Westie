@@ -11,6 +11,8 @@ require_once "../entity/facilities.php";
 require_once "../entity/users.php";
 require_once "../entity/students.php";
 require_once "../entity/floorPlans.php";
+require_once "../entity/campusBuildings.php";
+require_once "../entity/campusFloors.php";
 
 class ManageUniversityInformationController
 {
@@ -21,6 +23,8 @@ class ManageUniversityInformationController
     private $users;
     private $students;
     private $floorPlans;
+    private $campusBuildings;
+    private $campusFloors;
 
     public function __construct()
     {
@@ -31,6 +35,8 @@ class ManageUniversityInformationController
         $this->users = new Users();
         $this->students = new Students();
         $this->floorPlans = new FloorPlans();
+        $this->campusBuildings = new CampusBuildings();
+        $this->campusFloors = new CampusFloors();
     }
 
     // Validate Faculty CSV
@@ -1672,7 +1678,7 @@ class ManageUniversityInformationController
         );
     }
 
-    private function validateFloorPlan($file) 
+    public function validateFloorPlan($file) 
     {
         // Check whether a file was uploaded
         if (
@@ -1734,95 +1740,18 @@ class ManageUniversityInformationController
         return true;
     }
 
-    public function uploadFloorPlan($file, $universityId, $uploadedBy) 
-    {
-        // Validate file
-        $validationResult =
-            $this->validateFloorPlan($file);
-
-        if ($validationResult !== true) {
-            return $validationResult;
-        }
-
-        // Create upload directory
-        $uploadDirectory =
-            "../uploads/floorplans/";
-
-        if (!is_dir($uploadDirectory)) {
-
-            if (
-                !mkdir(
-                    $uploadDirectory,
-                    0777,
-                    true
-                )
-            ) {
-                return "Unable to create the floor plan upload directory.";
-            }
-        }
-
-        // Get extension
-        $extension = strtolower(
-            pathinfo(
-                $file['name'],
-                PATHINFO_EXTENSION
-            )
+    public function uploadFloorPlan(
+        $floorId,
+        $fileName,
+        $filePath,
+        $uploadedBy
+    ) {
+        return $this->floorPlans->uploadFloorPlan(
+            $floorId,
+            $fileName,
+            $filePath,
+            $uploadedBy
         );
-
-        // Generate unique file name
-        $newFileName =
-            "floorplan_" .
-            $universityId .
-            "_" .
-            time() .
-            "_" .
-            uniqid() .
-            "." .
-            $extension;
-
-        // Full server path
-        $destination =
-            $uploadDirectory .
-            $newFileName;
-
-        // Move uploaded file
-        if (
-            !move_uploaded_file(
-                $file['tmp_name'],
-                $destination
-            )
-        ) {
-            return "Unable to save the floor plan file.";
-        }
-
-        // Path stored in database
-        $filePath =
-            "uploads/floorplans/" .
-            $newFileName;
-
-        // Original file name
-        $originalFileName =
-            basename($file['name']);
-
-        // Insert database record
-        $result =
-            $this->floorPlans->uploadFloorPlan(
-                $universityId,
-                null,
-                $originalFileName,
-                $filePath,
-                $uploadedBy
-            );
-
-        if ($result === true) {
-            return true;
-        }
-
-        // Delete uploaded file if database insertion fails
-        if (file_exists($destination)) {
-            unlink($destination);
-        }
-        return "Unable to save floor plan information to the database.";
     }
 
     public function uploadStudentList(
@@ -1883,6 +1812,251 @@ class ManageUniversityInformationController
         }
 
         return true;
+    }
+
+    public function getFloorPlanByFloorId($floorId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $sql = "SELECT
+                    id,
+                    floorId,
+                    fileName,
+                    filePath,
+                    uploadedBy,
+                    uploadedAt,
+                    updatedAt
+                FROM FloorPlans
+                WHERE floorId = ?
+                ORDER BY id DESC
+                LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $floorId
+            ]);
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $result ?: null;
+
+        } catch (PDOException $e) {
+            return null;
+        }
+    }
+
+    // Get Overall Campus Map
+    public function getCampusMap($universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "SELECT campusMapPath
+                FROM Universities
+                WHERE id = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $universityId
+            ]);
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$result || empty($result['campusMapPath'])) {
+                return null;
+            }
+
+            return [
+                'filePath' => $result['campusMapPath']
+            ];
+
+        } catch (PDOException $e) {
+
+            error_log(
+                "Get campus map error: " .
+                $e->getMessage()
+            );
+
+            return null;
+        }
+    }
+
+    // Get all campus buildings for the university
+    public function getCampusBuildings($universityId)
+    {
+        $buildings =
+            $this->campusBuildings->getBuildingsByUniversity(
+                $universityId
+            );
+
+        foreach ($buildings as &$building) {
+
+            $building['floors'] =
+                $this->campusFloors->getFloorsByBuilding(
+                    $building['id']
+                );
+
+            foreach ($building['floors'] as &$floor) {
+
+                $floor['floorPlan'] =
+                    $this->floorPlans->getFloorPlanByFloorId(
+                        $floor['id']
+                    );
+            }
+        }
+
+        return $buildings;
+    }
+
+    // Get one campus building
+    public function getCampusBuildingById($buildingId)
+    {
+        return $this->campusBuildings->getBuildingById(
+            $buildingId
+        );
+    }
+
+
+    // Create a new campus building
+    public function createCampusBuilding(
+        $universityId,
+        $buildingName,
+        $buildingCode,
+        $description
+    ) {
+
+        if (
+            $this->campusBuildings->buildingCodeExists(
+                $universityId,
+                $buildingCode
+            )
+        ) {
+            return "Building code already exists.";
+        }
+
+        return $this->campusBuildings->createBuilding(
+            $universityId,
+            $buildingName,
+            $buildingCode,
+            $description
+        );
+    }
+
+
+    // Update campus building
+    public function updateCampusBuilding(
+        $buildingId,
+        $buildingName,
+        $buildingCode,
+        $description
+    ) {
+        return $this->campusBuildings->updateBuilding(
+            $buildingId,
+            $buildingName,
+            $buildingCode,
+            $description
+        );
+    }
+
+
+    // Deactivate campus building
+    public function deactivateCampusBuilding($buildingId)
+    {
+        return $this->campusBuildings->deactivateBuilding(
+            $buildingId
+        );
+    }
+
+
+    // Get all floors for a building
+    public function getCampusFloors($buildingId)
+    {
+        return $this->campusFloors->getFloorsByBuilding(
+            $buildingId
+        );
+    }
+
+
+    // Get one campus floor
+    public function getCampusFloorById($floorId)
+    {
+        return $this->campusFloors->getFloorById(
+            $floorId
+        );
+    }
+
+
+    // Create a new campus floor
+    public function createCampusFloor(
+        $buildingId,
+        $floorName,
+        $floorNumber,
+        $description
+    ) {
+        if (
+            $this->campusFloors->floorExists(
+                $buildingId,
+                $floorName,
+                $floorNumber
+            )
+        ) {
+            return "This level already exists in this building.";
+        }
+
+        return $this->campusFloors->createFloor(
+            $buildingId,
+            $floorName,
+            $floorNumber,
+            $description
+        );
+    }
+
+
+    // Update campus floor
+    public function updateCampusFloor(
+        $floorId,
+        $floorName,
+        $floorNumber,
+        $description
+    ) {
+        $floor =
+            $this->campusFloors->getFloorById($floorId);
+
+        if (!$floor) {
+            return "Level not found.";
+        }
+
+        if (
+            $this->campusFloors->floorExists(
+                $floor['buildingId'],
+                $floorName,
+                $floorNumber,
+                $floorId
+            )
+        ) {
+            return "This level already exists in this building.";
+        }
+
+        return $this->campusFloors->updateFloor(
+            $floorId,
+            $floorName,
+            $floorNumber,
+            $description
+        );
+    }
+
+    // Deactivate campus floor
+    public function deactivateCampusFloor($floorId)
+    {
+        return $this->campusFloors->deactivateFloor(
+            $floorId
+        );
     }
 }
 
@@ -2400,6 +2574,132 @@ if (
     exit();
 }
 
+// Handle Overall Campus Map upload
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['uploadType']) &&
+    $_POST['uploadType'] === "campusMap"
+) {
+
+    $file =
+        $_FILES['uploadFile'] ?? null;
+
+
+    // Check file
+    if (
+        !isset($file) ||
+        $file['error'] !== UPLOAD_ERR_OK
+    ) {
+
+        $_SESSION['upload_error'] =
+            "Please select a campus map.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    // Check extension
+    $extension =
+        strtolower(
+            pathinfo(
+                $file['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+    $allowedExtensions = [
+        'png',
+        'jpg',
+        'jpeg'
+    ];
+
+
+    if (
+        !in_array(
+            $extension,
+            $allowedExtensions
+        )
+    ) {
+
+        $_SESSION['upload_error'] =
+            "Invalid campus map format. Please upload a PNG, JPG, or JPEG file.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    // Create upload folder
+    $uploadDirectory =
+        "../uploads/campusMap/";
+
+    if (!is_dir($uploadDirectory)) {
+
+        mkdir(
+            $uploadDirectory,
+            0777,
+            true
+        );
+    }
+
+    // Generate unique file name
+    $fileName =
+        uniqid(
+            'campus_map_',
+            true
+        ) . '.' . $extension;
+
+
+    // Save file
+    if (
+        !move_uploaded_file(
+            $file['tmp_name'],
+            $uploadDirectory . $fileName
+        )
+    ) {
+
+        $_SESSION['upload_error'] =
+            "Unable to save the campus map.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+    $campusMapPath = 'uploads/campusMap/' . $fileName;
+
+    $database = new Database();
+    $db = $database->connect();
+
+    $stmt = $db->prepare("
+        UPDATE Universities
+        SET campusMapPath = ?
+        WHERE id = ?
+    ");
+
+    $stmt->execute([
+        $campusMapPath,
+        $_SESSION['university_id']
+    ]);
+
+    $_SESSION['upload_success'] = "Campus map uploaded successfully.";
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
+}
+
 // Handle Floor Plan upload
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
@@ -2407,27 +2707,25 @@ if (
     $_POST['uploadType'] === "floorPlan"
 ) {
 
-    $controller =
-        new ManageUniversityInformationController();
+    $controller = new ManageUniversityInformationController();
 
-    $file =
-        $_FILES['uploadFile'] ?? null;
+    $file = $_FILES['uploadFile'] ?? null;
 
-    $universityId =
-        $_SESSION['university_id'] ?? null;
+    $floorId =
+        isset($_POST['floorId'])
+        ? (int) $_POST['floorId']
+        : 0;
 
-    $uploadedBy =
-        $_SESSION['user_id'] ?? null;
+    $uploadedBy = $_SESSION['user_id'] ?? null;
 
-
-    // Check university
-    if ($universityId === null) {
+    // Check floor
+    if ($floorId <= 0) {
 
         $_SESSION['upload_error'] =
-            "Unable to identify your university.";
+            "Unable to identify the selected level.";
 
         header(
-            "Location: ../boundary/UploadListPage.php?type=floorPlan"
+            "Location: ../boundary/uploadFloorPlanPage.php"
         );
 
         exit();
@@ -2440,41 +2738,410 @@ if (
             "Unable to identify the current user.";
 
         header(
-            "Location: ../boundary/UploadListPage.php?type=floorPlan"
+            "Location: ../boundary/uploadFloorPlanPage.php"
         );
 
         exit();
     }
 
-    // Upload
-    $result =
-        $controller->uploadFloorPlan(
-            $file,
-            $universityId,
-            $uploadedBy
-        );
+    // Check file
+    $validation = $controller->validateFloorPlan($file);
 
-    // Success
-    if ($result === true) {
+    if ($validation !== true) {
 
-        $_SESSION['upload_success'] =
-            "Floor plan uploaded successfully.";
+        $_SESSION['upload_error'] =
+            $validation;
 
         header(
             "Location: ../boundary/uploadFloorPlanPage.php"
         );
 
         exit();
+    }
+
+    // Create upload folder
+    $uploadDirectory =
+        "../uploads/floorPlans/";
+
+    if (!is_dir($uploadDirectory)) {
+
+        mkdir(
+            $uploadDirectory,
+            0777,
+            true
+        );
+    }
+
+    // Generate unique file name
+    $extension =
+        strtolower(
+            pathinfo(
+                $file['name'],
+                PATHINFO_EXTENSION
+            )
+        );
+
+    $fileName =
+        uniqid(
+            'floorplan_',
+            true
+        ) . '.' . $extension;
+
+
+    $filePath =
+        "uploads/floorPlans/" . $fileName;
+
+    // Move uploaded file
+    if (
+        !move_uploaded_file(
+            $file['tmp_name'],
+            $uploadDirectory . $fileName
+        )
+    ) {
+
+        $_SESSION['upload_error'] =
+            "Unable to save the floor plan.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+    // Save to database
+    $result =
+        $controller->uploadFloorPlan(
+            $floorId,
+            $file['name'],
+            $filePath,
+            $uploadedBy
+        );
+
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Floor plan uploaded successfully.";
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            "Unable to save the floor plan.";
+
+    }
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
+}
+
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "createCampusBuilding"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $universityId =
+        $_SESSION['university_id'] ?? null;
+
+    $buildingName =
+        trim($_POST['buildingName'] ?? '');
+
+    $buildingCode =
+        trim($_POST['buildingCode'] ?? '');
+
+    $description =
+        trim($_POST['description'] ?? '');
+
+
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] =
+            "Unable to identify your university.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    if ($buildingName === '') {
+
+        $_SESSION['upload_error'] =
+            "Building name is required.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    $result =
+        $controller->createCampusBuilding(
+            $universityId,
+            $buildingName,
+            $buildingCode,
+            $description
+        );
+
+
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Campus building added successfully.";
 
     } else {
 
         $_SESSION['upload_error'] =
             $result;
+    }
+
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
+}
+
+// Handle Add Campus Floor
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "createCampusFloor"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $buildingId =
+        (int) ($_POST['buildingId'] ?? 0);
+
+    $floorName =
+        trim($_POST['floorName'] ?? '');
+
+    $floorNumber =
+        (int) ($_POST['floorNumber'] ?? 0);
+
+    $description =
+        trim($_POST['description'] ?? '');
+
+
+    if ($buildingId <= 0) {
+
+        $_SESSION['upload_error'] =
+            "Invalid building.";
 
         header(
-            "Location: ../boundary/UploadListPage.php?type=floorPlan"
+            "Location: ../boundary/uploadFloorPlanPage.php"
         );
 
         exit();
     }
+
+
+    if ($floorName === '') {
+
+        $_SESSION['upload_error'] =
+            "Level name is required.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    if ($floorNumber < 0) {
+
+        $_SESSION['upload_error'] =
+            "Level number is invalid.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    $result =
+        $controller->createCampusFloor(
+            $buildingId,
+            $floorName,
+            $floorNumber,
+            $description
+        );
+
+
+    if ($result === true) {
+
+        $_SESSION['upload_success'] =
+            "Level added successfully.";
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            $result;
+    }
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
+}
+
+// Handle Edit Campus Floor
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "updateCampusFloor"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $floorId =
+        (int) ($_POST['floorId'] ?? 0);
+
+    $floorName =
+        trim($_POST['floorName'] ?? '');
+
+    $floorNumber =
+        (int) ($_POST['floorNumber'] ?? 0);
+
+    $description =
+        trim($_POST['description'] ?? '');
+
+
+    if ($floorId <= 0) {
+
+        $_SESSION['upload_error'] =
+            "Invalid level.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    if ($floorName === '') {
+
+        $_SESSION['upload_error'] =
+            "Level name is required.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    if ($floorNumber < 0) {
+
+        $_SESSION['upload_error'] =
+            "Level number is invalid.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    $result =
+        $controller->updateCampusFloor(
+            $floorId,
+            $floorName,
+            $floorNumber,
+            $description
+        );
+
+
+    if ($result) {
+
+        $_SESSION['upload_success'] =
+            "Level updated successfully.";
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            "Unable to update level.";
+
+    }
+
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
+}
+
+// Handle Delete Campus Floor
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "deleteCampusFloor"
+) {
+
+    $controller =
+        new ManageUniversityInformationController();
+
+    $floorId =
+        (int) ($_POST['floorId'] ?? 0);
+
+
+    if ($floorId <= 0) {
+
+        $_SESSION['upload_error'] =
+            "Invalid level.";
+
+        header(
+            "Location: ../boundary/uploadFloorPlanPage.php"
+        );
+
+        exit();
+    }
+
+
+    $result =
+        $controller->deactivateCampusFloor(
+            $floorId
+        );
+
+
+    if ($result) {
+
+        $_SESSION['upload_success'] =
+            "Level deleted successfully.";
+
+    } else {
+
+        $_SESSION['upload_error'] =
+            "Unable to delete level.";
+
+    }
+
+
+    header(
+        "Location: ../boundary/uploadFloorPlanPage.php"
+    );
+
+    exit();
 }

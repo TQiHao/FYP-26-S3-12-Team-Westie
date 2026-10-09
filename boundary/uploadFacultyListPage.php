@@ -114,19 +114,10 @@ if ($universityId !== null) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-
-                    <a href="UniversityAdminDashboardPage.php">
-                        Dashboard
-                    </a>
-
-                    <a href="ManageUniversityInformationPage.php">
-                        Manage University Information
-                    </a>
-
-                    <a href="../controller/logoutController.php">
-                        Log Out
-                    </a>
-
+                    <a href="renewLicensePage.php">Renew License</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 
             </div>

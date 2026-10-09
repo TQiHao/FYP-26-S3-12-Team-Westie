@@ -73,14 +73,6 @@ switch ($type) {
         $icon = 'student.png';
         break;
 
-    case 'floorPlan':
-        $title = 'Campus Floor Plan';
-        $uploadType = 'floorPlan';
-        $backPage = 'uploadFloorPlanPage.php';
-        $buttonText = 'Upload Floor Plan';
-        $icon = 'floorPlan.png';
-        break;
-
     default:
         header("Location: ManageUniversityInformationPage.php");
         exit();
@@ -142,19 +134,10 @@ unset($_SESSION['upload_error']);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-
-                    <a href="UniversityAdminDashboardPage.php">
-                        Dashboard
-                    </a>
-
-                    <a href="ManageUniversityInformationPage.php">
-                        Manage University Information
-                    </a>
-
-                    <a href="../controller/logoutController.php">
-                        Log Out
-                    </a>
-
+                    <a href="renewLicensePage.php">Renew License</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 
             </div>

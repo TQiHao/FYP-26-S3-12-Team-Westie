@@ -31,88 +31,120 @@ class ManageBookableFacilitiesController
     }
 
     // CREATE BOOKABLE FACILITY
-    public function createBookableFacility(
-        $facilityId,
-        $facilityType,
-        $universityId
-    ) {
-        $facilityId =
-            (int) $facilityId;
+public function createBookableFacility(
+    $facilityId,
+    $facilityType,
+    $openTime,
+    $closeTime,
+    $universityId
+) {
+    $facilityId =
+        (int) $facilityId;
 
-        $facilityType =
-            trim($facilityType);
+    $facilityType =
+        trim($facilityType);
 
+    $openTime =
+        trim($openTime);
 
-        if ($facilityId <= 0) {
-            return "Please select a facility.";
-        }
-
-
-        if ($facilityType === '') {
-            return "Please select a facility type.";
-        }
+    $closeTime =
+        trim($closeTime);
 
 
-        // Get selected facility from Facilities
-        $facility =
-            $this->facilities
-                ->getFacilityByIdAndUniversity(
-                    $facilityId,
-                    $universityId
-                );
-
-
-        if ($facility === false) {
-            return "Selected facility is invalid.";
-        }
-
-        // Facility must be active
-        if (
-            strtolower(
-                trim($facility['status'] ?? '')
-            ) !== 'active'
-        ) {
-            return "Selected facility is not active.";
-        }
-
-        // Make sure selected type matches the actual facility type
-        if (
-            strtolower(
-                trim($facility['type'] ?? '')
-            ) !==
-            strtolower($facilityType)
-        ) {
-            return
-                "The selected facility type does not "
-                . "match the selected facility.";
-        }
-
-        // Check whether already bookable
-        if (
-            $this->bookableFacilities
-                ->bookableFacilityExists(
-                    $facilityId
-                )
-        ) {
-            return
-                "The selected facility is already "
-                . "bookable.";
-        }
-
-        // Create record in BookableFacilities
-        $created =
-            $this->bookableFacilities
-                ->createBookableFacility(
-                    $facilityId
-                );
-
-        if ($created === false) {
-            return
-                "Unable to create the bookable facility.";
-        }
-
-        return true;
+    if ($facilityId <= 0) {
+        return "Please select a facility.";
     }
+
+
+    if ($facilityType === '') {
+        return "Please select a facility type.";
+    }
+
+
+    if ($openTime === '') {
+        return "Please enter the opening time.";
+    }
+
+
+    if ($closeTime === '') {
+        return "Please enter the closing time.";
+    }
+
+
+    if ($closeTime <= $openTime) {
+        return "Closing time must be later than opening time.";
+    }
+
+
+    // Get selected facility from Facilities
+    $facility =
+        $this->facilities
+            ->getFacilityByIdAndUniversity(
+                $facilityId,
+                $universityId
+            );
+
+
+    if ($facility === false) {
+        return "Selected facility is invalid.";
+    }
+
+
+    // Facility must be active
+    if (
+        strtolower(
+            trim($facility['status'] ?? '')
+        ) !== 'active'
+    ) {
+        return "Selected facility is not active.";
+    }
+
+
+    // Make sure selected type matches
+    // the actual facility type
+    if (
+        strtolower(
+            trim($facility['type'] ?? '')
+        ) !==
+        strtolower($facilityType)
+    ) {
+        return
+            "The selected facility type does not "
+            . "match the selected facility.";
+    }
+
+
+    // Check whether already bookable
+    if (
+        $this->bookableFacilities
+            ->bookableFacilityExists(
+                $facilityId
+            )
+    ) {
+        return
+            "The selected facility is already "
+            . "bookable.";
+    }
+
+
+    // Create record in BookableFacilities
+    $created =
+        $this->bookableFacilities
+            ->createBookableFacility(
+                $facilityId,
+                $openTime,
+                $closeTime
+            );
+
+
+    if ($created === false) {
+        return
+            "Unable to create the bookable facility.";
+    }
+
+
+    return true;
+}
 
     // GET ALL BOOKABLE FACILITIES
     public function getBookableFacilities(
@@ -172,6 +204,18 @@ if (
         );
 
 
+    $openTime =
+        trim(
+            $_POST['openTime'] ?? ''
+        );
+
+
+    $closeTime =
+        trim(
+            $_POST['closeTime'] ?? ''
+        );
+
+
     if ($universityId === null) {
 
         $_SESSION['bookable_facility_error'] =
@@ -183,6 +227,8 @@ if (
             $controller->createBookableFacility(
                 $facilityId,
                 $facilityType,
+                $openTime,
+                $closeTime,
                 $universityId
             );
 

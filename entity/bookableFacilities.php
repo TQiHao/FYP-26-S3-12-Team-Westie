@@ -240,31 +240,40 @@ class BookableFacilities
     }
 
     // Create bookable facility
-    public function createBookableFacility($facilityId)
-    {
+    public function createBookableFacility(
+        $facilityId,
+        $openTime,
+        $closeTime
+    ) {
         $database = new Database();
         $db = $database->connect();
 
         try {
 
             $sql = "INSERT INTO BookableFacilities
-                    (
-                        facilityId,
-                        isBookable,
-                        bookingCapacity,
-                        status
-                    )
-                    SELECT
-                        id,
-                        TRUE,
-                        capacity,
-                        'available'
-                    FROM Facilities
-                    WHERE id = ?";
+                (
+                    facilityId,
+                    isBookable,
+                    bookingCapacity,
+                    openTime,
+                    closeTime,
+                    status
+                )
+                SELECT
+                    id,
+                    TRUE,
+                    capacity,
+                    ?,
+                    ?,
+                    'available'
+                FROM Facilities
+                WHERE id = ?";
 
             $stmt = $db->prepare($sql);
 
             $stmt->execute([
+                $openTime,
+                $closeTime,
                 $facilityId
             ]);
 

@@ -111,8 +111,7 @@ class FloorPlans
 
     // Upload floor plan information into database 
     public function uploadFloorPlan(
-        $universityId,
-        $buildingName,
+        $floorId,
         $fileName,
         $filePath,
         $uploadedBy
@@ -123,25 +122,23 @@ class FloorPlans
         try {
 
             $sql = "INSERT INTO FloorPlans
-                    (
-                        universityId,
-                        buildingName,
-                        fileName,
-                        filePath,
-                        uploadedBy,
-                        uploadedAt,
-                        updatedAt
-                    )
-                    VALUES
-                    (
-                        ?, ?, ?, ?, ?, NOW(), NOW()
-                    )";
+                (
+                    floorId,
+                    fileName,
+                    filePath,
+                    uploadedBy,
+                    uploadedAt,
+                    updatedAt
+                )
+                VALUES
+                (
+                    ?, ?, ?, ?, NOW(), NOW()
+                )";
 
             $stmt = $db->prepare($sql);
 
             $stmt->execute([
-                $universityId,
-                $buildingName,
+                $floorId,
                 $fileName,
                 $filePath,
                 $uploadedBy
@@ -155,9 +152,25 @@ class FloorPlans
         }
     }
 
-
     // Get the latest floor plan for a university
-    public function getLatestFloorPlan($universityId)
+    public function getLatestFloorPlan($floorId)
+    {
+        $sql = "SELECT *
+            FROM FloorPlans
+            WHERE floorId = ?
+            ORDER BY id DESC
+            LIMIT 1";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $floorId);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+
+        return $result->fetch_assoc();
+    }
+
+    public function getFloorPlanByFloorId($floorId)
     {
         $database = new Database();
         $db = $database->connect();
@@ -165,23 +178,22 @@ class FloorPlans
         try {
 
             $sql = "SELECT
-                        id,
-                        universityId,
-                        buildingName,
-                        fileName,
-                        filePath,
-                        uploadedBy,
-                        uploadedAt,
-                        updatedAt
-                    FROM FloorPlans
-                    WHERE universityId = ?
-                    ORDER BY id DESC
-                    LIMIT 1";
+                    id,
+                    floorId,
+                    fileName,
+                    filePath,
+                    uploadedBy,
+                    uploadedAt,
+                    updatedAt
+                FROM FloorPlans
+                WHERE floorId = ?
+                ORDER BY id DESC
+                LIMIT 1";
 
             $stmt = $db->prepare($sql);
 
             $stmt->execute([
-                $universityId
+                $floorId
             ]);
 
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
