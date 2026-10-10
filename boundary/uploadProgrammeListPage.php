@@ -69,48 +69,94 @@ unset($_SESSION['upload_error']);
     <link rel="stylesheet" href="../style.css">
 
     <style>
-    .message-overlay {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.25);
-        z-index: 99999;
-    }
 
-    .message-modal {
-        position: relative;
-        width: 425px;
-        height: 175px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f8fa;
-        border: 1px solid #555;
-        box-sizing: border-box;
-    }
+        /* Programme information - retain the existing page style */
+        .programme-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            min-width: 0;
+        }
 
-    .message-modal h2 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #000;
-    }
+        .programme-name {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #222222;
+            line-height: 1.5;
+        }
 
-    .message-close {
-        position: absolute;
-        top: 10px;
-        right: 14px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1;
-        color: #000;
-        cursor: pointer;
-    }
+        /* Coordinator appears as secondary information */
+        .programme-coordinator {
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: #666666;
+            line-height: 1.5;
+        }
+
+            .programme-coordinator strong {
+                color: #444444;
+                font-weight: 600;
+                margin-right: 3px;
+            }
+
+        /* Keep the original compact row and button style */
+        .programme-list-page .programme-row {
+            padding: 10px;
+            border: 1px solid #bbb;
+            border-radius: 10px;
+            box-shadow: none;
+            gap: 16px;
+        }
+
+            .programme-list-page .programme-row:hover {
+                border-color: #bbb;
+                box-shadow: none;
+                transform: none;
+            }
+
+        .message-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
+
+        .message-modal {
+            position: relative;
+            width: 425px;
+            height: 175px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
+
+        .message-modal h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .message-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            cursor: pointer;
+        }
     </style>
 
 </head>
@@ -240,7 +286,7 @@ unset($_SESSION['upload_error']);
             <div class="empty-message">
                 No programme has been uploaded yet.
             </div>
-
+        
         <?php else: ?>
 
             <div class="programme-list">
@@ -249,12 +295,25 @@ unset($_SESSION['upload_error']);
 
                     <div class="programme-row">
 
-                        <span>
-                            <?php echo htmlspecialchars($programme['name']); ?>
-                            (<?php echo htmlspecialchars($programme['durationYears']); ?> Years)
-                        </span>
+                        <div class="programme-info">
+                            <span class="programme-name">
+                                <?php echo htmlspecialchars($programme['name']); ?>
+                                (<?php echo htmlspecialchars($programme['durationYears']); ?> Years)
+                            </span>
 
-                        <a href="UploadModuleListPage.php?programmeId=<?php echo urlencode($programme['id']); ?>&facultyId=<?php echo urlencode($facultyId); ?>" class="select-button">
+                            <div class="programme-coordinator">
+                                <strong>Course Coordinator:</strong>
+                                <?php
+
+                                echo htmlspecialchars(
+                                    $programme['courseCoordinatorName'] ?? 'Not assigned'
+                                );
+                                ?>
+                            </div>
+                        </div>
+
+                        <a href="UploadModuleListPage.php?programmeId=<?php echo urlencode($programme['id']); ?>&facultyId=<?php echo urlencode($facultyId); ?>"
+                           class="select-button">
                             Select
                         </a>
 
@@ -265,7 +324,6 @@ unset($_SESSION['upload_error']);
             </div>
 
         <?php endif; ?>
-
 
         <!-- Upload Programme -->
         <div class="upload-programme-container">

@@ -192,13 +192,15 @@ CREATE TABLE Faculties (
 CREATE TABLE Programmes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     facultyId INT NOT NULL,
+    courseCoordinatorId INT NULL,
     name VARCHAR(255) NOT NULL,
     code VARCHAR(50),
     durationYears INT,
     description TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (facultyId) REFERENCES Faculties(id) ON DELETE CASCADE
+    FOREIGN KEY (facultyId) REFERENCES Faculties(id) ON DELETE CASCADE,
+    FOREIGN KEY (courseCoordinatorId) REFERENCES Users(id) ON DELETE SET NULL
 );
 
 -- Modules Table

@@ -205,6 +205,12 @@ class ManageUniversityInformationController
     // Validate programme CSV
     private function validateProgrammeCsv($csvFile, $facultyId)
     {
+        $universityId = $_SESSION['university_id'] ?? null;
+
+        if (!$universityId) {
+            return "Unable to identify the current university.";
+        }
+
         // Check file exists
         if (!isset($csvFile) || $csvFile['error'] !== UPLOAD_ERR_OK) {
             return "Please select a CSV file.";
@@ -242,14 +248,15 @@ class ManageUniversityInformationController
             'name',
             'code',
             'durationYears',
-            'description'
+            'description',
+            'courseCoordinatorEmail'
         ];
 
         // Verify header
         if ($headers !== $expectedHeaders) {
             fclose($handle);
 
-            return "Invalid CSV header. Expected: name, code, durationYears, description.";
+            return "Invalid CSV header. Expected: name, code, durationYears, description, courseCoordinatorEmail.";
         }
 
         $rows = [];
@@ -270,16 +277,36 @@ class ManageUniversityInformationController
             }
 
             // Check column count
-            if (count($row) !== 4) {
+            if (count($row) !== 5) {
                 fclose($handle);
 
-                return "Row {$rowNumber} must contain exactly 4 columns.";
+                return "Row {$rowNumber} must contain exactly 5 columns.";
             }
 
             $name = trim($row[0]);
             $code = trim($row[1]);
             $durationYears = trim($row[2]);
             $description = trim($row[3]);
+            $courseCoordinatorEmail = trim($row[4]);
+
+            if (
+                $courseCoordinatorEmail === '' ||
+                !filter_var($courseCoordinatorEmail, FILTER_VALIDATE_EMAIL)
+            ) {
+                fclose($handle);
+                return "Row {$rowNumber}: A valid course coordinator email is required.";
+            }
+
+            $coordinator = $this->users->getCourseCoordinatorByEmail(
+                $courseCoordinatorEmail,
+                $universityId
+            );
+
+            if ($coordinator === false) {
+                fclose($handle);
+
+                return "Row {$rowNumber}: Course coordinator email '{$courseCoordinatorEmail}' does not belong to an active course coordinator in this university.";
+            }
 
             // Check required fields
             if ($name === '') {
@@ -332,7 +359,8 @@ class ManageUniversityInformationController
                 'name' => $name,
                 'code' => $code,
                 'durationYears' => (int) $durationYears,
-                'description' => $description
+                'description' => $description,
+                'courseCoordinatorId' => (int) $coordinator['id']
             ];
         }
 

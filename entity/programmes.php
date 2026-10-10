@@ -36,17 +36,22 @@ class Programmes
         $db = $database->connect();
 
         $sql = "SELECT
-                id,
-                facultyId,
-                name,
-                code,
-                durationYears,
-                description,
-                createdAt,
-                updatedAt
-            FROM Programmes
-            WHERE facultyId = ?
-            ORDER BY id ASC";
+                    p.id,
+                    p.facultyId,
+                    p.courseCoordinatorId,
+                    p.name,
+                    p.code,
+                    p.durationYears,
+                    p.description,
+                    p.createdAt,
+                    p.updatedAt,
+                    u.fullName AS courseCoordinatorName,
+                    u.email AS courseCoordinatorEmail
+                FROM Programmes p
+                LEFT JOIN Users u
+                    ON p.courseCoordinatorId = u.id
+                WHERE p.facultyId = ?
+                ORDER BY p.id ASC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute([$facultyId]);
@@ -64,25 +69,17 @@ class Programmes
             $db->beginTransaction();
 
             $sql = "INSERT INTO Programmes
-                (
-                    facultyId,
-                    name,
-                    code,
-                    durationYears,
-                    description,
-                    createdAt,
-                    updatedAt
-                )
-                VALUES
-                (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    NOW(),
-                    NOW()
-                )";
+                    (
+                        facultyId,
+                        courseCoordinatorId,
+                        name,
+                        code,
+                        durationYears,
+                        description,
+                        createdAt,
+                        updatedAt
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
             $stmt = $db->prepare($sql);
 
@@ -90,6 +87,7 @@ class Programmes
 
                 $stmt->execute([
                     $facultyId,
+                    $row['courseCoordinatorId'],
                     $row['name'],
                     $row['code'],
                     $row['durationYears'],

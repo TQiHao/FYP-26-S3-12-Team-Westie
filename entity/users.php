@@ -683,4 +683,23 @@ class Users
             return false;
         }
     }
+
+    public function getCourseCoordinatorByEmail($email, $universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        $sql = "SELECT id, fullName, email
+            FROM Users
+            WHERE email = ?
+              AND universityId = ?
+              AND role = 'course_coordinator'
+              AND status = 'active'
+            LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$email, $universityId]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+    }
 }

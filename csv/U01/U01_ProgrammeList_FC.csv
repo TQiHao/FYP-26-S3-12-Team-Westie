@@ -1,3 +1,11 @@
-name,code,durationYears,description
-Bachelor of Computer Science,BSCS,3,A programme focusing on computer science and software development
-Bachelor of Information Technology,BsST,3,A programme focusing on information technology and systems
+name,code,durationYears,description,courseCoordinatorEmail
+Bachelor of Information Security,BISY,3,Information security programme,coordinator1@example.com
+Bachelor of Information Technology,BIT,3,Information technology programme,coordinator2@example.com
+Bachelor of Data Science,BDS,4,Data science programme,coordinator3@example.com
+Bachelor of Cybersecurity,BCY,3,Cybersecurity programme,coordinator4@example.com
+Bachelor of Software Engineering,BSE,4,Software engineering programme,coordinator5@example.com
+Bachelor of Artificial Intelligence,BAI,3,Artificial intelligence programme,coordinator6@example.com
+Bachelor of Information Systems,BIS,3,Information systems programme,coordinator7@example.com
+Bachelor of Computer Engineering,BCE,4,Computer engineering programme,coordinator8@example.com
+Bachelor of Business Analytics,BBA,3,Business analytics programme,coordinator9@example.com
+Bachelor of Game Development,BGD,3,Game development programme,coordinator10@example.com
