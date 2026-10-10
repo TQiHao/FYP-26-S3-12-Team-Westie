@@ -241,9 +241,8 @@ unset($_SESSION['search_keyword']);
                                 onclick='openEventView(<?php echo htmlspecialchars(json_encode($event), ENT_QUOTES); ?>)'>
                                 View
                             </button>
-
-                            <a href="viewEventNavigationPage.php?eventId=<?php echo urlencode($event['id']); ?>"
-                                class="btn-event-nav">
+                            <a href="FacilityLocationTrackingPage.php?facility=<?php echo urlencode($event['facilityId']); ?>"
+                            class="btn-event-nav">
                                 Navigate
                             </a>
 

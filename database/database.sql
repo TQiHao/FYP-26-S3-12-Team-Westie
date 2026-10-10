@@ -617,3 +617,59 @@ CREATE TABLE Students (
         ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS NavigationNodes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    floorId INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    type ENUM('room','junction','lift','stairs','entrance','exit') DEFAULT 'room',
+    x INT NOT NULL,
+    y INT NOT NULL,
+    facilityId INT NULL,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (floorId) REFERENCES CampusFloors(id) ON DELETE CASCADE,
+    FOREIGN KEY (facilityId) REFERENCES Facilities(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS NavigationEdges (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    fromNodeId INT NOT NULL,
+    toNodeId INT NOT NULL,
+    distanceMeters DECIMAL(6,2) NOT NULL,
+    isAccessible BOOLEAN DEFAULT TRUE,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (fromNodeId) REFERENCES NavigationNodes(id) ON DELETE CASCADE,
+    FOREIGN KEY (toNodeId) REFERENCES NavigationNodes(id) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Link events' facilities to navigation nodes so the
+-- "Navigate" button on the Events page can route to them.
+-- ============================================================
+
+-- 1. Every physical facility that has an event pointed at it
+--    gets a matching NavigationNodes row on Level 1 (as a room).
+--    Coordinates default to (30, 80) which is next to Main entrance.
+--    If you want a different position, edit x/y after running.
+INSERT INTO NavigationNodes (floorId, name, type, x, y, facilityId)
+SELECT @l1, f.name, 'room', 30, 80, f.id
+FROM Facilities f
+INNER JOIN BookableFacilities bf ON bf.facilityId = f.id
+INNER JOIN Events e ON e.facilityId = bf.id
+WHERE f.universityId = 1
+  AND NOT EXISTS (
+      SELECT 1 FROM NavigationNodes n WHERE n.facilityId = f.id
+  );
+
+-- 2. Connect each of those new nodes to Junction 1 on Level 1
+SET @n_j1 := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 1');
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT n.id, @n_j1, 8.00, TRUE
+FROM NavigationNodes n
+WHERE n.floorId = @l1
+  AND n.facilityId IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM NavigationEdges e
+      WHERE e.fromNodeId = n.id AND e.toNodeId = @n_j1
+  );

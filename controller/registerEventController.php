@@ -24,10 +24,13 @@ class RegisterEventController
     public function getEventById($eventId)
     {
         try {
-            $sql = "SELECT id, universityId, title, description, location,
-                           startDatetime, endDatetime, capacity, status
-                    FROM Events
-                    WHERE id = ?";
+            $sql = "SELECT e.id, e.universityId, e.title, e.description,
+                        e.startDatetime, e.endDatetime, e.capacity, e.status,
+                        f.location AS location
+                    FROM Events e
+                    INNER JOIN BookableFacilities bf ON bf.id = e.facilityId
+                    INNER JOIN Facilities f ON f.id = bf.facilityId
+                    WHERE e.id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$eventId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
