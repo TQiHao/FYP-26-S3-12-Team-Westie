@@ -176,7 +176,7 @@ ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 -- ============================================
 INSERT INTO SystemAdmins (email, passwordHash, fullName, status)
 VALUES
-('systemadmin@unibee.com', '$2y$12$0yPsP1593ENJj.gDG/5FD.6rva8FZgf0R0BKHW3MuUo0p.yvlWHYy', 'Sarah Tan', 'active');
+('systemadmin@unibee.com', '$2y$10$v35y3AhNTMSDRXMbBBD0oOHqRJNYZq8dgWDqrB.YqQpme9NFzM6s.', 'James Low', 'active');
 
 -- ============================================
 -- 10. LICENSES
