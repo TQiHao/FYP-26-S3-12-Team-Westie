@@ -3513,14 +3513,41 @@ footer {
   cursor: pointer;
 }
 
+/* Larger modal variant - used by the System Admin profile confirm / success pop-ups */
+.system-admin-dashboard .modal-box.modal-large {
+  max-width: 560px;
+  padding: 44px 48px;
+}
+
+.system-admin-dashboard .modal-box.modal-large .modal-title {
+  font-size: 1.25rem;
+  text-align: center;
+  margin-bottom: 60px;
+  padding-right: 0;
+}
+
+.system-admin-dashboard .modal-box.modal-large.modal-flash .modal-title {
+  margin-bottom: 0;
+  padding: 16px 0;
+}
+
+.system-admin-dashboard .modal-box.modal-large .modal-actions {
+  gap: 16px;
+}
+
+.system-admin-dashboard .modal-box.modal-large .modal-btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+}
+
 .system-admin-dashboard .modal-btn.modal-cancel {
   background-color: #3a2e2e;
   color: #fff;
 }
 
 .system-admin-dashboard .modal-btn.modal-confirm-approve {
-  background-color: #7fd99a;
-  color: #073b16;
+  background-color: #14AE5C;
+  color: #fff;
 }
 
 .system-admin-dashboard .modal-btn.modal-confirm-reject {
