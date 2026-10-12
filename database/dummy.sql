@@ -228,3 +228,142 @@ VALUES
  NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- Navigation test data (for Facility Location Tracking)
+-- ============================================================
+
+-- 0. Make sure @l1 and @n_j1 are defined in this session.
+SET @l1 := (SELECT f.id FROM CampusFloors f
+            JOIN CampusBuildings b ON b.id = f.buildingId
+            WHERE b.universityId = 1 AND b.buildingCode = 'BLK-A'
+              AND f.floorName = 'Level 1' LIMIT 1);
+
+SET @l2 := (SELECT f.id FROM CampusFloors f
+            JOIN CampusBuildings b ON b.id = f.buildingId
+            WHERE b.universityId = 1 AND b.buildingCode = 'BLK-A'
+              AND f.floorName = 'Level 2' LIMIT 1);
+
+-- 1. Level 1 nodes (only if not already there)
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Main entrance', 'entrance', 30, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Main entrance');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Junction 1', 'junction', 110, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 1');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Canteen', 'room', 110, 80
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Canteen');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Junction 2', 'junction', 210, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 2');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Lift', 'lift', 210, 80
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Lift');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l1, 'Stairs', 'stairs', 290, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l1 AND name = 'Stairs');
+
+-- 2. Level 2 nodes
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l2, 'Room 201', 'room', 210, 80
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l2 AND name = 'Room 201');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l2, 'Room 202', 'room', 110, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l2 AND name = 'Room 202');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l2, 'Lift', 'lift', 210, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l2 AND name = 'Lift');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @l2, 'Stairs', 'stairs', 290, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @l2 AND name = 'Stairs');
+
+-- 3. Node lookups
+SET @n_ent  := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Main entrance');
+SET @n_j1   := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 1');
+SET @n_can  := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Canteen');
+SET @n_j2   := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 2');
+SET @n_l1   := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Lift');
+SET @n_s1   := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Stairs');
+SET @n_r201 := (SELECT id FROM NavigationNodes WHERE floorId = @l2 AND name = 'Room 201');
+SET @n_r202 := (SELECT id FROM NavigationNodes WHERE floorId = @l2 AND name = 'Room 202');
+SET @n_l2   := (SELECT id FROM NavigationNodes WHERE floorId = @l2 AND name = 'Lift');
+SET @n_s2   := (SELECT id FROM NavigationNodes WHERE floorId = @l2 AND name = 'Stairs');
+
+-- 4. Edges (Level 1)
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_ent, @n_j1, 8.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_ent AND toNodeId=@n_j1);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_j1, @n_can, 7.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_j1 AND toNodeId=@n_can);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_j1, @n_j2, 10.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_j1 AND toNodeId=@n_j2);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_j2, @n_l1, 7.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_j2 AND toNodeId=@n_l1);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_j2, @n_s1, 8.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_j2 AND toNodeId=@n_s1);
+
+-- 5. Edges (Level 2)
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_l2, @n_r201, 7.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_l2 AND toNodeId=@n_r201);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_l2, @n_s2, 8.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_l2 AND toNodeId=@n_s2);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_s2, @n_r202, 18.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_s2 AND toNodeId=@n_r202);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_r202, @n_l2, 13.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_r202 AND toNodeId=@n_l2);
+
+-- 6. Vertical links
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_l1, @n_l2, 15.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_l1 AND toNodeId=@n_l2);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @n_s1, @n_s2, 10.00, FALSE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId=@n_s1 AND toNodeId=@n_s2);
+
+-- 7. Link event facilities to nodes (so the "Navigate" button works)
+INSERT INTO NavigationNodes (floorId, name, type, x, y, facilityId)
+SELECT @l1, f.name, 'room', 30, 80, f.id
+FROM Facilities f
+INNER JOIN BookableFacilities bf ON bf.facilityId = f.id
+INNER JOIN Events e ON e.facilityId = bf.id
+WHERE f.universityId = 1
+  AND NOT EXISTS (
+      SELECT 1 FROM NavigationNodes n WHERE n.facilityId = f.id
+  );
+
+SET @n_j1 := (SELECT id FROM NavigationNodes WHERE floorId = @l1 AND name = 'Junction 1');
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT n.id, @n_j1, 8.00, TRUE
+FROM NavigationNodes n
+WHERE n.floorId = @l1
+  AND n.facilityId IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM NavigationEdges e
+      WHERE e.fromNodeId = n.id AND e.toNodeId = @n_j1
+  );
