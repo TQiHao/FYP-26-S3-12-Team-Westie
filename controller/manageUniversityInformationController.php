@@ -1271,11 +1271,14 @@ class ManageUniversityInformationController
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
 
     $ajaxActions = [
-        'listNavigationNodes',
-        'createNavigationNode',
-        'deleteNavigationNode',
-        'createNavigationEdge',
-        'deleteNavigationEdge'
+    'listNavigationNodes',
+    'createNavigationNode',
+    'deleteNavigationNode',
+    'createNavigationEdge',
+    'deleteNavigationEdge',
+    'listFloorsForBuilding',      // NEW
+    'listNodesForOtherFloor',     // NEW
+    'createCrossFloorEdge'        // NEW
     ];
 
     if (in_array($_POST['action'], $ajaxActions, true)) {
@@ -1325,6 +1328,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
             echo json_encode([
                 'ok' => $controller->deleteNavigationEdge((int) ($_POST['edgeId'] ?? 0))
             ]);
+            exit;
+        }
+
+        if ($_POST['action'] === 'listFloorsForBuilding') {
+            echo json_encode([
+                'floors' => $controller->getCampusFloors((int) ($_POST['buildingId'] ?? 0))
+            ]);
+            exit;
+        }
+
+        if ($_POST['action'] === 'listNodesForOtherFloor') {
+            echo json_encode([
+                'nodes' => $controller->getNodesForFloor((int) ($_POST['floorId'] ?? 0))
+            ]);
+            exit;
+        }
+
+        if ($_POST['action'] === 'createCrossFloorEdge') {
+            $ok = $controller->createNavigationEdge(
+                (int) ($_POST['fromNodeId'] ?? 0),
+                (int) ($_POST['toNodeId'] ?? 0),
+                (float) ($_POST['distanceMeters'] ?? 15.0),
+                ($_POST['isAccessible'] ?? '0') === '1'
+            );
+            echo json_encode(['ok' => $ok !== false]);
             exit;
         }
     }

@@ -509,6 +509,11 @@ $campusMap = $controller->getCampusMap($universityId);
             box-shadow: 0 0 0 1px #333;
         }
 
+        .node-editor-dot.selected {
+            outline: 3px solid #ffcc00;
+            outline-offset: 2px;
+        }
+
         .node-editor-label {
             position: absolute;
             transform: translate(-50%, 12px);
@@ -546,6 +551,33 @@ $campusMap = $controller->getCampusMap($universityId);
 
         .node-editor-list ul {
             margin: 6px 0 0 18px;
+        }
+
+        /* ===== Cross-floor linking panel ===== */
+        .node-editor-crossfloor {
+            background: #eef6ff;
+            border: 1px solid #b6d7ff;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .node-editor-crossfloor select {
+            padding: 6px 8px;
+            font-size: 0.72rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .node-editor-crossfloor label {
+            display: flex;
+            gap: 5px;
+            align-items: center;
         }
 
     </style>
@@ -791,14 +823,15 @@ $campusMap = $controller->getCampusMap($universityId);
                                                         View
                                                     </button>
 
-                                                    <!-- Edit Navigation Nodes (NEW) -->
+                                                    <!-- Edit Navigation Nodes -->
                                                     <button type="button"
                                                             class="secondary-button"
                                                             onclick="openNodeEditor(
                                                                 <?php echo (int) $floor['id']; ?>,
                                                                 <?php echo (int) $floor['floorPlan']['id']; ?>,
                                                                 <?php echo htmlspecialchars(json_encode($floor['floorName'])); ?>,
-                                                                <?php echo htmlspecialchars(json_encode($floor['floorPlan']['filePath'])); ?>
+                                                                <?php echo htmlspecialchars(json_encode($floor['floorPlan']['filePath'])); ?>,
+                                                                <?php echo (int) $building['id']; ?>
                                                             )">
                                                         Edit Nodes
                                                     </button>
@@ -1074,7 +1107,7 @@ $campusMap = $controller->getCampusMap($universityId);
         </div>
     </div>
 
-    <!-- Node Editor Modal (NEW) -->
+    <!-- Node Editor Modal -->
     <div id="nodeEditorModal" class="building-modal">
         <div class="building-modal-content floor-plan-modal-content">
             <div class="building-modal-header">
@@ -1095,9 +1128,28 @@ $campusMap = $controller->getCampusMap($universityId);
                 <button type="button" id="nodeEditorConnectBtn" class="secondary-button">Connect mode: OFF</button>
             </div>
 
+            <div class="node-editor-crossfloor">
+                <strong>Link to another floor:</strong>
+                <select id="cfTargetFloor">
+                    <option value="">-- pick a floor --</option>
+                </select>
+                <select id="cfTargetNode">
+                    <option value="">-- pick a node --</option>
+                </select>
+                <label>
+                    <input type="checkbox" id="cfAccessible" checked>
+                    Accessible (lift/corridor)
+                </label>
+                <button type="button" id="cfConnectBtn" class="secondary-button">Link selected node → target</button>
+                <span id="cfSelectedHint" style="color:#666;">(click a node above first)</span>
+            </div>
+
             <div class="node-editor-help">
                 <strong>How to use:</strong>
-                Click on the floor plan to add a node — you'll be prompted for a name. To connect two nodes, click <em>Connect mode</em>, then click two existing nodes.
+                Click on the floor plan to add a node — you'll be prompted for a name.
+                To connect two nodes <em>on this floor</em>, click <em>Connect mode</em>, then click two nodes.
+                To connect <em>across floors</em>, first click a node on this floor (it gets a yellow ring),
+                then use the "Link to another floor" panel above.
             </div>
 
             <div class="node-editor-canvas-wrap" id="nodeEditorCanvasWrap">
@@ -1188,21 +1240,25 @@ $campusMap = $controller->getCampusMap($universityId);
             if (event.target === modal) closeEditBuildingModal();
         });
 
-        /* ===== Node Editor (NEW) ===== */
+        /* ===== Node Editor ===== */
 
         const CTL_URL = "../controller/manageUniversityInformationController.php";
 
         let nvFloorId = 0;
         let nvFloorPlanId = 0;
+        let nvBuildingId = 0;
         let nvNodes = [];
         let nvConnectMode = false;
         let nvConnectFrom = null;
+        let nvSelectedNodeId = null;
 
-        function openNodeEditor(floorId, floorPlanId, floorName, filePath) {
+        function openNodeEditor(floorId, floorPlanId, floorName, filePath, buildingId) {
             nvFloorId = floorId;
             nvFloorPlanId = floorPlanId;
+            nvBuildingId = buildingId;
             nvConnectMode = false;
             nvConnectFrom = null;
+            nvSelectedNodeId = null;
 
             document.getElementById("nodeEditorTitle").textContent =
                 "Edit Navigation Nodes — " + floorName;
@@ -1210,8 +1266,14 @@ $campusMap = $controller->getCampusMap($universityId);
             document.getElementById("nodeEditorModal").style.display = "flex";
             document.getElementById("nodeEditorConnectBtn").textContent = "Connect mode: OFF";
             document.getElementById("nodeEditorConnectBtn").style.background = "";
+            document.getElementById("cfSelectedHint").textContent = "(click a node above first)";
+
+            // Reset the cross-floor panel
+            document.getElementById("cfTargetFloor").innerHTML = '<option value="">-- pick a floor --</option>';
+            document.getElementById("cfTargetNode").innerHTML  = '<option value="">-- pick a node --</option>';
 
             loadNodeEditorNodes();
+            loadOtherFloors();
         }
 
         function closeNodeEditor() {
@@ -1240,6 +1302,30 @@ $campusMap = $controller->getCampusMap($universityId);
             });
         }
 
+        function loadOtherFloors() {
+            const body = "action=listFloorsForBuilding&buildingId=" + encodeURIComponent(nvBuildingId);
+
+            fetch(CTL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: body
+            })
+            .then(r => r.json())
+            .then(data => {
+                const sel = document.getElementById("cfTargetFloor");
+                sel.innerHTML = '<option value="">-- pick a floor --</option>';
+                (data.floors || []).forEach(f => {
+                    if (f.id != nvFloorId) {
+                        const opt = document.createElement("option");
+                        opt.value = f.id;
+                        opt.textContent = f.floorName;
+                        sel.appendChild(opt);
+                    }
+                });
+            })
+            .catch(err => console.error("loadOtherFloors error:", err));
+        }
+
         function renderNodeEditor() {
             const overlay = document.getElementById("nodeEditorOverlay");
             const list = document.getElementById("nodeEditorNodeList");
@@ -1255,6 +1341,7 @@ $campusMap = $controller->getCampusMap($universityId);
 
                 const dot = document.createElement("div");
                 dot.className = "node-editor-dot";
+                if (nvSelectedNodeId === n.id) dot.classList.add("selected");
                 dot.style.left = x + "px";
                 dot.style.top = y + "px";
                 dot.style.background =
@@ -1267,13 +1354,13 @@ $campusMap = $controller->getCampusMap($universityId);
                 dot.addEventListener("click", function (e) {
                     e.stopPropagation();
 
+                    // Connect-mode logic (same-floor edge)
                     if (nvConnectMode && nvConnectFrom !== null && nvConnectFrom !== n.id) {
                         const from = nvNodes.find(v => v.id === nvConnectFrom);
                         if (!from) return;
 
                         const fromX = parseInt(from.pixelX || from.x, 10);
                         const fromY = parseInt(from.pixelY || from.y, 10);
-
                         const dx = fromX - x;
                         const dy = fromY - y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -1301,11 +1388,20 @@ $campusMap = $controller->getCampusMap($universityId);
                             loadNodeEditorNodes();
                         })
                         .catch(() => { nvConnectFrom = null; });
+                        return;
+                    }
 
-                    } else if (nvConnectMode) {
+                    if (nvConnectMode) {
                         nvConnectFrom = n.id;
                         alert("Now click the second node to connect.");
+                        return;
                     }
+
+                    // Otherwise: select this node for cross-floor linking
+                    nvSelectedNodeId = n.id;
+                    document.getElementById("cfSelectedHint").textContent =
+                        "Selected: " + n.name;
+                    renderNodeEditor();
                 });
 
                 overlay.appendChild(dot);
@@ -1338,51 +1434,114 @@ $campusMap = $controller->getCampusMap($universityId);
         }
 
         document.getElementById("nodeEditorCanvasWrap").addEventListener("click", function (e) {
-        // Ignore clicks on existing dots or labels
-        if (e.target.classList.contains("node-editor-dot") ||
-            e.target.classList.contains("node-editor-label")) {
-            return;
-        }
+            if (e.target.classList.contains("node-editor-dot") ||
+                e.target.classList.contains("node-editor-label")) {
+                return;
+            }
 
-        if (nvConnectMode) return;
+            if (nvConnectMode) return;
 
-        const img = document.getElementById("nodeEditorImage");
-        const rect = img.getBoundingClientRect();
-        const px = Math.round(e.clientX - rect.left);
-        const py = Math.round(e.clientY - rect.top);
+            const img = document.getElementById("nodeEditorImage");
+            const rect = img.getBoundingClientRect();
+            const px = Math.round(e.clientX - rect.left);
+            const py = Math.round(e.clientY - rect.top);
 
-        const name = prompt("Enter node name:");
-        if (!name) return;
+            const name = prompt("Enter node name:");
+            if (!name) return;
 
-        const type = document.getElementById("nodeEditorType").value;
+            const type = document.getElementById("nodeEditorType").value;
 
-        const body =
-            "action=createNavigationNode" +
-            "&floorId=" + nvFloorId +
-            "&floorPlanId=" + nvFloorPlanId +
-            "&name=" + encodeURIComponent(name) +
-            "&type=" + encodeURIComponent(type) +
-            "&pixelX=" + px +
-            "&pixelY=" + py;
+            const body =
+                "action=createNavigationNode" +
+                "&floorId=" + nvFloorId +
+                "&floorPlanId=" + nvFloorPlanId +
+                "&name=" + encodeURIComponent(name) +
+                "&type=" + encodeURIComponent(type) +
+                "&pixelX=" + px +
+                "&pixelY=" + py;
 
-        fetch(CTL_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: body
-        })
-        .then(r => r.json())
-        .then(data => {
-            console.log("createNavigationNode response:", data);
-            loadNodeEditorNodes();
-        })
-        .catch(err => console.error("createNavigationNode error:", err));
-    });
+            fetch(CTL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: body
+            })
+            .then(r => r.json())
+            .then(() => loadNodeEditorNodes())
+            .catch(err => console.error("createNavigationNode error:", err));
+        });
 
         document.getElementById("nodeEditorConnectBtn").addEventListener("click", function () {
             nvConnectMode = !nvConnectMode;
             nvConnectFrom = null;
             this.textContent = "Connect mode: " + (nvConnectMode ? "ON" : "OFF");
             this.style.background = nvConnectMode ? "#ffcc00" : "";
+        });
+
+        /* ===== Cross-floor linking ===== */
+
+        document.getElementById("cfTargetFloor").addEventListener("change", function () {
+            const targetFloorId = this.value;
+            const nodeSel = document.getElementById("cfTargetNode");
+            nodeSel.innerHTML = '<option value="">-- pick a node --</option>';
+
+            if (!targetFloorId) return;
+
+            fetch(CTL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "action=listNodesForOtherFloor&floorId=" + targetFloorId
+            })
+            .then(r => r.json())
+            .then(data => {
+                (data.nodes || []).forEach(n => {
+                    const opt = document.createElement("option");
+                    opt.value = n.id;
+                    opt.textContent = n.name + " (" + n.type + ")";
+                    nodeSel.appendChild(opt);
+                });
+            })
+            .catch(err => console.error("listNodesForOtherFloor error:", err));
+        });
+
+        document.getElementById("cfConnectBtn").addEventListener("click", function () {
+            if (!nvSelectedNodeId) {
+                alert("First click a node on this floorplan to select it.");
+                return;
+            }
+            const targetNodeId = document.getElementById("cfTargetNode").value;
+            if (!targetNodeId) {
+                alert("Pick a target floor and node first.");
+                return;
+            }
+            const accessible = document.getElementById("cfAccessible").checked;
+
+            const body =
+                "action=createCrossFloorEdge" +
+                "&fromNodeId=" + nvSelectedNodeId +
+                "&toNodeId=" + targetNodeId +
+                "&distanceMeters=15.0" +
+                "&isAccessible=" + (accessible ? "1" : "0");
+
+            fetch(CTL_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: body
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    alert("Cross-floor link created.");
+                    nvSelectedNodeId = null;
+                    document.getElementById("cfSelectedHint").textContent = "(click a node above first)";
+                    renderNodeEditor();
+                } else {
+                    alert("Could not create link (it may already exist).");
+                }
+            })
+            .catch(err => {
+                console.error("createCrossFloorEdge error:", err);
+                alert("Error creating link.");
+            });
         });
 
     </script>
