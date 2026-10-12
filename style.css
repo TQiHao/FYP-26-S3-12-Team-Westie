@@ -5943,3 +5943,28 @@ footer {
   color: #2563eb;
   text-decoration: underline;
 }
+
+.flt-floorplan-wrap {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    background: #1b1b1b;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.flt-floorplan-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+}
+
+.flt-floorplan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}

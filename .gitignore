@@ -12,3 +12,6 @@ database/database.php
 
 # VS Code
 .vs/
+
+# User-generated uploads (floorplans, posters, campus maps)
+uploads/

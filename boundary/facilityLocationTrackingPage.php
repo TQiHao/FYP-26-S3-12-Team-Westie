@@ -13,10 +13,32 @@ require_once __DIR__ . '/../database/database.php';
 $controller   = new FacilityLocationTrackingController();
 $universityId = $_SESSION['university_id'] ?? 0;
 
-$building = $controller->getBuildingForUniversity($universityId);
+// All buildings that have navigation nodes
+$buildingsWithNodes = $controller->getBuildingsWithNodes($universityId);
+
+// Pick the building from ?building=, or default to the first
+$requestedBuildingId = isset($_GET['building']) ? (int) $_GET['building'] : 0;
+$building = null;
+
+foreach ($buildingsWithNodes as $b) {
+    if ((int) $b['id'] === $requestedBuildingId) {
+        $building = $b;
+        break;
+    }
+}
+if (!$building && !empty($buildingsWithNodes)) {
+    $building = $buildingsWithNodes[0];
+}
 $floors   = $building ? $controller->getFloors($building['id']) : [];
 $nodes    = $building ? $controller->getNodes($building['id'])   : [];
 $edges    = $building ? $controller->getEdges($building['id'])   : [];
+
+// Fetch floorplan image for each floor (if any)
+$floorPlansByFloor = [];
+foreach ($floors as $f) {
+    $fp = $controller->getFloorPlanForFloor($f['id']);
+    if ($fp) $floorPlansByFloor[(int) $f['id']] = $fp;
+}
 
 // Index nodes by floor for drawing
 $nodesByFloor = [];
@@ -228,6 +250,21 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
             <?php else: ?>
 
                 <form method="GET" action="FacilityLocationTrackingPage.php" class="flt-form">
+                        <?php if (count($buildingsWithNodes) > 1): ?>
+                        <div class="flt-form-row">
+                            <div class="flt-form-col">
+                                <label>Building</label>
+                                <select name="building" onchange="this.form.submit()">
+                                    <?php foreach ($buildingsWithNodes as $b): ?>
+                                        <option value="<?php echo (int) $b['id']; ?>"
+                                            <?php echo ($building && $b['id'] == $building['id']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($b['buildingName']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     <div class="flt-form-row">
                         <div class="flt-form-col">
                             <label>From</label>
@@ -272,62 +309,153 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                         ?>
                         <div class="flt-floor-panel">
                             <div class="flt-floor-label"><?php echo htmlspecialchars($floor['floorName']); ?></div>
-                            <svg class="flt-svg" viewBox="<?php echo $viewBox; ?>" preserveAspectRatio="xMidYMid meet">
 
-                                <!-- Grey edges -->
-                                <?php foreach ($floorEdges as $e):
-                                    $a = $nodeById[(int) $e['fromNodeId']] ?? null;
-                                    $b = $nodeById[(int) $e['toNodeId']]   ?? null;
-                                    if (!$a || !$b) continue;
+                            <?php if (!empty($floorPlansByFloor[$fid])): ?>
+                                <?php
+                                    // ---------- FLOORPLAN IMAGE PATH ----------
+                                    $fp = $floorPlansByFloor[$fid];
+
+                                    // Compute SVG viewBox in "pixel space" from the node coords on this floor.
+                                    $xs = array_column($floorNodes, 'pixelX');
+                                    $ys = array_column($floorNodes, 'pixelY');
+                                    // Fallback to x/y if pixelX missing (older nodes)
+                                    foreach ($floorNodes as $n) {
+                                        $xs[] = $n['pixelX'] ?? $n['x'];
+                                        $ys[] = $n['pixelY'] ?? $n['y'];
+                                    }
+                                    $pad = 40;
+                                    $minX = !empty($xs) ? min($xs) - $pad : 0;
+                                    $minY = !empty($ys) ? min($ys) - $pad : 0;
+                                    $maxX = !empty($xs) ? max($xs) + $pad : 800;
+                                    $maxY = !empty($ys) ? max($ys) + $pad : 600;
+                                    $vb = "$minX $minY " . ($maxX - $minX) . " " . ($maxY - $minY);
                                 ?>
-                                    <line x1="<?php echo $a['x']; ?>" y1="<?php echo $a['y']; ?>"
-                                          x2="<?php echo $b['x']; ?>" y2="<?php echo $b['y']; ?>"
-                                          stroke="#5a5a5a" stroke-width="2"/>
-                                <?php endforeach; ?>
+                                <div class="flt-floorplan-wrap">
+                                    <img src="../<?php echo htmlspecialchars($fp['filePath']); ?>"
+                                        alt="Floor plan" class="flt-floorplan-img">
 
-                                <!-- Blue route edges (on top) -->
-                                <?php foreach ($floorEdges as $e):
-                                    $aId = (int) $e['fromNodeId'];
-                                    $bId = (int) $e['toNodeId'];
-                                    if (!isset($routeEdges["$aId-$bId"])) continue;
-                                    $a = $nodeById[$aId] ?? null;
-                                    $b = $nodeById[$bId] ?? null;
-                                    if (!$a || !$b) continue;
-                                ?>
-                                    <line x1="<?php echo $a['x']; ?>" y1="<?php echo $a['y']; ?>"
-                                          x2="<?php echo $b['x']; ?>" y2="<?php echo $b['y']; ?>"
-                                          stroke="#1e90ff" stroke-width="4"/>
-                                <?php endforeach; ?>
+                                    <svg class="flt-floorplan-overlay"
+                                        viewBox="<?php echo $vb; ?>"
+                                        preserveAspectRatio="xMidYMid meet">
 
-                                <!-- Nodes -->
-                                <?php foreach ($floorNodes as $n):
-                                    $type = strtolower($n['type']);
-                                    $fill = '#4CAF50';
-                                    if ($type === 'lift')     $fill = '#6a5acd';
-                                    if ($type === 'stairs')   $fill = '#1e90ff';
-                                    if ($type === 'entrance') $fill = '#f5f5f5';
-                                    if ($type === 'junction') $fill = '#999999';
+                                        <!-- grey edges -->
+                                        <?php foreach ($floorEdges as $e):
+                                            $a = $nodeById[(int) $e['fromNodeId']] ?? null;
+                                            $b = $nodeById[(int) $e['toNodeId']]   ?? null;
+                                            if (!$a || !$b) continue;
+                                            $ax = $a['pixelX'] ?? $a['x']; $ay = $a['pixelY'] ?? $a['y'];
+                                            $bx = $b['pixelX'] ?? $b['x']; $by = $b['pixelY'] ?? $b['y'];
+                                        ?>
+                                            <line x1="<?php echo $ax; ?>" y1="<?php echo $ay; ?>"
+                                                x2="<?php echo $bx; ?>" y2="<?php echo $by; ?>"
+                                                stroke="rgba(120,120,120,0.5)" stroke-width="3"/>
+                                        <?php endforeach; ?>
 
-                                    $isStart = ($n['id'] == $fromId);
-                                    $isEnd   = ($n['id'] == $toId);
-                                ?>
-                                    <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="7"
-                                            fill="<?php echo $fill; ?>"
-                                            stroke="#222" stroke-width="1.5"/>
-                                    <?php if ($isStart): ?>
-                                        <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="12"
-                                                fill="none" stroke="#1e90ff" stroke-width="2"/>
-                                    <?php endif; ?>
-                                    <?php if ($isEnd): ?>
-                                        <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="12"
-                                                fill="none" stroke="#4CAF50" stroke-width="2"/>
-                                    <?php endif; ?>
-                                    <text x="<?php echo $n['x']; ?>" y="<?php echo $n['y'] - 12; ?>"
-                                          text-anchor="middle" font-size="9">
-                                        <?php echo htmlspecialchars($n['name']); ?>
-                                    </text>
-                                <?php endforeach; ?>
-                            </svg>
+                                        <!-- blue route edges -->
+                                        <?php foreach ($floorEdges as $e):
+                                            $aId = (int) $e['fromNodeId']; $bId = (int) $e['toNodeId'];
+                                            if (!isset($routeEdges["$aId-$bId"])) continue;
+                                            $a = $nodeById[$aId] ?? null; $b = $nodeById[$bId] ?? null;
+                                            if (!$a || !$b) continue;
+                                            $ax = $a['pixelX'] ?? $a['x']; $ay = $a['pixelY'] ?? $a['y'];
+                                            $bx = $b['pixelX'] ?? $b['x']; $by = $b['pixelY'] ?? $b['y'];
+                                        ?>
+                                            <line x1="<?php echo $ax; ?>" y1="<?php echo $ay; ?>"
+                                                x2="<?php echo $bx; ?>" y2="<?php echo $by; ?>"
+                                                stroke="#1e90ff" stroke-width="6"/>
+                                        <?php endforeach; ?>
+
+                                        <!-- nodes -->
+                                        <?php foreach ($floorNodes as $n):
+                                            $type = strtolower($n['type']);
+                                            $fill = '#4CAF50';
+                                            if ($type === 'lift')     $fill = '#6a5acd';
+                                            if ($type === 'stairs')   $fill = '#1e90ff';
+                                            if ($type === 'entrance') $fill = '#f5f5f5';
+                                            if ($type === 'junction') $fill = '#999999';
+                                            $nx = $n['pixelX'] ?? $n['x'];
+                                            $ny = $n['pixelY'] ?? $n['y'];
+                                            $isStart = ($n['id'] == $fromId);
+                                            $isEnd   = ($n['id'] == $toId);
+                                        ?>
+                                            <circle cx="<?php echo $nx; ?>" cy="<?php echo $ny; ?>" r="10"
+                                                    fill="<?php echo $fill; ?>" stroke="#222" stroke-width="2"/>
+                                            <?php if ($isStart): ?>
+                                                <circle cx="<?php echo $nx; ?>" cy="<?php echo $ny; ?>" r="16"
+                                                        fill="none" stroke="#1e90ff" stroke-width="3"/>
+                                            <?php endif; ?>
+                                            <?php if ($isEnd): ?>
+                                                <circle cx="<?php echo $nx; ?>" cy="<?php echo $ny; ?>" r="16"
+                                                        fill="none" stroke="#4CAF50" stroke-width="3"/>
+                                            <?php endif; ?>
+                                            <text x="<?php echo $nx; ?>" y="<?php echo $ny - 18; ?>"
+                                                text-anchor="middle" font-size="14" fill="#222"
+                                                style="font-weight:600; paint-order:stroke; stroke:#fff; stroke-width:3px;">
+                                                <?php echo htmlspecialchars($n['name']); ?>
+                                            </text>
+                                        <?php endforeach; ?>
+                                    </svg>
+                                </div>
+                            <?php else: ?>
+                                <!-- No floorplan uploaded → keep the existing black-grid SVG -->
+                                <svg class="flt-svg" viewBox="<?php echo $viewBox; ?>" preserveAspectRatio="xMidYMid meet">
+
+                                    <!-- Grey edges -->
+                                    <?php foreach ($floorEdges as $e):
+                                        $a = $nodeById[(int) $e['fromNodeId']] ?? null;
+                                        $b = $nodeById[(int) $e['toNodeId']]   ?? null;
+                                        if (!$a || !$b) continue;
+                                    ?>
+                                        <line x1="<?php echo $a['x']; ?>" y1="<?php echo $a['y']; ?>"
+                                            x2="<?php echo $b['x']; ?>" y2="<?php echo $b['y']; ?>"
+                                            stroke="#5a5a5a" stroke-width="2"/>
+                                    <?php endforeach; ?>
+
+                                    <!-- Blue route edges -->
+                                    <?php foreach ($floorEdges as $e):
+                                        $aId = (int) $e['fromNodeId'];
+                                        $bId = (int) $e['toNodeId'];
+                                        if (!isset($routeEdges["$aId-$bId"])) continue;
+                                        $a = $nodeById[$aId] ?? null;
+                                        $b = $nodeById[$bId] ?? null;
+                                        if (!$a || !$b) continue;
+                                    ?>
+                                        <line x1="<?php echo $a['x']; ?>" y1="<?php echo $a['y']; ?>"
+                                            x2="<?php echo $b['x']; ?>" y2="<?php echo $b['y']; ?>"
+                                            stroke="#1e90ff" stroke-width="4"/>
+                                    <?php endforeach; ?>
+
+                                    <!-- Nodes -->
+                                    <?php foreach ($floorNodes as $n):
+                                        $type = strtolower($n['type']);
+                                        $fill = '#4CAF50';
+                                        if ($type === 'lift')     $fill = '#6a5acd';
+                                        if ($type === 'stairs')   $fill = '#1e90ff';
+                                        if ($type === 'entrance') $fill = '#f5f5f5';
+                                        if ($type === 'junction') $fill = '#999999';
+                                        $isStart = ($n['id'] == $fromId);
+                                        $isEnd   = ($n['id'] == $toId);
+                                    ?>
+                                        <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="7"
+                                                fill="<?php echo $fill; ?>" stroke="#222" stroke-width="1.5"/>
+                                        <?php if ($isStart): ?>
+                                            <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="12"
+                                                    fill="none" stroke="#1e90ff" stroke-width="2"/>
+                                        <?php endif; ?>
+                                        <?php if ($isEnd): ?>
+                                            <circle cx="<?php echo $n['x']; ?>" cy="<?php echo $n['y']; ?>" r="12"
+                                                    fill="none" stroke="#4CAF50" stroke-width="2"/>
+                                        <?php endif; ?>
+                                        <text x="<?php echo $n['x']; ?>" y="<?php echo $n['y'] - 12; ?>"
+                                            text-anchor="middle" font-size="9" fill="#e0e0e0">
+                                            <?php echo htmlspecialchars($n['name']); ?>
+                                        </text>
+                                    <?php endforeach; ?>
+
+                                </svg>
+                                    <!-- … your existing SVG content here … -->
+                                </svg>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
