@@ -1386,7 +1386,12 @@ footer {
   max-width: 800px;
   margin: 50px auto 10px auto;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-header-actions .admin-edit-back {
+  margin-bottom: 0;
 }
 
 .profile-header-actions .btn-update {

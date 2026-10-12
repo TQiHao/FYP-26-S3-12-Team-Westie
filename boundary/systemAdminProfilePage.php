@@ -76,6 +76,7 @@ if (isset($_SESSION['sysadmin_profile_success'])) {
     <main>
 
         <div class="profile-header-actions">
+            <a href="systemAdminDashboardPage.php" class="admin-edit-back">&#8249; Back</a>
             <a href="updateSystemAdminProfilePage.php" class="btn-update">Update</a>
         </div>
 
