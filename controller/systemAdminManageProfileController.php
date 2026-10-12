@@ -100,7 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_profile'])) {
 
     if ($result === true) {
         $_SESSION['user_name'] = $fullName;
-        $_SESSION['sysadmin_profile_success'] = "Profile updated successfully.";
+        $_SESSION['sysadmin_profile_success'] = "Profile Updated Successfully.";
     } elseif ($result === "missing_name") {
         $_SESSION['sysadmin_profile_error'] = "Please enter your full name.";
         header("Location: ../boundary/updateSystemAdminProfilePage.php");

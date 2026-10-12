@@ -121,7 +121,7 @@ if (isset($_SESSION['sysadmin_profile_success'])) {
 
     <?php if ($flashMessage): ?>
         <div id="flashModal" class="modal-overlay active">
-            <div class="modal-box modal-flash">
+           <div class="modal-box modal-flash modal-large">
                 <button type="button" class="modal-close" onclick="closeModal('flashModal')">&times;</button>
                 <p class="modal-title"><?php echo htmlspecialchars($flashMessage); ?></p>
             </div>

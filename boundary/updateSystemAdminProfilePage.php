@@ -80,9 +80,10 @@ if (isset($_SESSION['sysadmin_profile_error'])) {
             </div>
         <?php endif; ?>
 
-        <form action="../controller/systemAdminManageProfileController.php" method="POST" class="admin-edit-form">
+        <form id="updateProfileForm" action="../controller/systemAdminManageProfileController.php" method="POST" class="admin-edit-form">
 
-            <!-- Admin ID and Email are not editable -->
+            <input type="hidden" name="update_profile" value="1">
+
             <div class="admin-edit-row">
                 <label>Admin ID:</label>
                 <span>SYSADM-<?php echo str_pad($admin['id'], 4, '0', STR_PAD_LEFT); ?></span>
@@ -117,17 +118,77 @@ if (isset($_SESSION['sysadmin_profile_error'])) {
                        value="<?php echo htmlspecialchars($admin['department'] ?? ''); ?>">
             </div>
 
-            <button type="submit" name="update_profile" class="admin-edit-submit">Update</button>
+            <button type="button" class="admin-edit-submit" onclick="openUpdateConfirm()">Update</button>
 
         </form>
 
     </main>
+
+    <!-- Confirmation popup -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal-box modal-large">
+            <button type="button" class="modal-close" onclick="closeModal('confirmModal')">&times;</button>
+
+            <p class="modal-title">Are you sure you want to update the profile details?</p>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-btn modal-cancel" onclick="closeModal('confirmModal')">Cancel</button>
+                <button type="button" class="modal-btn modal-confirm-approve"
+                        onclick="document.getElementById('updateProfileForm').submit();">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pop up message when nothing was edited -->
+    <div id="noChangesModal" class="modal-overlay">
+        <div class="modal-box modal-flash modal-large">
+            <button type="button" class="modal-close" onclick="closeModal('noChangesModal')">&times;</button>
+            <p class="modal-title">No changes were made to the profile details.</p>
+        </div>
+    </div>
 
     <footer>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.
         </div>
     </footer>
+
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openUpdateConfirm() {
+            var form = document.getElementById('updateProfileForm');
+
+            if (!form.reportValidity()) {
+                return;
+            }
+
+            var fields = form.querySelectorAll('input[type="text"]');
+            var changed = false;
+
+            fields.forEach(function (field) {
+                if (field.value.trim() !== field.defaultValue.trim()) {
+                    changed = true;
+                }
+            });
+
+            openModal(changed ? 'confirmModal' : 'noChangesModal');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+            overlay.addEventListener('click', function (event) {
+                if (event.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
