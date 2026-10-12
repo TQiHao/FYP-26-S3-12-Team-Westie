@@ -617,21 +617,25 @@ CREATE TABLE Students (
         ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS NavigationNodes (
+CREATE TABLE NavigationNodes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     floorId INT NOT NULL,
+    floorPlanId INT NULL,
     name VARCHAR(100) NOT NULL,
     type ENUM('room','junction','lift','stairs','entrance','exit') DEFAULT 'room',
     x INT NOT NULL,
     y INT NOT NULL,
+    pixelX INT NULL,
+    pixelY INT NULL,
     facilityId INT NULL,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (floorId) REFERENCES CampusFloors(id) ON DELETE CASCADE,
+    FOREIGN KEY (floorPlanId) REFERENCES FloorPlans(id) ON DELETE SET NULL,
     FOREIGN KEY (facilityId) REFERENCES Facilities(id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS NavigationEdges (
+CREATE TABLE NavigationEdges (
     id INT PRIMARY KEY AUTO_INCREMENT,
     fromNodeId INT NOT NULL,
     toNodeId INT NOT NULL,
@@ -641,4 +645,3 @@ CREATE TABLE IF NOT EXISTS NavigationEdges (
     FOREIGN KEY (fromNodeId) REFERENCES NavigationNodes(id) ON DELETE CASCADE,
     FOREIGN KEY (toNodeId) REFERENCES NavigationNodes(id) ON DELETE CASCADE
 );
-

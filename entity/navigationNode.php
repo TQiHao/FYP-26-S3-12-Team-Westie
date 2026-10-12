@@ -113,4 +113,66 @@ class NavigationNode
             'floorNumber' => $this->floorNumber,
         ];
     }
+
+    /**
+ * Get all nodes placed on a specific floor.
+ */
+public function findByFloor($floorId)
+{
+    try {
+        $sql = "SELECT id, floorId, floorPlanId, name, type,
+                       x, y, pixelX, pixelY, facilityId
+                FROM NavigationNodes
+                WHERE floorId = ?
+                ORDER BY id ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([(int) $floorId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("NavigationNode::findByFloor error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Create a node on a floor. Also writes to x/y for backward compat.
+ */
+public function createForFloor($floorId, $floorPlanId, $name, $type, $pixelX, $pixelY)
+{
+    try {
+        $sql = "INSERT INTO NavigationNodes
+                (floorId, floorPlanId, name, type, x, y, pixelX, pixelY)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            (int) $floorId,
+            $floorPlanId ? (int) $floorPlanId : null,
+            trim($name),
+            $type,
+            (int) $pixelX,
+            (int) $pixelY,
+            (int) $pixelX,
+            (int) $pixelY
+        ]);
+        return (int) $this->db->lastInsertId();
+    } catch (PDOException $e) {
+        error_log("NavigationNode::createForFloor error: " . $e->getMessage());
+        return false;
+    }
+}
+
+    /**
+     * Delete a node (its edges cascade via FK).
+     */
+    public function deleteById($nodeId)
+    {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM NavigationNodes WHERE id = ?");
+            $stmt->execute([(int) $nodeId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("NavigationNode::deleteById error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

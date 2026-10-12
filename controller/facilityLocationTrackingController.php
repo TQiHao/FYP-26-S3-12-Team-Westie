@@ -238,4 +238,41 @@ class FacilityLocationTrackingController
 
         return $steps;
     }
+
+    public function getBuildingsWithNodes($universityId)
+    {
+        try {
+            $sql = "SELECT b.id, b.buildingName, b.buildingCode
+                    FROM CampusBuildings b
+                    WHERE b.universityId = ? AND b.status = 'active'
+                    AND EXISTS (
+                        SELECT 1 FROM CampusFloors f
+                        INNER JOIN NavigationNodes n ON n.floorId = f.id
+                        WHERE f.buildingId = b.id
+                    )
+                    ORDER BY b.buildingName ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([(int) $universityId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getBuildingsWithNodes error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getFloorPlanForFloor($floorId)
+    {
+        try {
+            $sql = "SELECT id, floorId, fileName, filePath
+                    FROM FloorPlans
+                    WHERE floorId = ?
+                    ORDER BY id DESC LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([(int) $floorId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) {
+            error_log("getFloorPlanForFloor error: " . $e->getMessage());
+            return null;
+        }
+    }
 }
