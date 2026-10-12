@@ -392,3 +392,84 @@ WHERE n.floorId = @l1
   );
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- Navigation demo building: "Library Tower"
+-- (Extra building for testing the navigation feature end-to-end.)
+-- ============================================================
+
+-- 1. Building
+INSERT INTO CampusBuildings (universityId, buildingName, buildingCode, description, status)
+SELECT 1, 'Library Tower', 'LIB-TOWER', 'Demo building for navigation tests', 'active'
+WHERE NOT EXISTS (
+    SELECT 1 FROM CampusBuildings WHERE universityId = 1 AND buildingCode = 'LIB-TOWER'
+);
+
+SET @lib := (SELECT id FROM CampusBuildings WHERE buildingCode = 'LIB-TOWER' LIMIT 1);
+
+-- 2. Floors
+INSERT INTO CampusFloors (buildingId, floorName, floorNumber, description, status)
+SELECT @lib, 'Level 1', 1, 'Ground floor', 'active'
+WHERE NOT EXISTS (
+    SELECT 1 FROM CampusFloors WHERE buildingId = @lib AND floorName = 'Level 1'
+);
+
+INSERT INTO CampusFloors (buildingId, floorName, floorNumber, description, status)
+SELECT @lib, 'Level 2', 2, 'Upper floor', 'active'
+WHERE NOT EXISTS (
+    SELECT 1 FROM CampusFloors WHERE buildingId = @lib AND floorName = 'Level 2'
+);
+
+SET @lib_l1 := (SELECT id FROM CampusFloors WHERE buildingId = @lib AND floorName = 'Level 1' LIMIT 1);
+SET @lib_l2 := (SELECT id FROM CampusFloors WHERE buildingId = @lib AND floorName = 'Level 2' LIMIT 1);
+
+-- 3. Level 1 nodes
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @lib_l1, 'Main Door', 'entrance', 30, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Main Door');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @lib_l1, 'Hallway', 'junction', 150, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Hallway');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @lib_l1, 'Lift', 'lift', 290, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Lift');
+
+-- 4. Level 2 nodes
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @lib_l2, 'Lift', 'lift', 290, 150
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @lib_l2 AND name = 'Lift');
+
+INSERT INTO NavigationNodes (floorId, name, type, x, y)
+SELECT @lib_l2, 'Reading Hall', 'room', 150, 100
+WHERE NOT EXISTS (SELECT 1 FROM NavigationNodes WHERE floorId = @lib_l2 AND name = 'Reading Hall');
+
+-- 5. Lookup node IDs
+SET @md  := (SELECT id FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Main Door');
+SET @hw  := (SELECT id FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Hallway');
+SET @l1  := (SELECT id FROM NavigationNodes WHERE floorId = @lib_l1 AND name = 'Lift');
+SET @l2  := (SELECT id FROM NavigationNodes WHERE floorId = @lib_l2 AND name = 'Lift');
+SET @rh  := (SELECT id FROM NavigationNodes WHERE floorId = @lib_l2 AND name = 'Reading Hall');
+
+-- 6. Edges (same floor)
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @md, @hw, 12.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId = @md AND toNodeId = @hw);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @hw, @l1, 14.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId = @hw AND toNodeId = @l1);
+
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @l2, @rh, 15.00, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM NavigationEdges WHERE fromNodeId = @l2 AND toNodeId = @rh);
+
+-- 7. Cross-floor edge (Lift ↔ Lift)
+INSERT INTO NavigationEdges (fromNodeId, toNodeId, distanceMeters, isAccessible)
+SELECT @l1, @l2, 15.00, TRUE
+WHERE NOT EXISTS (
+    SELECT 1 FROM NavigationEdges
+    WHERE (fromNodeId = @l1 AND toNodeId = @l2)
+       OR (fromNodeId = @l2 AND toNodeId = @l1)
+);
