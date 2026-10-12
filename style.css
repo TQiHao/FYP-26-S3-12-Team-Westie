@@ -1382,6 +1382,117 @@ footer {
   background-color: #f1f1f1;
 }
 
+.profile-header-actions {
+  max-width: 800px;
+  margin: 50px auto 10px auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.profile-header-actions .btn-update {
+  background: white;
+  border: 1px solid #777;
+  color: #000;
+}
+
+.profile-header-actions .btn-update:hover {
+  background-color: #f8ea9b;
+}
+
+.system-admin-dashboard .profile-header-actions,
+.system-admin-dashboard .profile-view {
+  width: 88%;
+  max-width: 1100px;
+}
+
+.system-admin-dashboard .profile-view {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 10 10;
+}
+
+/* ===== SYSTEM ADMIN - UPDATE PROFILE PAGE ===== */
+.admin-edit-page {
+  width: 88%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 0 60px;
+}
+
+.admin-edit-back {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #000;
+  text-decoration: none;
+  margin-bottom: 30px;
+}
+
+.admin-edit-back:hover {
+  text-decoration: underline;
+}
+
+.admin-edit-error {
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+.admin-edit-form {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 320px);
+  row-gap: 28px;
+  column-gap: 40px;
+  align-items: center;
+}
+
+.admin-edit-row {
+  display: contents;
+}
+
+.admin-edit-row label {
+  font-weight: 500;
+  font-size: 1rem;
+  color: #000;
+}
+
+.admin-edit-row span {
+  font-size: 1rem;
+  color: #000;
+}
+
+.admin-edit-form input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid #999;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.admin-edit-form input[type="text"]:focus {
+  outline: none;
+  border-color: #2E6DD6;
+}
+
+.admin-edit-submit {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 30px;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  background-color: #2E6DD6;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.admin-edit-submit:hover {
+  background-color: #2557ab;
+}
+
 .profile-view {
   max-width: 800px;
   margin: 0 auto;
@@ -3279,6 +3390,15 @@ footer {
 .system-admin-dashboard .btn-large.approve-btn {
   background-color: #2E9E3F;
   color: #fff;
+
+}.system-admin-dashboard .btn-large.reactivate-btn {
+  background-color: #2E6DD6;
+  color: #fff;
+}
+
+.system-admin-dashboard .btn-large.update-btn {
+  background-color: #2E6DD6;
+  color: #fff;
 }
 
 /* Reject reason textarea, hidden until "Reject" is clicked */
@@ -3406,6 +3526,42 @@ footer {
 .system-admin-dashboard .modal-btn.modal-confirm-reject {
   background-color: #D64545;
   color: #fff;
+}
+
+.system-admin-dashboard .modal-btn.modal-confirm-reactivate {
+  background-color: #2E6DD6;
+  color: #fff;
+}
+
+/* ===== SYSTEM ADMIN PROFILE - UPDATE FORM ===== */
+.system-admin-dashboard .profile-update-form .form-group {
+  margin-bottom: 18px;
+}
+
+.system-admin-dashboard .profile-update-form .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.system-admin-dashboard .profile-update-form .form-group input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.system-admin-dashboard .profile-update-form .form-group input:disabled {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.system-admin-dashboard .profile-update-form .form-group input:focus {
+  outline: none;
+  border-color: #2E6DD6;
 }
 
 /* ===== SUBMIT FEEDBACK ===== */

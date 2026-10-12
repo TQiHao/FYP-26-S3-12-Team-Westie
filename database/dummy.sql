@@ -179,6 +179,15 @@ VALUES
 ('systemadmin@unibee.com', '$2y$10$v35y3AhNTMSDRXMbBBD0oOHqRJNYZq8dgWDqrB.YqQpme9NFzM6s.', 'James Low', 'active');
 
 -- ============================================
+-- 9. SYSTEM ADMIN PROFILE
+-- ============================================
+INSERT INTO SystemAdminProfiles (systemAdminId, contactNumber, position, department)
+SELECT id, '+65 92217459', 'System Administrator', 'IT'
+FROM SystemAdmins
+WHERE email = 'systemadmin@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM SystemAdminProfiles WHERE systemAdminId = (SELECT id FROM SystemAdmins WHERE email = 'systemadmin@unibee.com'));
+
+-- ============================================
 -- 10. LICENSES
 -- ============================================
 INSERT INTO Licenses (id, name, durationYears, description, status)

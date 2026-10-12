@@ -23,7 +23,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
 
         <div class="logo-container">
@@ -52,7 +51,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 <div id="profileMenu" class="dropdown-menu">
 
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
-                    <a href="">Profile</a>
+                    <a href="systemAdminProfilePage.php">Profile</a>
                     <a href="">Universities</a>
                     <a href="">Manage Landing Page</a>
                     <a href="">Update AI Model</a>

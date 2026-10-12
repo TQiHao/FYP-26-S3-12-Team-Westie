@@ -65,7 +65,7 @@ if (isset($_SESSION['registration_review_success'])) {
                 <div id="profileMenu" class="dropdown-menu">
 
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
-                    <a href="">Profile</a>
+                    <a href="systemAdminProfilePage.php">Profile</a>
                     <a href="">Universities</a>
                     <a href="">Manage Landing Page</a>
                     <a href="">Update AI Model</a>
