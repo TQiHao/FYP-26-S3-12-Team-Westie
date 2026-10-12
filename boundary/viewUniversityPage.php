@@ -65,11 +65,11 @@ if (isset($_SESSION['university_action_success'])) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
-                    <a href="">Profile</a>
-                    <a href="">Universities</a>
-                    <a href="">Manage Landing Page</a>
-                    <a href="">Update AI Model</a>
-                    <a href="">System Operations</a>
+                    <a href="systemAdminProfilePage.php">Profile</a>
+                    <a href="ManageUniversityPage.php">Manage Universities</a>
+                    <a href="manageLandingPage.php">Manage Landing Page</a>
+                    <a href="UpdateAIModelPage.php">Update AI Model</a>
+                    <a href="SystemOperationPage.php">System Operations</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 

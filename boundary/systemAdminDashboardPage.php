@@ -36,10 +36,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </strong>
         </div>
 
-        <!-- Header Icons -->
         <div class="dashboard-header-right">
 
-            <!-- Profile + Dropdown -->
             <div class="profile-dropdown">
 
                 <div class="profile-container" onclick="toggleDropdown()">
@@ -49,15 +47,13 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
                     <a href="systemAdminProfilePage.php">Profile</a>
-                    <a href="">Universities</a>
-                    <a href="">Manage Landing Page</a>
-                    <a href="">Update AI Model</a>
-                    <a href="">System Operations</a>
+                    <a href="ManageUniversityPage.php">Manage Universities</a>
+                    <a href="manageLandingPage.php">Manage Landing Page</a>
+                    <a href="UpdateAIModelPage.php">Update AI Model</a>
+                    <a href="SystemOperationPage.php">System Operations</a>
                     <a href="../controller/logoutController.php">Log Out</a>
-
                 </div>
 
             </div>
@@ -69,7 +65,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <!-- System Admin Dashboard -->
     <main class="dashboard system-admin-dashboard">
 
-        <!-- Management Actions -->
         <section class="dashboard-section">
 
             <h3 class="section-label system-admin-dashboard">Management Actions</h3>
@@ -83,7 +78,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 </a>
 
                 <!-- Manage Landing Page -->
-                <a href="ManageLandingPagePage.php" class="dashboard-card">
+                <a href="ManageLandingPage.php" class="dashboard-card">
                     <img src="../images/manageLandingPage.png" alt="Manage Landing Page" class="card-icon system-admin-dashboard">
                     <h2>Manage Landing Page</h2>
                 </a>
@@ -106,8 +101,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
     </main>
 
-
-    <!-- Footer -->
     <footer>
 
         <div class="footer-bottom-bar">
