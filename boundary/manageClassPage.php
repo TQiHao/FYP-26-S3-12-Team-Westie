@@ -1531,7 +1531,7 @@ foreach ($classList as $c) {
             fd.append('capacity', capacity);
             fd.append('excludeClassId', classId);
 
-            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
+            fetch('../controller/roomSuggestionController.php', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
@@ -1716,7 +1716,7 @@ foreach ($classList as $c) {
             fd.append('endTime', endTime);
             fd.append('capacity', capacity);
 
-            fetch('../controller/roomSuggestion.php', { method: 'POST', body: fd })
+            fetch('../controller/roomSuggestionController.php', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
