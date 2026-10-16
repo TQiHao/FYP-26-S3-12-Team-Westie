@@ -323,12 +323,21 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                         $xs[] = $n['pixelX'] ?? $n['x'];
                                         $ys[] = $n['pixelY'] ?? $n['y'];
                                     }
+                                    $imgW = (int) ($fp['imageWidth']  ?? 0);
+                                $imgH = (int) ($fp['imageHeight'] ?? 0);
+
+                                if ($imgW <= 0 || $imgH <= 0) {
+                                    // Fallback if dimensions weren't stored (old uploads)
                                     $pad = 40;
                                     $minX = !empty($xs) ? min($xs) - $pad : 0;
                                     $minY = !empty($ys) ? min($ys) - $pad : 0;
                                     $maxX = !empty($xs) ? max($xs) + $pad : 800;
                                     $maxY = !empty($ys) ? max($ys) + $pad : 600;
                                     $vb = "$minX $minY " . ($maxX - $minX) . " " . ($maxY - $minY);
+                                } else {
+                                    // Full image coordinate space — nodes align correctly
+                                    $vb = "0 0 $imgW $imgH";
+                                }
                                 ?>
                                 <div class="flt-floorplan-wrap">
                                     <img src="../<?php echo htmlspecialchars($fp['filePath']); ?>"
@@ -336,6 +345,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
                                     <svg class="flt-floorplan-overlay"
                                         viewBox="<?php echo $vb; ?>"
+                                        <?php if ($imgW <= 0 || $imgH <= 0): ?>data-needs-natural-size="1"<?php endif; ?>
                                         preserveAspectRatio="xMidYMid meet">
 
                                         <!-- grey edges -->
@@ -521,6 +531,21 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
         </div>
     </footer>
     <script>
+    // Floor-plan overlays: viewBox must be the image's natural pixel size
+    // (nodes are saved in natural-image pixels by the node editor).
+    function syncOverlayToImage(wrap) {
+        var img = wrap.querySelector('.flt-floorplan-img');
+        var svg = wrap.querySelector('.flt-floorplan-overlay');
+        if (!img || !svg || !img.naturalWidth) return;
+        svg.setAttribute('viewBox', '0 0 ' + img.naturalWidth + ' ' + img.naturalHeight);
+    }
+    document.querySelectorAll('.flt-floorplan-wrap').forEach(function (wrap) {
+        var img = wrap.querySelector('.flt-floorplan-img');
+        if (!img) return;
+        if (img.complete) syncOverlayToImage(wrap);
+        else img.addEventListener('load', function () { syncOverlayToImage(wrap); });
+    });
+
     <?php if (isset($_GET['facility'])): ?>
     document.addEventListener('DOMContentLoaded', function () {
         var summary = document.querySelector('.flt-summary');

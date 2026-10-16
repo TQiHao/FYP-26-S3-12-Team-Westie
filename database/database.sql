@@ -357,6 +357,8 @@ CREATE TABLE FloorPlans (
     floorId INT NOT NULL,
     fileName VARCHAR(255) NOT NULL,
     filePath VARCHAR(500) NOT NULL,
+    imageWidth INT NULL,              
+    imageHeight INT NULL,             
     description TEXT,
     uploadedBy INT,
     uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,

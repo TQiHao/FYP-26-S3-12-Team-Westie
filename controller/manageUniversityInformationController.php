@@ -1066,7 +1066,27 @@ class ManageUniversityInformationController
 
     public function uploadFloorPlan($floorId, $fileName, $filePath, $uploadedBy)
     {
-        return $this->floorPlans->uploadFloorPlan($floorId, $fileName, $filePath, $uploadedBy);
+        // NEW: read natural image dimensions from the saved file
+        $fullPath = __DIR__ . '/../' . $filePath;
+        $imageWidth  = null;
+        $imageHeight = null;
+
+        if (file_exists($fullPath)) {
+            $dims = getimagesize($fullPath);
+            if ($dims !== false) {
+                $imageWidth  = (int) $dims[0];
+                $imageHeight = (int) $dims[1];
+            }
+        }
+
+        return $this->floorPlans->uploadFloorPlan(
+            $floorId,
+            $fileName,
+            $filePath,
+            $uploadedBy,
+            $imageWidth,
+            $imageHeight
+        );
     }
 
     public function uploadStudentList($csvFile, $universityId)

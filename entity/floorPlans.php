@@ -114,40 +114,31 @@ class FloorPlans
         $floorId,
         $fileName,
         $filePath,
-        $uploadedBy
+        $uploadedBy,
+        $imageWidth  = null,     // NEW
+        $imageHeight = null      // NEW
     ) {
         $database = new Database();
         $db = $database->connect();
 
         try {
-
             $sql = "INSERT INTO FloorPlans
-                (
-                    floorId,
-                    fileName,
-                    filePath,
-                    uploadedBy,
-                    uploadedAt,
-                    updatedAt
-                )
-                VALUES
-                (
-                    ?, ?, ?, ?, NOW(), NOW()
-                )";
+                    (floorId, fileName, filePath, imageWidth, imageHeight,
+                    uploadedBy, uploadedAt, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
             $stmt = $db->prepare($sql);
-
             $stmt->execute([
                 $floorId,
                 $fileName,
                 $filePath,
+                $imageWidth,
+                $imageHeight,
                 $uploadedBy
             ]);
 
             return true;
-
         } catch (PDOException $e) {
-
             return false;
         }
     }

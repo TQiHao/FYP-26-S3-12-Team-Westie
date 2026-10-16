@@ -477,16 +477,17 @@ $campusMap = $controller->getCampusMap($universityId);
         .node-editor-canvas-wrap {
             position: relative;
             display: inline-block;
-            width: 100%;
             margin-top: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
             overflow: hidden;
+            max-width: 100%;
         }
 
         .node-editor-canvas-wrap img {
             display: block;
-            width: 100%;
+            max-width: 100%;
+            height: auto;
             user-select: none;
         }
 
@@ -496,6 +497,7 @@ $campusMap = $controller->getCampusMap($universityId);
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;   /* ← NEW: clicks pass through to the wrapper */
         }
 
         .node-editor-dot {
@@ -507,6 +509,7 @@ $campusMap = $controller->getCampusMap($universityId);
             transform: translate(-50%, -50%);
             cursor: pointer;
             box-shadow: 0 0 0 1px #333;
+            pointer-events: auto;
         }
 
         .node-editor-dot.selected {
@@ -1335,15 +1338,22 @@ $campusMap = $controller->getCampusMap($universityId);
             list.innerHTML = "";
             countEl.textContent = nvNodes.length;
 
+            const imgEl = document.getElementById("nodeEditorImage");
+            const naturalW = imgEl.naturalWidth  || 1000;
+            const naturalH = imgEl.naturalHeight || 700;
+
             nvNodes.forEach(n => {
-                const x = parseInt(n.pixelX || n.x, 10);
-                const y = parseInt(n.pixelY || n.y, 10);
+                const xNat = parseInt(n.pixelX || n.x, 10);
+                const yNat = parseInt(n.pixelY || n.y, 10);
+
+                const xPct = (xNat / naturalW) * 100;
+                const yPct = (yNat / naturalH) * 100;
 
                 const dot = document.createElement("div");
                 dot.className = "node-editor-dot";
                 if (nvSelectedNodeId === n.id) dot.classList.add("selected");
-                dot.style.left = x + "px";
-                dot.style.top = y + "px";
+                dot.style.left = xPct + "%";
+                dot.style.top  = yPct + "%";
                 dot.style.background =
                     n.type === "lift"     ? "#6a5acd" :
                     n.type === "stairs"   ? "#1e90ff" :
@@ -1361,8 +1371,8 @@ $campusMap = $controller->getCampusMap($universityId);
 
                         const fromX = parseInt(from.pixelX || from.x, 10);
                         const fromY = parseInt(from.pixelY || from.y, 10);
-                        const dx = fromX - x;
-                        const dy = fromY - y;
+                        const dx = fromX - xNat;
+                        const dy = fromY - yNat;
                         const dist = Math.sqrt(dx * dx + dy * dy);
                         const meters = Math.round(dist / 10 * 100) / 100;
 
@@ -1408,8 +1418,8 @@ $campusMap = $controller->getCampusMap($universityId);
 
                 const label = document.createElement("div");
                 label.className = "node-editor-label";
-                label.style.left = x + "px";
-                label.style.top = y + "px";
+                label.style.left = xPct + "%";
+                label.style.top  = yPct + "%";
                 label.textContent = n.name;
                 overlay.appendChild(label);
 
@@ -1443,8 +1453,12 @@ $campusMap = $controller->getCampusMap($universityId);
 
             const img = document.getElementById("nodeEditorImage");
             const rect = img.getBoundingClientRect();
-            const px = Math.round(e.clientX - rect.left);
-            const py = Math.round(e.clientY - rect.top);
+            const naturalW = img.naturalWidth;
+            const naturalH = img.naturalHeight;
+
+            // Convert click from displayed (modal) space to natural image space
+            const px = Math.round((e.clientX - rect.left) * (naturalW / rect.width));
+            const py = Math.round((e.clientY - rect.top)  * (naturalH / rect.height));
 
             const name = prompt("Enter node name:");
             if (!name) return;
