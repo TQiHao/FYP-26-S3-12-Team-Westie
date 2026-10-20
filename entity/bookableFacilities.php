@@ -243,17 +243,18 @@ class BookableFacilities
     public function createBookableFacility(
         $facilityId,
         $openTime,
-        $closeTime
+        $closeTime,
+        $slotDuration
     ) {
         $database = new Database();
         $db = $database->connect();
 
         try {
-
             $sql = "INSERT INTO BookableFacilities
                 (
                     facilityId,
                     isBookable,
+                    slotDuration,
                     bookingCapacity,
                     openTime,
                     closeTime,
@@ -262,6 +263,7 @@ class BookableFacilities
                 SELECT
                     id,
                     TRUE,
+                    ?,
                     capacity,
                     ?,
                     ?,
@@ -272,6 +274,7 @@ class BookableFacilities
             $stmt = $db->prepare($sql);
 
             $stmt->execute([
+                $slotDuration,
                 $openTime,
                 $closeTime,
                 $facilityId
@@ -280,7 +283,6 @@ class BookableFacilities
             return $db->lastInsertId();
 
         } catch (PDOException $e) {
-
             error_log(
                 "Create bookable facility error: "
                 . $e->getMessage()
@@ -289,6 +291,7 @@ class BookableFacilities
             return false;
         }
     }
+
 
     // Get all bookable facilities
     public function getBookableFacilitiesByUniversity(
@@ -348,6 +351,7 @@ class BookableFacilities
         }
     }
 
+
     public function getFacilityUtilisationReport(
         $universityId,
         $facilityType = '',
@@ -357,19 +361,19 @@ class BookableFacilities
         $db = $database->connect();
 
         try {
+            // Current Monday-Friday reporting week
+            $today = new DateTimeImmutable('today');
+            $weekStart = $today->modify('monday this week');
+            $weekEnd = $weekStart->modify('+4 days');
+
+            $startDate = $weekStart->format('Y-m-d');
+            $endDate = $weekEnd->format('Y-m-d');
 
             $params = [
+                $startDate,
+                $endDate,
                 $universityId
             ];
-
-            /*
-             * FacilityBookings contains both:
-             * 1. Student bookings
-             * 2. Event bookings
-             *
-             * Event bookings are identified by:
-             * purpose LIKE 'Event:%'
-             */
 
             $sql = "SELECT
                     f.id AS facilityId,
@@ -381,7 +385,6 @@ class BookableFacilities
                     bf.openTime,
                     bf.closeTime,
 
-                    /* STUDENT BOOKINGS */
                     COUNT(
                         CASE
                             WHEN fb.status IN (
@@ -389,33 +392,33 @@ class BookableFacilities
                                 'confirmed',
                                 'completed'
                             )
-                            AND fb.purpose NOT LIKE 'Event:%'
+                            AND COALESCE(fb.purpose, '')
+                                NOT LIKE 'Event:%'
                             THEN fb.id
                         END
                     ) AS studentBookings,
 
-                    /* STUDENT HOURS */
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN fb.status IN (
-                                    'pending',
-                                    'confirmed',
-                                    'completed'
-                                )
-                                AND fb.purpose NOT LIKE 'Event:%'
-                                THEN TIMESTAMPDIFF(
+                    COALESCE(SUM(
+                        CASE
+                            WHEN fb.status IN (
+                                'pending',
+                                'confirmed',
+                                'completed'
+                            )
+                            AND COALESCE(fb.purpose, '')
+                                NOT LIKE 'Event:%'
+                            THEN GREATEST(
+                                0,
+                                TIMESTAMPDIFF(
                                     MINUTE,
                                     fb.startTime,
                                     fb.endTime
-                                ) / 60
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS studentHours,
+                                )
+                            ) / 60
+                            ELSE 0
+                        END
+                    ), 0) AS studentHours,
 
-                    /* EVENT BOOKINGS */
                     COUNT(
                         CASE
                             WHEN fb.status IN (
@@ -428,26 +431,25 @@ class BookableFacilities
                         END
                     ) AS eventCount,
 
-                    /* EVENT HOURS */
-                    COALESCE(
-                        SUM(
-                            CASE
-                                WHEN fb.status IN (
-                                    'pending',
-                                    'confirmed',
-                                    'completed'
-                                )
-                                AND fb.purpose LIKE 'Event:%'
-                                THEN TIMESTAMPDIFF(
+                    COALESCE(SUM(
+                        CASE
+                            WHEN fb.status IN (
+                                'pending',
+                                'confirmed',
+                                'completed'
+                            )
+                            AND fb.purpose LIKE 'Event:%'
+                            THEN GREATEST(
+                                0,
+                                TIMESTAMPDIFF(
                                     MINUTE,
                                     fb.startTime,
                                     fb.endTime
-                                ) / 60
-                                ELSE 0
-                            END
-                        ),
-                        0
-                    ) AS eventHours
+                                )
+                            ) / 60
+                            ELSE 0
+                        END
+                    ), 0) AS eventHours
 
                 FROM Facilities f
 
@@ -456,166 +458,78 @@ class BookableFacilities
 
                 LEFT JOIN FacilityBookings fb
                     ON fb.facilityId = bf.id
+                    AND fb.bookingDate BETWEEN ? AND ?
 
                 WHERE f.universityId = ?
                   AND bf.isBookable = TRUE";
 
-            /*
-             * Facility type filter
-             */
             if ($facilityType !== '') {
-
-                $sql .= "
-                AND f.type = ?
-            ";
-
+                $sql .= " AND f.type = ?";
                 $params[] = $facilityType;
             }
 
-            /*
-             * Group facilities
-             */
-            $sql .= "
-            GROUP BY
-                f.id,
-                f.name,
-                f.roomCode,
-                f.type,
-                f.location,
-                f.blockFloor,
-                bf.openTime,
-                bf.closeTime
+            $sql .= " GROUP BY
+                    f.id,
+                    f.name,
+                    f.roomCode,
+                    f.type,
+                    f.location,
+                    f.blockFloor,
+                    bf.openTime,
+                    bf.closeTime
 
-            ORDER BY f.name ASC
-        ";
+                  ORDER BY f.name ASC";
 
             $stmt = $db->prepare($sql);
-
             $stmt->execute($params);
 
-            $rows = $stmt->fetchAll(
-                PDO::FETCH_ASSOC
-            );
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-            /*
-             * Calculate final totals
-             */
             foreach ($rows as &$row) {
+                $studentBookings = (int) $row['studentBookings'];
+                $eventCount = (int) $row['eventCount'];
+                $studentHours = (float) $row['studentHours'];
+                $eventHours = (float) $row['eventHours'];
 
-                $studentBookings =
-                    (int) $row['studentBookings'];
-
-                $eventCount =
-                    (int) $row['eventCount'];
-
-                $studentHours =
-                    (float) $row['studentHours'];
-
-                $eventHours =
-                    (float) $row['eventHours'];
-
-
-                /*
-                 * STUDENT ONLY
-                 */
                 if ($usageType === 'student') {
-
-                    $row['totalBookings'] =
-                        $studentBookings;
-
-                    $row['hoursUsed'] =
-                        $studentHours;
-
-
-                    /*
-                     * EVENT ONLY
-                     */
+                    $row['totalBookings'] = $studentBookings;
+                    $row['hoursUsed'] = $studentHours;
                 } elseif ($usageType === 'event') {
-
-                    $row['totalBookings'] =
-                        $eventCount;
-
-                    $row['hoursUsed'] =
-                        $eventHours;
-
-
-                    /*
-                     * ALL USAGE
-                     */
+                    $row['totalBookings'] = $eventCount;
+                    $row['hoursUsed'] = $eventHours;
                 } else {
-
                     $row['totalBookings'] =
-                        $studentBookings
-                        + $eventCount;
+                        $studentBookings + $eventCount;
 
                     $row['hoursUsed'] =
-                        $studentHours
-                        + $eventHours;
+                        $studentHours + $eventHours;
                 }
 
+                // Assumption: same opening hours on all five weekdays
+                $open = strtotime($row['openTime'] ?? '');
+                $close = strtotime($row['closeTime'] ?? '');
 
-                /*
-                 * Weekly available hours.
-                 *
-                 * Assumes the same opening/closing
-                 * time every day.
-                 */
                 if (
                     !empty($row['openTime']) &&
-                    !empty($row['closeTime'])
+                    !empty($row['closeTime']) &&
+                    $close > $open
                 ) {
-
-                    $open =
-                        strtotime(
-                            $row['openTime']
-                        );
-
-                    $close =
-                        strtotime(
-                            $row['closeTime']
-                        );
-
-                    if ($close > $open) {
-
-                        $dailyHours =
-                            (
-                                $close - $open
-                            ) / 3600;
-
-                        $availableHours =
-                            $dailyHours * 5;
-
-                    } else {
-
-                        $availableHours = 0;
-                    }
-
+                    $dailyHours = ($close - $open) / 3600;
+                    $row['availableHours'] = $dailyHours * 5;
                 } else {
-
-                    $availableHours = 0;
+                    $row['availableHours'] = 0;
                 }
 
+                $row['utilisationRate'] =
+                    $row['availableHours'] > 0
+                    ? (
+                        $row['hoursUsed']
+                        / $row['availableHours']
+                    ) * 100
+                    : 0;
 
-                $row['availableHours'] =
-                    $availableHours;
-
-
-                /*
-                 * Utilisation percentage
-                 */
-                if ($availableHours > 0) {
-
-                    $row['utilisationRate'] =
-                        (
-                            $row['hoursUsed']
-                            / $availableHours
-                        ) * 100;
-
-                } else {
-
-                    $row['utilisationRate'] = 0;
-                }
+                $row['reportStartDate'] = $startDate;
+                $row['reportEndDate'] = $endDate;
             }
 
             unset($row);
@@ -623,7 +537,6 @@ class BookableFacilities
             return $rows;
 
         } catch (PDOException $e) {
-
             error_log(
                 "Facility utilisation report error: "
                 . $e->getMessage()
@@ -638,73 +551,130 @@ class BookableFacilities
         $facilityType = '',
         $usageType = ''
     ) {
-        $report =
-            $this->getFacilityUtilisationReport(
-                $universityId,
-                $facilityType,
-                $usageType
-            );
+        $report = $this->getFacilityUtilisationReport(
+            $universityId,
+            $facilityType,
+            $usageType
+        );
 
         $totalBookings = 0;
         $totalHours = 0;
+        $totalAvailableHours = 0;
 
         $mostUsedFacility = '-';
         $highestRate = -1;
 
-
         foreach ($report as $row) {
+            $totalBookings += (int) $row['totalBookings'];
+            $totalHours += (float) $row['hoursUsed'];
 
-            $totalBookings +=
-                (int) $row['totalBookings'];
+            $availableHours = (float) $row['availableHours'];
+            $utilisationRate = (float) $row['utilisationRate'];
 
-            $totalHours +=
-                (float) $row['hoursUsed'];
+            if ($availableHours > 0) {
+                $totalAvailableHours += $availableHours;
 
-            /*
-             * Only consider facilities that have
-             * available operating hours.
-             */
-            if (
-                (float) $row['availableHours'] > 0 &&
-                (float) $row['utilisationRate']
-                > $highestRate
-            ) {
-
-                $highestRate =
-                    (float) 
-                    $row['utilisationRate'];
-
-                $mostUsedFacility =
-                    $row['facilityName'];
+                if ($utilisationRate > $highestRate) {
+                    $highestRate = $utilisationRate;
+                    $mostUsedFacility = $row['facilityName'];
+                }
             }
         }
 
-        $averageRate = 0;
-
-        if (!empty($report)) {
-
-            $averageRate =
-                array_sum(
-                    array_column(
-                        $report,
-                        'utilisationRate'
-                    )
-                ) / count($report);
-        }
+        $averageRate = $totalAvailableHours > 0
+            ? ($totalHours / $totalAvailableHours) * 100
+            : 0;
 
         return [
-            'totalBookings' =>
-                $totalBookings,
-
-            'totalHours' =>
-                round($totalHours, 1),
-
-            'averageRate' =>
-                round($averageRate, 1),
-
-            'mostUsedFacility' =>
-                $mostUsedFacility
+            'totalBookings' => $totalBookings,
+            'totalHours' => round($totalHours, 1),
+            'averageRate' => round($averageRate, 1),
+            'mostUsedFacility' => $mostUsedFacility
         ];
     }
+
+
+    // Update bookable facility settings
+    public function updateBookableFacility(
+        $bookableFacilityId,
+        $universityId,
+        $openTime,
+        $closeTime,
+        $slotDuration
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $sql = "UPDATE BookableFacilities bf
+                    INNER JOIN Facilities f
+                        ON f.id = bf.facilityId
+                    SET bf.openTime = ?,
+                        bf.closeTime = ?,
+                        bf.slotDuration = ?,
+                        bf.updatedAt = CURRENT_TIMESTAMP
+                    WHERE bf.id = ?
+                      AND f.universityId = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $openTime,
+                $closeTime,
+                $slotDuration,
+                $bookableFacilityId,
+                $universityId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+            error_log(
+                "Update bookable facility error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
+    // Suspend or reactivate a bookable facility
+    public function updateBookableFacilityStatus(
+        $bookableFacilityId,
+        $universityId,
+        $status
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $sql = "UPDATE BookableFacilities bf
+                    INNER JOIN Facilities f
+                        ON f.id = bf.facilityId
+                    SET bf.status = ?,
+                        bf.updatedAt = CURRENT_TIMESTAMP
+                    WHERE bf.id = ?
+                      AND f.universityId = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $status,
+                $bookableFacilityId,
+                $universityId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+            error_log(
+                "Update bookable facility status error: "
+                . $e->getMessage()
+            );
+
+            return false;
+        }
+    }
+
 }
 ?>

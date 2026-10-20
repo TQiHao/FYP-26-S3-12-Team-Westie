@@ -230,12 +230,7 @@ class ManageUniversityEventController
                 . "the start date and time.";
         }
 
-
-        // -------------------------------------------------
-        // Make sure the selected BookableFacilities
-        // record exists and belongs to this university.
-        // -------------------------------------------------
-
+        // Make sure the selected BookableFacilities record exists and belongs to this university.
         $bookableFacility =
             $this->bookableFacilities
                 ->getBookableFacilityByIdAndUniversity(
@@ -243,10 +238,53 @@ class ManageUniversityEventController
                     $universityId
                 );
 
-
         if ($bookableFacility === false) {
-            return
-                "Selected bookable facility is invalid.";
+            return "Selected bookable facility is invalid.";
+        }
+
+        // Validate event duration against slot duration
+        $slotDuration = (int) (
+            $bookableFacility['slotDuration'] ?? 0
+        );
+
+        if ($slotDuration > 0) {
+            $durationMinutes = (
+                $end->getTimestamp() - $start->getTimestamp()
+            ) / 60;
+
+            if ($durationMinutes > $slotDuration) {
+                return "Event duration cannot exceed "
+                    . $slotDuration . " minutes.";
+            }
+        }
+
+        // Validate facility opening hours
+        $openTime = $bookableFacility['openTime'] ?? null;
+        $closeTime = $bookableFacility['closeTime'] ?? null;
+
+        if (
+            empty($openTime) ||
+            empty($closeTime)
+        ) {
+            return "Facility opening hours are not configured.";
+        }
+
+        // Compare times using HH:MM format
+        $eventStartTime = $start->format('H:i:s');
+        $eventEndTime = $end->format('H:i:s');
+
+        // Events must be within opening hours and on one day
+        if (
+            $start->format('Y-m-d') !== $end->format('Y-m-d')
+        ) {
+            return "Events must start and end on the same day.";
+        }
+
+        if (
+            $eventStartTime < $openTime ||
+            $eventEndTime > $closeTime
+        ) {
+            return "Event must be within the facility opening hours.";
         }
 
 
@@ -858,6 +896,44 @@ class ManageUniversityEventController
         }
 
 
+        // Validate facility opening hours and booking duration
+        $openTime = $bookableFacility['openTime'] ?? null;
+        $closeTime = $bookableFacility['closeTime'] ?? null;
+        $slotDuration = $bookableFacility['slotDuration'] ?? null;
+
+        if (empty($openTime) || empty($closeTime)) {
+            return "Facility opening hours are not configured.";
+        }
+
+        // Event must start and end on the same day
+        if ($start->format('Y-m-d') !== $end->format('Y-m-d')) {
+            return "Events must start and end on the same day.";
+        }
+
+        // Check opening and closing times
+        $eventStartTime = $start->format('H:i:s');
+        $eventEndTime = $end->format('H:i:s');
+
+        if (
+            $eventStartTime < $openTime ||
+            $eventEndTime > $closeTime
+        ) {
+            return "Event must be within the facility opening hours.";
+        }
+
+        // Check booking duration against slotDuration
+        if ($slotDuration !== null && (int) $slotDuration > 0) {
+            $durationMinutes = (
+                $end->getTimestamp() - $start->getTimestamp()
+            ) / 60;
+
+            if ($durationMinutes % (int) $slotDuration !== 0) {
+                return "Event duration must be a multiple of "
+                    . (int) $slotDuration . " minutes.";
+            }
+        }
+
+
         if (
             !(int) 
             $bookableFacility['isBookable']
@@ -958,17 +1034,15 @@ class ManageUniversityEventController
         // Final availability check
         // -------------------------------------------------
 
-        $recommended =
-            $this->getRecommendedFacilities(
-                $universityId,
-                (int) $capacity,
-                $startDatetime,
-                $endDatetime
-            );
-
+        $recommended = $this->event->getRecommendedFacilities(
+            $universityId,
+            (int) $capacity,
+            $startDatetime,
+            $endDatetime,
+            $eventId
+        );
 
         $facilityStillAvailable = false;
-
 
         foreach (
             $recommended as $recommendedFacility
@@ -987,21 +1061,6 @@ class ManageUniversityEventController
 
                 break;
             }
-        }
-
-
-        /*
-         * If the admin is keeping the same facility,
-         * the current event should not reject itself.
-         */
-        if (
-            $facilityId ===
-            (int) $existingEvent[
-                'facilityId'
-            ]
-        ) {
-
-            $facilityStillAvailable = true;
         }
 
 
@@ -1046,12 +1105,9 @@ class ManageUniversityEventController
         }
 
 
-        // -------------------------------------------------
         // If facility changed:
-        //
         // Old facility → active
         // New facility → occupied
-        // -------------------------------------------------
 
         if (
             $facilityId !==
@@ -1198,6 +1254,52 @@ class ManageUniversityEventController
 
 
         return true;
+    }
+
+    private function validateFacilityBookingTiming(
+        array $facility,
+        DateTime $start,
+        DateTime $end
+    ): ?string {
+
+        $openTime = $facility['openTime'] ?? null;
+        $closeTime = $facility['closeTime'] ?? null;
+        $slotDuration = $facility['slotDuration'] ?? null;
+
+        if (empty($openTime) || empty($closeTime)) {
+            return "Facility opening hours are not configured.";
+        }
+
+        if ($end <= $start) {
+            return "End time must be after start time.";
+        }
+
+        // Require the event to start and end on the same day.
+        if ($start->format('Y-m-d') !== $end->format('Y-m-d')) {
+            return "Events must start and end on the same day.";
+        }
+
+        $startTime = $start->format('H:i:s');
+        $endTime = $end->format('H:i:s');
+
+        // Check facility operating hours.
+        if ($startTime < $openTime || $endTime > $closeTime) {
+            return "Event must be within the facility opening hours.";
+        }
+
+        // Validate duration against the configured slot duration.
+        if ($slotDuration !== null && (int) $slotDuration > 0) {
+            $durationMinutes = (
+                $end->getTimestamp() - $start->getTimestamp()
+            ) / 60;
+
+            if ($durationMinutes % (int) $slotDuration !== 0) {
+                return "Event duration must be a multiple of "
+                    . (int) $slotDuration . " minutes.";
+            }
+        }
+
+        return null;
     }
 
 

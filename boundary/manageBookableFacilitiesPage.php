@@ -27,6 +27,21 @@ $allowedTabs = [
     'report'
 ];
 
+$editFacility = false;
+
+if (
+    $universityId !== null &&
+    $tab === 'view' &&
+    isset($_GET['edit']) &&
+    ctype_digit((string) $_GET['edit'])
+) {
+    $editFacility = $controller->getBookableFacilityById(
+        (int) $_GET['edit'],
+        $universityId
+    );
+}
+
+
 if (!in_array($tab, $allowedTabs, true)) {
     $tab = 'create';
 }
@@ -258,10 +273,71 @@ if ($universityId !== null) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
             padding: 14px 18px;
             border: 1px solid #bbb;
             border-radius: 10px;
         }
+
+        .bookable-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: nowrap;
+            margin-left: auto;
+        }
+
+        .bookable-actions form {
+            margin: 0;
+        }
+
+        .bookable-action-button {
+            display: inline-block;
+            padding: 7px 12px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            background: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: #222;
+            line-height: normal;
+        }
+
+        .bookable-action-button:hover {
+            background: #f5f5f5;
+        }
+
+        .bookable-edit-form {
+            margin-bottom: 22px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+
+        .bookable-edit-form input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #999;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .bookable-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        @media (max-width: 650px) {
+            .bookable-edit-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
 
         .bookable-main {
             display: flex;
@@ -300,6 +376,76 @@ if ($universityId !== null) {
             padding: 70px 0;
             font-size: 0.85rem;
             box-sizing: border-box;
+        }
+
+        /* Edit Popup */
+        .edit-popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.45);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .edit-popup {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-sizing: border-box;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .edit-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .edit-popup-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .edit-popup-close {
+            border: none;
+            background: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .edit-popup-fields {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 5px;
+        }
+
+        .edit-popup-fields input {
+            width: 100%;
+            height: 40px;
+            padding: 8px 10px;
+            border: 1px solid #999;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .edit-popup-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .edit-popup-actions button {
+            min-height: 36px;
         }
 
         /* FACILITY UTILISATION REPORT */
@@ -749,6 +895,25 @@ if ($universityId !== null) {
 
                 </div>
 
+                <!-- SLOT DURATION -->
+
+                <div class="form-group">
+
+                    <label for="slotDuration">
+                        Slot Duration (minutes)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="slotDuration"
+                        name="slotDuration"
+                        min="1"
+                        step="1"
+                        placeholder="e.g. 60"
+                        required
+                    >
+
+                </div>
 
                 <!-- CREATE BUTTON -->
 
@@ -765,105 +930,249 @@ if ($universityId !== null) {
 
             </form>
 
-        <!-- VIEW -->
-        <?php elseif ($tab === 'view'): ?>
+    <!-- VIEW -->
+    <?php elseif ($tab === 'view'): ?>
 
+        <?php if (empty($bookableFacilities)): ?>
 
-            <?php
+            <div class="empty-message">
+                No bookable facilities found.
+            </div>
 
-            if (
-                empty($bookableFacilities)
-            ): ?>
+        <?php else: ?>
 
-                <div class="empty-message">
+            <div class="bookable-list">
 
-                    No bookable facilities found.
+                <?php foreach ($bookableFacilities as $facility): ?>
 
-                </div>
+                    <div class="bookable-row">
 
-            <?php else: ?>
+                        <div class="bookable-main">
 
-                <div class="bookable-list">
-
-                    <?php
-
-                    foreach (
-                        $bookableFacilities
-                        as $facility
-                    ): ?>
-
-                        <div class="bookable-row">
-
-                            <div class="bookable-main">
-
-                                <span
-                                    class="bookable-name"
-                                >
-                                    <?php
-
-                                    echo htmlspecialchars(
-                                        $facility['name']
-                                    );
-                                    ?>
-                                </span>
-
-                                <span
-                                    class="bookable-details"
-                                >
-                                    <?php
-
-                                    echo htmlspecialchars(
-                                        $facility['type']
-                                    );
-                                    ?>
-
-                                    &nbsp; | &nbsp;
-
-                                    <?php
-
-                                    echo htmlspecialchars(
-                                        $facility['location']
-                                    );
-                                    ?>,
-
-                                    <?php
-
-                                    echo htmlspecialchars(
-                                        $facility['blockFloor']
-                                    );
-                                    ?>
-                                </span>
-
-                            </div>
-
-
-                            <span
-                                class="bookable-status
-                                    <?php
-
-                                    echo strtolower(
-                                        $facility['status']
-                                    )
-                                        === 'available'
-                                        ? 'status-available'
-                                        : 'status-unavailable';
-                                    ?>"
-                            >
+                            <span class="bookable-name">
                                 <?php
 
-                                echo htmlspecialchars(
-                                    $facility['status']
-                                );
+                                echo htmlspecialchars($facility['name']);
                                 ?>
                             </span>
 
+                            <span class="bookable-details">
+                                <?php
+
+                                echo htmlspecialchars($facility['type']);
+                                ?>
+
+                                &nbsp; | &nbsp;
+
+                                <?php
+
+                                echo htmlspecialchars($facility['location']);
+                                ?>,
+
+                                <?php
+
+                                echo htmlspecialchars($facility['blockFloor']);
+                                ?>
+
+                                &nbsp; | &nbsp;
+
+                                Slot Duration:
+
+                                <?php
+
+                                echo (int) $facility['slotDuration'];
+                                ?>
+
+                                minutes
+                            </span>
+
+                            <!-- FACILITY STATUS -->
+                            <div class="bookable-status">
+                                Status:
+                                <span class="<?php
+
+                                echo $facility['status'] === 'available'
+                                    ? 'status-available'
+                                    : 'status-unavailable';
+                                ?>">
+                                    <?php
+
+                                    echo ucfirst(
+                                        htmlspecialchars($facility['status'])
+                                    );
+                                    ?>
+                                </span>
+                            </div>
+
                         </div>
 
-                    <?php endforeach; ?>
+                        <!-- ACTION BUTTONS -->
+                        <div class="bookable-actions">
 
-                </div>
+                            <!-- EDIT BUTTON -->
+                            <button
+                                type="button"
+                                class="bookable-action-button"
+                                onclick="openEditPopup(
+                                    <?php echo (int) $facility['id']; ?>
+                                )"
+                            >
+                                Edit
+                            </button>
+
+                            <!-- SUSPEND / REACTIVATE BUTTON -->
+                            <form
+                                method="POST"
+                                action="../controller/manageBookableFacilitiesController.php"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="changeBookableFacilityStatus"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="bookableFacilityId"
+                                    value="
+                                    <?php
+
+                                    echo (int) $facility['id'];
+                                    ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="<?php
+
+                                    echo $facility['status'] === 'available'
+                                        ? 'unavailable'
+                                        : 'available';
+                                    ?>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="bookable-action-button"
+                                >
+                                    <?php
+
+                                    echo $facility['status'] === 'available'
+                                        ? 'Suspend'
+                                        : 'Reactivate';
+                                    ?>
+                                </button>
+                            </form>
+
+                        </div>
+
+                    </div>
+
+                <?php endforeach; ?>
+
+            </div>
+
+            <!-- EDIT POPUP -->
+            <?php if ($tab === 'view' && !empty($bookableFacilities)): ?>
+                <?php foreach ($bookableFacilities as $facility): ?>
+                    <div
+                        id="editPopup<?php echo (int) $facility['id']; ?>"
+                        class="edit-popup-overlay"
+                        onclick="closeEditPopup(event, <?php echo (int) $facility['id']; ?>)"
+                    >
+                        <div class="edit-popup" onclick="event.stopPropagation()">
+
+                            <div class="edit-popup-header">
+                                <h2>
+                                    Edit <?php echo htmlspecialchars($facility['name']); ?>
+                                </h2>
+
+                                <button
+                                    type="button"
+                                    class="edit-popup-close"
+                                    onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)"
+                                >&times;</button>
+                            </div>
+
+                            <form
+                                method="POST"
+                                action="../controller/manageBookableFacilitiesController.php"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="editBookableFacility"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="bookableFacilityId"
+                                    value="<?php echo (int) $facility['id']; ?>"
+                                >
+
+                                <div class="edit-popup-fields">
+
+                                    <div class="form-group">
+                                        <label>Opening Time</label>
+                                        <input
+                                            type="time"
+                                            name="openTime"
+                                            value="<?php echo htmlspecialchars(substr($facility['openTime'], 0, 5)); ?>"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Closing Time</label>
+                                        <input
+                                            type="time"
+                                            name="closeTime"
+                                            value="<?php echo htmlspecialchars(substr($facility['closeTime'], 0, 5)); ?>"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Slot Duration (minutes)</label>
+                                        <input
+                                            type="number"
+                                            name="slotDuration"
+                                            min="1"
+                                            step="1"
+                                            value="<?php echo (int) $facility['slotDuration']; ?>"
+                                            required
+                                        >
+                                    </div>
+
+                                </div>
+
+                                <div class="edit-popup-actions">
+                                    <button
+                                        type="button"
+                                        class="bookable-action-button"
+                                        onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        class="btn-create-bookable"
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+
+                <?php endforeach; ?>
 
             <?php endif; ?>
+
+        <?php endif; ?>
 
         <!-- REPORT -->
         <?php else: ?>
@@ -1374,6 +1683,34 @@ function filterFacilities()
         }
     );
 }
+
+function openEditPopup(facilityId) {
+    const popup = document.getElementById('editPopup' + facilityId);
+
+    if (popup) {
+        popup.style.display = 'flex';
+    }
+}
+
+function closeEditPopup(event, facilityId) {
+    if (event && event.target !== event.currentTarget) {
+        return;
+    }
+
+    const popup = document.getElementById('editPopup' + facilityId);
+
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        document.querySelectorAll('.edit-popup-overlay').forEach(function (popup) {
+            popup.style.display = 'none';
+        });
+    }
+});
 
 </script>
 

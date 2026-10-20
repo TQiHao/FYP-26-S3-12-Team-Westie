@@ -477,64 +477,113 @@ class Event
         }
     }
 
-    public function getRecommendedFacilities($universityId, $capacity, $startDatetime, $endDatetime)
-    {
-        try {
-            $bufferStart = date('Y-m-d H:i:s', strtotime($startDatetime . ' -30 minutes'));
-            $bufferEnd   = date('Y-m-d H:i:s', strtotime($endDatetime . ' +30 minutes'));
 
-            $sql = "SELECT
-                        bf.id AS bookableFacilityId,
-                        f.id AS facilityId,
-                        f.name,
-                        f.type,
-                        f.description,
-                        f.location,
-                        f.blockFloor,
-                        f.capacity,
-                        bf.isBookable,
-                        bf.status AS bookableStatus,
-                        bf.slotDuration,
-                        bf.bookingCapacity,
-                        bf.openTime,
-                        bf.closeTime
-                    FROM BookableFacilities bf
-                    INNER JOIN Facilities f ON f.id = bf.facilityId
-                    WHERE f.universityId = ?
-                      AND f.status = 'active'
-                      AND f.capacity >= ?
-                      AND bf.isBookable = TRUE
-                      AND bf.status = 'available'
-                      AND NOT EXISTS (
-                          SELECT 1 FROM Events e
-                          WHERE e.facilityId = bf.id
-                            AND e.status = 'active'
-                            AND e.startDatetime < ?
-                            AND e.endDatetime > ?
-                      )
-                      AND NOT EXISTS (
-                          SELECT 1 FROM FacilityBookings fb
-                          WHERE fb.facilityId = bf.id
-                            AND fb.status IN ('pending', 'confirmed')
-                            AND TIMESTAMP(fb.bookingDate, fb.startTime) < ?
-                            AND TIMESTAMP(fb.bookingDate, fb.endTime) > ?
-                      )
-                    ORDER BY f.capacity ASC, f.name ASC";
+    public function getRecommendedFacilities(
+        $universityId,
+        $capacity,
+        $startDatetime,
+        $endDatetime,
+        $excludeEventId = null
+    ) {
+        try {
+            // Allow a 30-minute buffer before and after the booking
+            $bufferStart = date(
+                'Y-m-d H:i:s',
+                strtotime($startDatetime . ' -30 minutes')
+            );
+
+            $bufferEnd = date(
+                'Y-m-d H:i:s',
+                strtotime($endDatetime . ' +30 minutes')
+            );
+
+            $sql = "
+            SELECT
+                 bf.id AS bookableFacilityId,
+                 f.id AS facilityId,
+                 f.name,
+                 f.type,
+                 f.description,
+                 f.location,
+                 f.blockFloor,
+                 f.capacity,
+                 bf.isBookable,
+                 bf.status AS bookableStatus,
+                 bf.slotDuration,
+                 bf.bookingCapacity,
+                 bf.openTime,
+                 bf.closeTime
+            FROM BookableFacilities bf
+            INNER JOIN Facilities f
+                 ON f.id = bf.facilityId
+            WHERE f.universityId = ?
+                AND f.status = 'active'
+                AND f.capacity >= ?
+                AND bf.isBookable = TRUE
+                AND bf.status = 'available'
+                AND bf.openTime <= TIME(?)
+                AND bf.closeTime >= TIME(?)
+                AND bf.slotDuration > 0
+                AND TIMESTAMPDIFF(MINUTE, ?, ?) <= bf.slotDuration
+              -- Check for conflicting events
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM Events e
+                  WHERE e.facilityId = bf.id
+                AND e.status = 'active'
+                AND e.startDatetime < ?
+                AND e.endDatetime > ?
+                AND (? IS NULL OR e.id <> ?)
+              )
+
+              -- Check for conflicting student bookings
+              AND NOT EXISTS (
+                 SELECT 1
+                 FROM FacilityBookings fb
+                 WHERE fb.facilityId = bf.id
+                     AND fb.status IN ('pending', 'confirmed')
+                     AND fb.purpose NOT LIKE 'Event:%'
+                     AND TIMESTAMP(
+                        fb.bookingDate,
+                        fb.startTime
+                    ) < ?
+                     AND TIMESTAMP(
+                        fb.bookingDate,
+                        fb.endTime
+                    ) > ?
+              )
+
+            ORDER BY f.capacity ASC, f.name ASC
+        ";
+
             $stmt = $this->db->prepare($sql);
+
             $stmt->execute([
                 $universityId,
                 $capacity,
+                $startDatetime,
+                $endDatetime,
+                $startDatetime,
+                $endDatetime,
                 $bufferEnd,
                 $bufferStart,
+                $excludeEventId,
+                $excludeEventId,
                 $bufferEnd,
                 $bufferStart
             ]);
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (Exception $e) {
-            error_log("Get recommended facilities error: " . $e->getMessage());
+            error_log(
+                "Get recommended facilities error: "
+                . $e->getMessage()
+            );
+
             return [];
         }
     }
+
 }
 ?>
