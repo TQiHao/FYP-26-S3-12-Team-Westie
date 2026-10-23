@@ -7,16 +7,18 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+$userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
+$isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
+$dashboardPage = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
+
 require_once __DIR__ . '/../controller/FacilityLocationTrackingController.php';
 require_once __DIR__ . '/../database/database.php';
 
 $controller   = new FacilityLocationTrackingController();
 $universityId = $_SESSION['university_id'] ?? 0;
 
-// All buildings that have navigation nodes
 $buildingsWithNodes = $controller->getBuildingsWithNodes($universityId);
 
-// Pick the building from ?building=, or default to the first
 $requestedBuildingId = isset($_GET['building']) ? (int) $_GET['building'] : 0;
 $building = null;
 
@@ -33,26 +35,22 @@ $floors   = $building ? $controller->getFloors($building['id']) : [];
 $nodes    = $building ? $controller->getNodes($building['id'])   : [];
 $edges    = $building ? $controller->getEdges($building['id'])   : [];
 
-// Fetch floorplan image for each floor (if any)
 $floorPlansByFloor = [];
 foreach ($floors as $f) {
     $fp = $controller->getFloorPlanForFloor($f['id']);
     if ($fp) $floorPlansByFloor[(int) $f['id']] = $fp;
 }
 
-// Index nodes by floor for drawing
 $nodesByFloor = [];
 foreach ($nodes as $n) {
     $nodesByFloor[(int) $n['floorId']][] = $n;
 }
 
-// Index nodes by ID for fast lookup
 $nodeById = [];
 foreach ($nodes as $n) {
     $nodeById[(int) $n['id']] = $n;
 }
 
-// Dropdown options
 $fromOptions = [];
 $toOptions   = [];
 foreach ($nodes as $n) {
@@ -63,8 +61,6 @@ foreach ($nodes as $n) {
     }
 }
 
-// Read form state
-// Support redirect from Events page: ?facility=<BookableFacilities.id>
 if (isset($_GET['facility']) && !isset($_GET['to'])) {
     $bookableFacilityId = (int) $_GET['facility'];
     if ($bookableFacilityId > 0) {
@@ -92,7 +88,6 @@ $fromId   = isset($_GET['from']) ? (int) $_GET['from'] : 0;
 $toId     = isset($_GET['to'])   ? (int) $_GET['to']   : 0;
 $stepFree = isset($_GET['step_free']) && $_GET['step_free'] === '1';
 
-// Defaults: first entrance -> first room (not hardcoded to "Room 201")
 if ($fromId === 0) {
     foreach ($nodes as $n) {
         if (strtolower($n['type']) === 'entrance') { $fromId = (int) $n['id']; break; }
@@ -104,10 +99,8 @@ if ($toId === 0) {
     }
 }
 
-// Same from/to → show message
 $sameLocation = ($fromId > 0 && $fromId === $toId);
 
-// Compute route
 $route = null;
 $routeNodeIds = [];
 if (!$sameLocation && $fromId > 0 && $toId > 0 && $building) {
@@ -117,7 +110,6 @@ if (!$sameLocation && $fromId > 0 && $toId > 0 && $building) {
     }
 }
 
-// Build route-edge lookup (both directions)
 $routeEdges = [];
 for ($i = 0; $i < count($routeNodeIds) - 1; $i++) {
     $a = $routeNodeIds[$i];
@@ -126,7 +118,6 @@ for ($i = 0; $i < count($routeNodeIds) - 1; $i++) {
     $routeEdges["$b-$a"] = true;
 }
 
-// Dynamic viewBox for the SVG so all node coordinates fit
 $pad = 40;
 $minX = !empty($nodes) ? min(array_column($nodes, 'x')) - $pad : 0;
 $minY = !empty($nodes) ? min(array_column($nodes, 'y')) - $pad : 0;
@@ -188,7 +179,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
     <header class="header">
         <div class="logo-container">
-            <a href="studentDashboardPage.php">
+            <a href="<?php echo $dashboardPage; ?>">
                 <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
@@ -211,16 +202,23 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
-                    <a href="viewEventsPage.php">University Campus Event</a>
+                    <?php if ($isLecturer): ?>
+                        <a href="teachingPage.php">Teaching</a>
+                        <a href="viewEventsPage.php">University Campus Events</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php else: ?>
+                        <a href="AIChatbotPage.php">AI Chatbot</a>
+                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                        <a href="viewEventsPage.php">University Campus Event</a>
+                    <?php endif; ?>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>
         </div>
     </header>
 
+    <?php if (!$isLecturer): ?>
     <nav class="facilities-nav">
         <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab active">Facility Location Tracking</a>
@@ -228,10 +226,11 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
         <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
         <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
     </nav>
+    <?php endif; ?>
 
     <main class="dashboard">
         <div class="facility-back-bar">
-            <a href="ViewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
+            <a href="<?php echo $isLecturer ? 'viewEventsPage.php' : 'ViewFacilitiesPage.php'; ?>" class="btn-back">&#8592; Back</a>
         </div>
 
         <div class="flt-wrapper">
@@ -312,32 +311,26 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
                             <?php if (!empty($floorPlansByFloor[$fid])): ?>
                                 <?php
-                                    // ---------- FLOORPLAN IMAGE PATH ----------
                                     $fp = $floorPlansByFloor[$fid];
-
-                                    // Compute SVG viewBox in "pixel space" from the node coords on this floor.
                                     $xs = array_column($floorNodes, 'pixelX');
                                     $ys = array_column($floorNodes, 'pixelY');
-                                    // Fallback to x/y if pixelX missing (older nodes)
                                     foreach ($floorNodes as $n) {
                                         $xs[] = $n['pixelX'] ?? $n['x'];
                                         $ys[] = $n['pixelY'] ?? $n['y'];
                                     }
                                     $imgW = (int) ($fp['imageWidth']  ?? 0);
-                                $imgH = (int) ($fp['imageHeight'] ?? 0);
+                                    $imgH = (int) ($fp['imageHeight'] ?? 0);
 
-                                if ($imgW <= 0 || $imgH <= 0) {
-                                    // Fallback if dimensions weren't stored (old uploads)
-                                    $pad = 40;
-                                    $minX = !empty($xs) ? min($xs) - $pad : 0;
-                                    $minY = !empty($ys) ? min($ys) - $pad : 0;
-                                    $maxX = !empty($xs) ? max($xs) + $pad : 800;
-                                    $maxY = !empty($ys) ? max($ys) + $pad : 600;
-                                    $vb = "$minX $minY " . ($maxX - $minX) . " " . ($maxY - $minY);
-                                } else {
-                                    // Full image coordinate space — nodes align correctly
-                                    $vb = "0 0 $imgW $imgH";
-                                }
+                                    if ($imgW <= 0 || $imgH <= 0) {
+                                        $pad = 40;
+                                        $minX = !empty($xs) ? min($xs) - $pad : 0;
+                                        $minY = !empty($ys) ? min($ys) - $pad : 0;
+                                        $maxX = !empty($xs) ? max($xs) + $pad : 800;
+                                        $maxY = !empty($ys) ? max($ys) + $pad : 600;
+                                        $vb = "$minX $minY " . ($maxX - $minX) . " " . ($maxY - $minY);
+                                    } else {
+                                        $vb = "0 0 $imgW $imgH";
+                                    }
                                 ?>
                                 <div class="flt-floorplan-wrap">
                                     <img src="../<?php echo htmlspecialchars($fp['filePath']); ?>"
@@ -348,7 +341,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                         <?php if ($imgW <= 0 || $imgH <= 0): ?>data-needs-natural-size="1"<?php endif; ?>
                                         preserveAspectRatio="xMidYMid meet">
 
-                                        <!-- grey edges -->
                                         <?php foreach ($floorEdges as $e):
                                             $a = $nodeById[(int) $e['fromNodeId']] ?? null;
                                             $b = $nodeById[(int) $e['toNodeId']]   ?? null;
@@ -361,7 +353,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                                 stroke="rgba(120,120,120,0.5)" stroke-width="3"/>
                                         <?php endforeach; ?>
 
-                                        <!-- blue route edges -->
                                         <?php foreach ($floorEdges as $e):
                                             $aId = (int) $e['fromNodeId']; $bId = (int) $e['toNodeId'];
                                             if (!isset($routeEdges["$aId-$bId"])) continue;
@@ -375,7 +366,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                                 stroke="#1e90ff" stroke-width="6"/>
                                         <?php endforeach; ?>
 
-                                        <!-- nodes -->
                                         <?php foreach ($floorNodes as $n):
                                             $type = strtolower($n['type']);
                                             $fill = '#4CAF50';
@@ -407,10 +397,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                     </svg>
                                 </div>
                             <?php else: ?>
-                                <!-- No floorplan uploaded → keep the existing black-grid SVG -->
                                 <svg class="flt-svg" viewBox="<?php echo $viewBox; ?>" preserveAspectRatio="xMidYMid meet">
-
-                                    <!-- Grey edges -->
                                     <?php foreach ($floorEdges as $e):
                                         $a = $nodeById[(int) $e['fromNodeId']] ?? null;
                                         $b = $nodeById[(int) $e['toNodeId']]   ?? null;
@@ -421,7 +408,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                             stroke="#5a5a5a" stroke-width="2"/>
                                     <?php endforeach; ?>
 
-                                    <!-- Blue route edges -->
                                     <?php foreach ($floorEdges as $e):
                                         $aId = (int) $e['fromNodeId'];
                                         $bId = (int) $e['toNodeId'];
@@ -435,7 +421,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                             stroke="#1e90ff" stroke-width="4"/>
                                     <?php endforeach; ?>
 
-                                    <!-- Nodes -->
                                     <?php foreach ($floorNodes as $n):
                                         $type = strtolower($n['type']);
                                         $fill = '#4CAF50';
@@ -462,8 +447,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                                         </text>
                                     <?php endforeach; ?>
 
-                                </svg>
-                                    <!-- … your existing SVG content here … -->
                                 </svg>
                             <?php endif; ?>
                         </div>
@@ -531,8 +514,6 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
         </div>
     </footer>
     <script>
-    // Floor-plan overlays: viewBox must be the image's natural pixel size
-    // (nodes are saved in natural-image pixels by the node editor).
     function syncOverlayToImage(wrap) {
         var img = wrap.querySelector('.flt-floorplan-img');
         var svg = wrap.querySelector('.flt-floorplan-overlay');
