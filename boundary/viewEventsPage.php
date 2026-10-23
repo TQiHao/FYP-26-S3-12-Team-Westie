@@ -275,6 +275,17 @@ unset($_SESSION['search_keyword']);
             <h3 id="eventViewTitle" style="margin:0 0 10px; font-size:1.15rem;"></h3>
             <p id="eventViewMeta" style="color:#666; font-size:0.85rem; margin:0 0 14px;"></p>
             <p id="eventViewDesc" style="font-size:0.9rem; line-height:1.5; margin:0 0 20px; color:#333;"></p>
+            <img
+                id="eventViewPoster"
+                src=""
+                alt="Event poster"
+                style="display:none; width:100%; max-height:300px; object-fit:contain; margin:0 0 18px; border-radius:8px;" />
+            <div id="eventViewInfoSection" style="display:none; margin-bottom:20px;">
+            <h4 style="margin:0 0 8px; font-size:1rem;">Event Information</h4>
+            <p id="eventViewInfo"
+               style="font-size:0.9rem; line-height:1.6; color:#333; white-space:pre-line; margin:0;">
+            </p>
+            </div>
             <div style="text-align: right;">
                 <button type="button" onclick="closeEventView()"
                     style="padding: 9px 22px; border: none; border-radius: 20px; background: #e0e0e0; color: #333; font-weight: 700; cursor: pointer;">
@@ -325,10 +336,31 @@ unset($_SESSION['search_keyword']);
             document.getElementById('eventViewTitle').textContent = data.title || '';
             var start = new Date((data.startDatetime || '').replace(' ', 'T'));
             var end = new Date((data.endDatetime || '').replace(' ', 'T'));
-            var opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
-            var meta = start.toLocaleString('en-SG', opts) + ' — ' + end.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit' });
-            if (data.location) meta += ' · ' + data.location;
-            document.getElementById('eventViewMeta').textContent = meta;
+            var opts = {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'};
+            var meta = start.toLocaleString('en-SG', opts) + ' — ' + end.toLocaleTimeString('en-SG', {hour: 'numeric', minute: '2-digit'});
+            if (data.location) {
+                meta += ' · ' + data.location;
+            }
+            var poster = document.getElementById('eventViewPoster');
+            if (data.eventPoster && data.eventPoster.trim() !== '') {
+                poster.src = '../' + data.eventPoster.replace(/^\/+/, '');
+                poster.style.display = 'block';
+                poster.onerror = function () {
+                    poster.style.display = 'none';
+                };
+            } else {
+                poster.removeAttribute('src');
+                poster.style.display = 'none';
+            }
+            var eventInfoSection = document.getElementById('eventViewInfoSection');
+            var eventInfo = document.getElementById('eventViewInfo');
+            if (data.eventInfo && data.eventInfo.trim() !== '') {
+                eventInfo.textContent = data.eventInfo;
+                eventInfoSection.style.display = 'block';
+            } else {
+                eventInfo.textContent = '';
+                eventInfoSection.style.display = 'none';
+            }
             document.getElementById('eventViewDesc').textContent = data.description || 'No description provided.';
             document.getElementById('eventViewModal').style.display = 'flex';
         }

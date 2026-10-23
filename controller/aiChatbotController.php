@@ -323,6 +323,18 @@ class AIChatbotController
         if (preg_match('/\b(where|location|navigate|find|floor plan|directions|how (do i|to) get)\b/', $q))
             return 'navigation';
 
+        if (preg_match('/\b(add|create|manage|update|edit|upload)\b.*\b(bookable facilities|facilities|facility)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
+            return 'admin_facilities';
+
+        if (preg_match('/\b(university information|university info|university details)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
+            return 'admin_university_info';
+
+        if (preg_match('/\b(manage|add|create|update|upload|view)\b.*\b(faq|faqs|faq database)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
+            return 'admin_faq';
+
+        if (preg_match('/\b(create|add|manage|edit|update)\b.*\b(events?|campus events?)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
+            return 'admin_events';
+
         if (preg_match('/\b(logout|log out|sign out|exit)\b/', $q))
             return 'logout';
 
@@ -360,6 +372,14 @@ class AIChatbotController
                 return $this->handleLogout();
             case 'features_guide':
                 return $this->handleFeaturesGuide();
+            case 'admin_facilities':
+                return $this->handleAdminPage('Manage bookable facilities.', 'Open Facility Management', 'manageBookableFacilitiesPage.php');
+            case 'admin_university_info':
+                return $this->handleAdminPage('Manage your university information.', 'Manage University Information', 'manageUniversityInformationPage.php');
+            case 'admin_faq':
+                return $this->handleAdminPage('Create or manage frequently asked questions.', 'Manage FAQ Database', 'manageFAQDatabasePage.php');
+            case 'admin_events':
+                return $this->handleAdminPage('Create or manage university campus events.', 'Manage Campus Events', 'manageUniversityEventPage.php');
         }
         return null;
     }
@@ -807,6 +827,29 @@ class AIChatbotController
             'action' => [
                 'label' => 'Open Campus Navigation',
                 'url' => 'viewFacilitiesPage.php'
+            ]
+        ];
+    }
+
+    private function handleAdminPage($answer, $label, $url)
+    {
+        $role = strtolower(trim(
+            $_SESSION['user_role'] ?? $_SESSION['role'] ?? ''
+        ));
+
+        if (!in_array($role, ['university_admin', 'university admin'])) {
+            return [
+                'answer' => 'This page is only available to University Admins.',
+                'source' => 'faq'
+            ];
+        }
+
+        return [
+            'answer' => $answer,
+            'source' => 'faq',
+            'action' => [
+                'label' => $label,
+                'url' => $url
             ]
         ];
     }
