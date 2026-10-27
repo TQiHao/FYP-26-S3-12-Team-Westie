@@ -36,58 +36,80 @@ if ($universityId !== null) {
 <head>
 
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Upload Facility List - UniBee</title>
 
     <link rel="stylesheet" href="../style.css">
 
     <style>
-    .message-overlay {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.25);
-        z-index: 99999;
-    }
+        .message-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
 
-    .message-modal {
-        position: relative;
-        width: 425px;
-        height: 175px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f8fa;
-        border: 1px solid #555;
-        box-sizing: border-box;
-    }
+        .message-modal {
+            position: relative;
+            width: 425px;
+            height: 175px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
 
-    .message-modal h2 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #000;
-    }
+        .message-modal h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #000;
+        }
 
-    .message-close {
-        position: absolute;
-        top: 10px;
-        right: 14px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1;
-        color: #000;
-        cursor: pointer;
-    }
+        .message-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            cursor: pointer;
+        }
+
+        .facility-group {
+            margin-bottom: 28px;
+        }
+
+        .facility-group-heading {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #222;
+            margin: 0 0 12px 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--bg-yellow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .facility-group-count {
+            background: var(--bg-yellow);
+            color: #222;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
     </style>
 
 </head>
@@ -99,10 +121,7 @@ if ($universityId !== null) {
 
         <div class="logo-container">
 
-            <img
-                src="../images/uniBeeLogo.png"
-                alt="UniBee Logo"
-            >
+            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
 
         </div>
 
@@ -110,22 +129,11 @@ if ($universityId !== null) {
 
             <div class="profile-dropdown">
 
-                <div
-                    class="profile-container"
-                    onclick="toggleDropdown()"
-                >
+                <div class="profile-container" onclick="toggleDropdown()">
 
-                    <img
-                        src="../images/profilePic.png"
-                        alt="Profile"
-                        class="profile-icon"
-                    >
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                    <img
-                        src="../images/dropdown.png"
-                        alt="Menu"
-                        class="dropdown-arrow"
-                    >
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
                 </div>
 
@@ -149,10 +157,7 @@ if ($universityId !== null) {
         <!-- Back -->
         <div class="profile-header">
 
-            <a
-                href="ManageUniversityInformationPage.php"
-                class="btn-back"
-            >
+            <a href="ManageUniversityInformationPage.php" class="btn-back">
                 &#8592; Back
             </a>
 
@@ -162,28 +167,22 @@ if ($universityId !== null) {
         <!-- Facility Header -->
         <section class="facility-header">
 
-            <img
-                src="../images/facilityBooking.png"
-                alt="Facility"
-            >
+            <img src="../images/facilityBooking.png" alt="Facility">
 
             <h1>
                 Facility
             </h1>
 
         </section>
-        
+
         <?php if ($success): ?>
 
             <div class="message-overlay" id="successPopup">
 
                 <div class="message-modal">
 
-                    <button
-                        type="button"
-                        class="message-close"
-                        onclick="document.getElementById('successPopup').style.display='none';"
-                    >
+                    <button type="button" class="message-close"
+                        onclick="document.getElementById('successPopup').style.display='none';">
                         &times;
                     </button>
 
@@ -213,62 +212,53 @@ if ($universityId !== null) {
 
         <?php else: ?>
 
+            <?php
+            $groupedFacilities = [];
+            foreach ($facilities as $facility) {
+                $typeLabel = ucwords(strtolower($facility['type'] ?? 'other'));
+                $groupedFacilities[$typeLabel][] = $facility;
+            }
+            ksort($groupedFacilities);
+            ?>
+
             <div class="facility-list">
 
-                <?php foreach ($facilities as $facility): ?>
+                <?php foreach ($groupedFacilities as $typeLabel => $typeFacilities): ?>
 
-                    <div class="facility-row">
+                    <div class="facility-group">
+                        <h3 class="facility-group-heading">
+                            <?php echo htmlspecialchars($typeLabel); ?>
+                            <span class="facility-group-count"><?php echo count($typeFacilities); ?></span>
+                        </h3>
 
-                        <div class="facility-main">
+                        <?php foreach ($typeFacilities as $facility): ?>
 
-                            <span class="facility-name">
-                                <?php echo htmlspecialchars($facility['name']); ?>
-                            </span>
+                            <div class="facility-row">
 
-                            <span class="facility-type">
-                                <?php echo htmlspecialchars($facility['type']); ?>
-                            </span>
+                                <div class="facility-main">
+                                    <span class="facility-name">
+                                        <?php echo htmlspecialchars($facility['name']); ?>
+                                    </span>
+                                    <span class="facility-type">
+                                        <?php echo htmlspecialchars($facility['type']); ?>
+                                    </span>
+                                </div>
 
-                        </div>
+                                <div class="facility-details">
+                                    <?php if (!empty($facility['location'])): ?>
+                                        <span>Location: <?php echo htmlspecialchars($facility['location']); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($facility['blockFloor'])): ?>
+                                        <span><?php echo htmlspecialchars($facility['blockFloor']); ?></span>
+                                    <?php endif; ?>
+                                    <?php if (isset($facility['capacity']) && $facility['capacity'] !== ''): ?>
+                                        <span>Capacity: <?php echo htmlspecialchars($facility['capacity']); ?></span>
+                                    <?php endif; ?>
+                                </div>
 
+                            </div>
 
-                        <div class="facility-details">
-
-                            <?php if (!empty($facility['location'])): ?>
-
-                                <span>
-                                    Location:
-                                    <?php echo htmlspecialchars($facility['location']); ?>
-                                </span>
-
-                            <?php endif; ?>
-
-
-                            <?php if (!empty($facility['blockFloor'])): ?>
-
-                                <span>
-                                    <?php echo htmlspecialchars($facility['blockFloor']); ?>
-                                </span>
-
-                            <?php endif; ?>
-
-
-                            <?php
-
-                            if (
-                                isset($facility['capacity']) &&
-                                $facility['capacity'] !== ''
-                            ): ?>
-
-                                <span>
-                                    Capacity:
-                                    <?php echo htmlspecialchars($facility['capacity']); ?>
-                                </span>
-
-                            <?php endif; ?>
-
-                        </div>
-
+                        <?php endforeach; ?>
                     </div>
 
                 <?php endforeach; ?>
@@ -281,10 +271,7 @@ if ($universityId !== null) {
         <!-- Upload Facility -->
         <div class="upload-facility-container">
 
-            <a
-                href="UploadListPage.php?type=facility"
-                class="upload-facility-button"
-            >
+            <a href="UploadListPage.php?type=facility" class="upload-facility-button">
                 Upload Facility
             </a>
 

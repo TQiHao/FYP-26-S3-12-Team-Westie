@@ -262,7 +262,7 @@ if ($currentLicense) {
                     <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
                 </div>
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="manageClassPage.php">Manage Classes</a>
+                    <a href="manageUniversityInformationPage.php">Manage University Information</a>
                     <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>

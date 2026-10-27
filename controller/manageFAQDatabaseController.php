@@ -143,6 +143,22 @@ class ManageFAQDatabaseController
         return false;
     }
 
+    private function questionExists($universityId, $question)
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT id FROM FAQs WHERE universityId = ? AND LOWER(TRIM(question)) = LOWER(TRIM(?)) LIMIT 1"
+        );
+        if (!$stmt) {
+            return false;
+        }
+        $stmt->bind_param("is", $universityId, $question);
+        $stmt->execute();
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+        return $exists;
+    }
+
     public function getAllFAQs($universityId, $search = '')
     {
         $sql = "SELECT id, universityId, createdBy, question, answer, createdAt, updatedAt
@@ -187,6 +203,20 @@ class ManageFAQDatabaseController
         }
         if ($this->isBlocked($question) || $this->isBlocked($answer)) {
             return ['status' => 'error', 'message' => 'Content contains inappropriate language and cannot be saved.'];
+        }
+
+        $dupStmt = $this->conn->prepare(
+            "SELECT id FROM FAQs WHERE universityId = ? AND LOWER(TRIM(question)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1"
+        );
+        if ($dupStmt) {
+            $dupStmt->bind_param("isi", $universityId, $question, $id);
+            $dupStmt->execute();
+            $dupStmt->store_result();
+            if ($dupStmt->num_rows > 0) {
+                $dupStmt->close();
+                return ['status' => 'error', 'message' => 'An FAQ with the same question already exists.'];
+            }
+            $dupStmt->close();
         }
 
         $stmt = $this->conn->prepare(
@@ -253,6 +283,7 @@ class ManageFAQDatabaseController
         $imported = 0;
         $skipped = 0;
         $reasons = [];
+        $seenInFile = [];
 
         $stmt = $this->conn->prepare(
             "INSERT INTO FAQs (universityId, createdBy, question, answer) VALUES (?, ?, ?, ?)"
@@ -281,6 +312,20 @@ class ManageFAQDatabaseController
             if ($this->isBlocked($question) || $this->isBlocked($answer)) {
                 $skipped++;
                 $reasons[] = "Row $rowNum skipped: inappropriate or negative content.";
+                continue;
+            }
+
+            $key = strtolower($question);
+            if (isset($seenInFile[$key])) {
+                $skipped++;
+                $reasons[] = "Row $rowNum skipped: duplicate question within the CSV file.";
+                continue;
+            }
+            $seenInFile[$key] = true;
+
+            if ($this->questionExists($universityId, $question)) {
+                $skipped++;
+                $reasons[] = "Row $rowNum skipped: this FAQ already exists in the database.";
                 continue;
             }
 

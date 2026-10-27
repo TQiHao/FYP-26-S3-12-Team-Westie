@@ -110,14 +110,39 @@ class BookFacilityController
     public function confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
     {
         try {
-            // Check availability first
+            $facilityStmt = $this->db->prepare(
+                "SELECT bf.slotDuration FROM BookableFacilities bf WHERE bf.facilityId = ? AND bf.isBookable = TRUE LIMIT 1"
+            );
+            $facilityStmt->execute([$facilityId]);
+            $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$facility) {
+                return false;
+            }
+
+            $slotDuration = (int) $facility['slotDuration'];
+            $startParts = explode(':', $startTime);
+            $endParts = explode(':', $endTime);
+
+            if (count($startParts) < 2 || count($endParts) < 2) {
+                return 'invalid_time';
+            }
+
+            $startMinutes = (int) $startParts[0] * 60 + (int) $startParts[1];
+            $endMinutes = (int) $endParts[0] * 60 + (int) $endParts[1];
+            $duration = $endMinutes - $startMinutes;
+
+            if ($duration <= 0 || $duration > $slotDuration) {
+                return 'invalid_time';
+            }
+
             if (!$this->checkAvailability($facilityId, $bookingDate, $startTime)) {
-                return null;  // Alt flow: not available
+                return null;
             }
 
             $sql = "INSERT INTO FacilityBookings
-                    (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
+                (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose]);
 
@@ -125,7 +150,7 @@ class BookFacilityController
 
         } catch (Exception $e) {
             error_log("Booking confirm error: " . $e->getMessage());
-            return false;  // Alt flow: error
+            return false;
         }
     }
 }
@@ -145,6 +170,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
 
     if ($result === true) {
         $_SESSION['booking_success'] = "Facility booked successfully.";
+    } elseif ($result === 'invalid_time') {
+        $_SESSION['booking_error'] = "Invalid time range. Booking duration must be greater than zero and must not exceed the facility slot duration.";
     } elseif ($result === null) {
         $_SESSION['booking_error'] = "This facility is no longer available for the selected time. Please choose another slot.";
     } else {

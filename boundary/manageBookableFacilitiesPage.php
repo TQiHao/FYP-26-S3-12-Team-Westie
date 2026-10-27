@@ -117,19 +117,13 @@ if ($universityId !== null) {
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
-        Manage Facilities Booking - UniBee
+        Manage Bookable Facilities - UniBee
     </title>
 
-    <link
-        rel="stylesheet"
-        href="../style.css"
-    >
+    <link rel="stylesheet" href="../style.css">
 
     <style>
         .bookable-page {
@@ -601,979 +595,807 @@ if ($universityId !== null) {
             padding: 70px 0 !important;
             color: #777;
         }
-
     </style>
 
 </head>
 
 <body>
 
-<header class="header">
+    <header class="header">
 
-    <div class="logo-container">
+        <div class="logo-container">
 
-        <img
-            src="../images/uniBeeLogo.png"
-            alt="UniBee Logo"
-        >
+            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
 
-    </div>
+        </div>
 
-    <div class="dashboard-header-right">
+        <div class="dashboard-header-right">
 
-        <div class="profile-dropdown">
+            <div class="profile-dropdown">
 
-            <div
-                class="profile-container"
-                onclick="toggleDropdown()"
-            >
+                <div class="profile-container" onclick="toggleDropdown()">
 
-                <img
-                    src="../images/profilePic.png"
-                    alt="Profile"
-                    class="profile-icon"
-                >
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                <img
-                    src="../images/dropdown.png"
-                    alt="Menu"
-                    class="dropdown-arrow"
-                >
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
-            </div>
+                </div>
 
-            <div id="profileMenu" class="dropdown-menu">
-                <a href="renewLicensePage.php">Renew License</a>
-                <a href="aiChatbotPage.php">AI Chatbot</a>
-                <a href="submitFeedbackPage.php">Submit Feedback</a>
-                <a href="../controller/logoutController.php">Log Out</a>
+                <div id="profileMenu" class="dropdown-menu">
+                    <a href="renewLicensePage.php">Renew License</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
+                </div>
+
             </div>
 
         </div>
 
-    </div>
+    </header>
 
-</header>
+    <main class="bookable-page">
 
-<main class="bookable-page">
+        <div class="bookable-container">
 
-    <div class="bookable-container">
+            <div class="profile-header">
+                <a href="universityAdminDashboardPage.php" class="btn-back">
+                    &#8592; Back
+                </a>
 
-        <div class="profile-header">
-            <a
-                href="universityAdminDashboardPage.php"
-                class="btn-back"
-            >
-                &#8592; Back
-            </a>
+                <h1 class="section-label">
+                    Manage Bookable Facilities
+                </h1>
+            </div>
 
-            <h1 class="section-label">
-                Manage Facilities Booking
-            </h1>
-        </div>
+            <!-- TABS -->
+            <div class="bookable-tabs">
 
-        <!-- TABS -->
-        <div class="bookable-tabs">
-
-            <a
-                href="?tab=create"
-                class="bookable-tab
+                <a href="?tab=create" class="bookable-tab
                     <?php
 
                     echo $tab === 'create'
                         ? 'active'
-                        : ''; ?>"
-            >
-                Create Bookable Facilities 
-            </a>
+                        : ''; ?>">
+                    Create Bookable Facilities
+                </a>
 
-            <a
-                href="?tab=view"
-                class="bookable-tab
+                <a href="?tab=view" class="bookable-tab
                     <?php
 
                     echo $tab === 'view'
                         ? 'active'
-                        : ''; ?>"
-            >
-                View Bookable Facilities
-            </a>
+                        : ''; ?>">
+                    View Bookable Facilities
+                </a>
 
-            <a
-                href="?tab=report"
-                class="bookable-tab
+                <a href="?tab=report" class="bookable-tab
                     <?php
 
                     echo $tab === 'report'
                         ? 'active'
-                        : ''; ?>"
-            >
-                Facility Utilisation Report
-            </a>
-
-        </div>
-
-        <!-- MESSAGE -->
-        <?php if ($success): ?>
-
-            <div
-                class="bookable-message bookable-success"
-            >
-                <?php
-
-                echo htmlspecialchars($success);
-                ?>
-            </div>
-
-        <?php endif; ?>
-
-
-        <?php if ($error): ?>
-
-            <div
-                class="bookable-message bookable-error"
-            >
-                <?php
-
-                echo htmlspecialchars($error);
-                ?>
-            </div>
-
-        <?php endif; ?>
-
-        <!-- CREATE -->
-        <?php if ($tab === 'create'): ?>
-
-            <form
-                method="POST"
-                action="../controller/manageBookableFacilitiesController.php"
-                class="bookable-form"
-            >
-
-                <input
-                    type="hidden"
-                    name="action"
-                    value="createBookableFacility"
-                >
-
-                <!-- FACILITY TYPE -->
-
-                <div class="form-group">
-
-                    <label for="facilityType">
-                        Facility Type
-                    </label>
-
-                    <select
-                        id="facilityType"
-                        name="facilityType"
-                        onchange="filterFacilities()"
-                        required
-                    >
-
-                        <option value="">
-                            Select facility type
-                        </option>
-
-                        <option value="study room">
-                            Study Room
-                        </option>
-
-                        <option value="gym">
-                            Gym
-                        </option>
-
-                        <option value="lecture hall">
-                            Lecture Hall
-                        </option>
-
-                        <option value="lab">
-                            Lab
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- FACILITY NAME -->
-
-                <div class="form-group">
-
-                    <label for="facilityId">
-                        Facility Name
-                    </label>
-
-                    <select
-                        id="facilityId"
-                        name="facilityId"
-                        required
-                    >
-
-                        <option
-                            value=""
-                            data-type=""
-                        >
-                            Select facility
-                        </option>
-
-
-                        <?php foreach ($facilities as $facility): ?>
-
-                            <option
-                                value="<?php
-                                    echo (int) $facility['id'];
-                                ?>"
-                                data-type="<?php
-                                    echo htmlspecialchars(
-                                        $facility['type']
-                                    );
-                                ?>"
-                            >
-
-                                <?php
-                                    echo htmlspecialchars(
-                                        $facility['name']
-                                    );
-                                ?>
-
-                                —
-
-                                <?php
-                                    echo htmlspecialchars(
-                                        $facility['location']
-                                    );
-                                ?>,
-
-                                <?php
-                                    echo htmlspecialchars(
-                                        $facility['blockFloor']
-                                    );
-                                ?>
-
-                            </option>
-
-                        <?php endforeach; ?>
-
-                    </select>
-
-                </div>
-
-
-                <!-- OPEN TIME -->
-
-                <div class="form-group">
-
-                    <label for="openTime">
-                        Open Time
-                    </label>
-
-                    <input
-                        type="time"
-                        id="openTime"
-                        name="openTime"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- END TIME -->
-
-                <div class="form-group">
-
-                    <label for="closeTime">
-                        End Time
-                    </label>
-
-                    <input
-                        type="time"
-                        id="closeTime"
-                        name="closeTime"
-                        required
-                    >
-
-                </div>
-
-                <!-- SLOT DURATION -->
-
-                <div class="form-group">
-
-                    <label for="slotDuration">
-                        Slot Duration (minutes)
-                    </label>
-
-                    <input
-                        type="number"
-                        id="slotDuration"
-                        name="slotDuration"
-                        min="1"
-                        step="1"
-                        placeholder="e.g. 60"
-                        required
-                    >
-
-                </div>
-
-                <!-- CREATE BUTTON -->
-
-                <div class="create-button-area">
-
-                    <button
-                        type="submit"
-                        class="btn-create-bookable"
-                    >
-                        Create
-                    </button>
-
-                </div>
-
-            </form>
-
-    <!-- VIEW -->
-    <?php elseif ($tab === 'view'): ?>
-
-        <?php if (empty($bookableFacilities)): ?>
-
-            <div class="empty-message">
-                No bookable facilities found.
-            </div>
-
-        <?php else: ?>
-
-            <div class="bookable-list">
-
-                <?php foreach ($bookableFacilities as $facility): ?>
-
-                    <div class="bookable-row">
-
-                        <div class="bookable-main">
-
-                            <span class="bookable-name">
-                                <?php
-
-                                echo htmlspecialchars($facility['name']);
-                                ?>
-                            </span>
-
-                            <span class="bookable-details">
-                                <?php
-
-                                echo htmlspecialchars($facility['type']);
-                                ?>
-
-                                &nbsp; | &nbsp;
-
-                                <?php
-
-                                echo htmlspecialchars($facility['location']);
-                                ?>,
-
-                                <?php
-
-                                echo htmlspecialchars($facility['blockFloor']);
-                                ?>
-
-                                &nbsp; | &nbsp;
-
-                                Slot Duration:
-
-                                <?php
-
-                                echo (int) $facility['slotDuration'];
-                                ?>
-
-                                minutes
-                            </span>
-
-                            <!-- FACILITY STATUS -->
-                            <div class="bookable-status">
-                                Status:
-                                <span class="<?php
-
-                                echo $facility['status'] === 'available'
-                                    ? 'status-available'
-                                    : 'status-unavailable';
-                                ?>">
-                                    <?php
-
-                                    echo ucfirst(
-                                        htmlspecialchars($facility['status'])
-                                    );
-                                    ?>
-                                </span>
-                            </div>
-
-                        </div>
-
-                        <!-- ACTION BUTTONS -->
-                        <div class="bookable-actions">
-
-                            <!-- EDIT BUTTON -->
-                            <button
-                                type="button"
-                                class="bookable-action-button"
-                                onclick="openEditPopup(
-                                    <?php echo (int) $facility['id']; ?>
-                                )"
-                            >
-                                Edit
-                            </button>
-
-                            <!-- SUSPEND / REACTIVATE BUTTON -->
-                            <form
-                                method="POST"
-                                action="../controller/manageBookableFacilitiesController.php"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="action"
-                                    value="changeBookableFacilityStatus"
-                                >
-
-                                <input
-                                    type="hidden"
-                                    name="bookableFacilityId"
-                                    value="
-                                    <?php
-
-                                    echo (int) $facility['id'];
-                                    ?>"
-                                >
-
-                                <input
-                                    type="hidden"
-                                    name="status"
-                                    value="<?php
-
-                                    echo $facility['status'] === 'available'
-                                        ? 'unavailable'
-                                        : 'available';
-                                    ?>"
-                                >
-
-                                <button
-                                    type="submit"
-                                    class="bookable-action-button"
-                                >
-                                    <?php
-
-                                    echo $facility['status'] === 'available'
-                                        ? 'Suspend'
-                                        : 'Reactivate';
-                                    ?>
-                                </button>
-                            </form>
-
-                        </div>
-
-                    </div>
-
-                <?php endforeach; ?>
+                        : ''; ?>">
+                    Facility Utilisation Report
+                </a>
 
             </div>
 
-            <!-- EDIT POPUP -->
-            <?php if ($tab === 'view' && !empty($bookableFacilities)): ?>
-                <?php foreach ($bookableFacilities as $facility): ?>
-                    <div
-                        id="editPopup<?php echo (int) $facility['id']; ?>"
-                        class="edit-popup-overlay"
-                        onclick="closeEditPopup(event, <?php echo (int) $facility['id']; ?>)"
-                    >
-                        <div class="edit-popup" onclick="event.stopPropagation()">
+            <!-- MESSAGE -->
+            <?php if ($success): ?>
 
-                            <div class="edit-popup-header">
-                                <h2>
-                                    Edit <?php echo htmlspecialchars($facility['name']); ?>
-                                </h2>
+                <div class="bookable-message bookable-success">
+                    <?php
 
-                                <button
-                                    type="button"
-                                    class="edit-popup-close"
-                                    onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)"
-                                >&times;</button>
-                            </div>
-
-                            <form
-                                method="POST"
-                                action="../controller/manageBookableFacilitiesController.php"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="action"
-                                    value="editBookableFacility"
-                                >
-
-                                <input
-                                    type="hidden"
-                                    name="bookableFacilityId"
-                                    value="<?php echo (int) $facility['id']; ?>"
-                                >
-
-                                <div class="edit-popup-fields">
-
-                                    <div class="form-group">
-                                        <label>Opening Time</label>
-                                        <input
-                                            type="time"
-                                            name="openTime"
-                                            value="<?php echo htmlspecialchars(substr($facility['openTime'], 0, 5)); ?>"
-                                            required
-                                        >
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Closing Time</label>
-                                        <input
-                                            type="time"
-                                            name="closeTime"
-                                            value="<?php echo htmlspecialchars(substr($facility['closeTime'], 0, 5)); ?>"
-                                            required
-                                        >
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Slot Duration (minutes)</label>
-                                        <input
-                                            type="number"
-                                            name="slotDuration"
-                                            min="1"
-                                            step="1"
-                                            value="<?php echo (int) $facility['slotDuration']; ?>"
-                                            required
-                                        >
-                                    </div>
-
-                                </div>
-
-                                <div class="edit-popup-actions">
-                                    <button
-                                        type="button"
-                                        class="bookable-action-button"
-                                        onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)"
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        type="submit"
-                                        class="btn-create-bookable"
-                                    >
-                                        Save Changes
-                                    </button>
-                                </div>
-                            </form>
-
-                        </div>
-                    </div>
-
-                <?php endforeach; ?>
+                    echo htmlspecialchars($success);
+                    ?>
+                </div>
 
             <?php endif; ?>
 
-        <?php endif; ?>
 
-        <!-- REPORT -->
-        <?php else: ?>
+            <?php if ($error): ?>
 
-            <!-- Report Filters -->
-            <form
-                method="GET"
-                class="report-filter-form"
-            >
+                <div class="bookable-message bookable-error">
+                    <?php
 
-                <input
-                    type="hidden"
-                    name="tab"
-                    value="report"
-                >
+                    echo htmlspecialchars($error);
+                    ?>
+                </div>
 
-                <div class="report-filter-group">
+            <?php endif; ?>
 
-                    <label for="facilityType">
-                        Facility Type
-                    </label>
+            <!-- CREATE -->
+            <?php if ($tab === 'create'): ?>
 
-                    <select
-                        id="facilityType"
-                        name="facilityType"
-                    >
+                <form method="POST" action="../controller/manageBookableFacilitiesController.php" class="bookable-form">
 
-                        <option value="">
-                            All Facility Types
-                        </option>
+                    <input type="hidden" name="action" value="createBookableFacility">
 
-                        <option
-                            value="study room"
-                            <?php
+                    <!-- FACILITY TYPE -->
+
+                    <div class="form-group">
+
+                        <label for="facilityType">
+                            Facility Type
+                        </label>
+
+                        <select id="facilityType" name="facilityType" onchange="filterFacilities()" required>
+
+                            <option value="">
+                                Select facility type
+                            </option>
+
+                            <option value="study room">
+                                Study Room
+                            </option>
+
+                            <option value="gym">
+                                Gym
+                            </option>
+
+                            <option value="lecture hall">
+                                Lecture Hall
+                            </option>
+
+                            <option value="lab">
+                                Lab
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- FACILITY NAME -->
+
+                    <div class="form-group">
+
+                        <label for="facilityId">
+                            Facility Name
+                        </label>
+
+                        <select id="facilityId" name="facilityId" required>
+
+                            <option value="" data-type="">
+                                Select facility
+                            </option>
+
+
+                            <?php foreach ($facilities as $facility): ?>
+
+                                <option value="<?php
+                                echo (int) $facility['id'];
+                                ?>" data-type="<?php
+                                echo htmlspecialchars(
+                                    $facility['type']
+                                );
+                                ?>">
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $facility['name']
+                                    );
+                                    ?>
+
+                                    —
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $facility['location']
+                                    );
+                                    ?>,
+
+                                    <?php
+                                    echo htmlspecialchars(
+                                        $facility['blockFloor']
+                                    );
+                                    ?>
+
+                                </option>
+
+                            <?php endforeach; ?>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- OPEN TIME -->
+
+                    <div class="form-group">
+
+                        <label for="openTime">
+                            Open Time
+                        </label>
+
+                        <input type="time" id="openTime" name="openTime" required>
+
+                    </div>
+
+
+                    <!-- END TIME -->
+
+                    <div class="form-group">
+
+                        <label for="closeTime">
+                            End Time
+                        </label>
+
+                        <input type="time" id="closeTime" name="closeTime" required>
+
+                    </div>
+
+                    <!-- SLOT DURATION -->
+
+                    <div class="form-group">
+
+                        <label for="slotDuration">
+                            Slot Duration (minutes)
+                        </label>
+
+                        <input type="number" id="slotDuration" name="slotDuration" min="1" step="1" placeholder="e.g. 60"
+                            required>
+
+                    </div>
+
+                    <!-- CREATE BUTTON -->
+
+                    <div class="create-button-area">
+
+                        <button type="submit" class="btn-create-bookable">
+                            Create
+                        </button>
+
+                    </div>
+
+                </form>
+
+                <!-- VIEW -->
+            <?php elseif ($tab === 'view'): ?>
+
+                <?php if (empty($bookableFacilities)): ?>
+
+                    <div class="empty-message">
+                        No bookable facilities found.
+                    </div>
+
+                <?php else: ?>
+
+                    <div class="bookable-list">
+
+                        <?php foreach ($bookableFacilities as $facility): ?>
+
+                            <div class="bookable-row">
+
+                                <div class="bookable-main">
+
+                                    <span class="bookable-name">
+                                        <?php
+
+                                        echo htmlspecialchars($facility['name']);
+                                        ?>
+                                    </span>
+
+                                    <span class="bookable-details">
+                                        <?php
+
+                                        echo htmlspecialchars($facility['type']);
+                                        ?>
+
+                                        &nbsp; | &nbsp;
+
+                                        <?php
+
+                                        echo htmlspecialchars($facility['location']);
+                                        ?>,
+
+                                        <?php
+
+                                        echo htmlspecialchars($facility['blockFloor']);
+                                        ?>
+
+                                        &nbsp; | &nbsp;
+
+                                        Slot Duration:
+
+                                        <?php
+
+                                        echo (int) $facility['slotDuration'];
+                                        ?>
+
+                                        minutes
+                                    </span>
+
+                                    <!-- FACILITY STATUS -->
+                                    <div class="bookable-status">
+                                        Status:
+                                        <span class="<?php
+
+                                        echo $facility['status'] === 'available'
+                                            ? 'status-available'
+                                            : 'status-unavailable';
+                                        ?>">
+                                            <?php
+
+                                            echo ucfirst(
+                                                htmlspecialchars($facility['status'])
+                                            );
+                                            ?>
+                                        </span>
+                                    </div>
+
+                                </div>
+
+                                <!-- ACTION BUTTONS -->
+                                <div class="bookable-actions">
+
+                                    <!-- EDIT BUTTON -->
+                                    <button type="button" class="bookable-action-button" onclick="openEditPopup(
+                                    <?php echo (int) $facility['id']; ?>
+                                )">
+                                        Edit
+                                    </button>
+
+                                    <!-- SUSPEND / REACTIVATE BUTTON -->
+                                    <form method="POST" action="../controller/manageBookableFacilitiesController.php">
+                                        <input type="hidden" name="action" value="changeBookableFacilityStatus">
+
+                                        <input type="hidden" name="bookableFacilityId" value="
+                                    <?php
+
+                                    echo (int) $facility['id'];
+                                    ?>">
+
+                                        <input type="hidden" name="status" value="<?php
+
+                                        echo $facility['status'] === 'available'
+                                            ? 'unavailable'
+                                            : 'available';
+                                        ?>">
+
+                                        <button type="submit" class="bookable-action-button">
+                                            <?php
+
+                                            echo $facility['status'] === 'available'
+                                                ? 'Suspend'
+                                                : 'Reactivate';
+                                            ?>
+                                        </button>
+                                    </form>
+
+                                </div>
+
+                            </div>
+
+                        <?php endforeach; ?>
+
+                    </div>
+
+                    <!-- EDIT POPUP -->
+                    <?php if ($tab === 'view' && !empty($bookableFacilities)): ?>
+                        <?php foreach ($bookableFacilities as $facility): ?>
+                            <div id="editPopup<?php echo (int) $facility['id']; ?>" class="edit-popup-overlay"
+                                onclick="closeEditPopup(event, <?php echo (int) $facility['id']; ?>)">
+                                <div class="edit-popup" onclick="event.stopPropagation()">
+
+                                    <div class="edit-popup-header">
+                                        <h2>
+                                            Edit <?php echo htmlspecialchars($facility['name']); ?>
+                                        </h2>
+
+                                        <button type="button" class="edit-popup-close"
+                                            onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)">&times;</button>
+                                    </div>
+
+                                    <form method="POST" action="../controller/manageBookableFacilitiesController.php">
+                                        <input type="hidden" name="action" value="editBookableFacility">
+
+                                        <input type="hidden" name="bookableFacilityId" value="<?php echo (int) $facility['id']; ?>">
+
+                                        <div class="edit-popup-fields">
+
+                                            <div class="form-group">
+                                                <label>Opening Time</label>
+                                                <input type="time" name="openTime"
+                                                    value="<?php echo htmlspecialchars(substr($facility['openTime'], 0, 5)); ?>"
+                                                    required>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label>Closing Time</label>
+                                                <input type="time" name="closeTime"
+                                                    value="<?php echo htmlspecialchars(substr($facility['closeTime'], 0, 5)); ?>"
+                                                    required>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label>Slot Duration (minutes)</label>
+                                                <input type="number" name="slotDuration" min="1" step="1"
+                                                    value="<?php echo (int) $facility['slotDuration']; ?>" required>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="edit-popup-actions">
+                                            <button type="button" class="bookable-action-button"
+                                                onclick="closeEditPopup(null, <?php echo (int) $facility['id']; ?>)">
+                                                Cancel
+                                            </button>
+
+                                            <button type="submit" class="btn-create-bookable">
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                </div>
+                            </div>
+
+                        <?php endforeach; ?>
+
+                    <?php endif; ?>
+
+                <?php endif; ?>
+
+                <!-- REPORT -->
+            <?php else: ?>
+
+                <!-- Report Filters -->
+                <form method="GET" class="report-filter-form">
+
+                    <input type="hidden" name="tab" value="report">
+
+                    <div class="report-filter-group">
+
+                        <label for="facilityType">
+                            Facility Type
+                        </label>
+
+                        <select id="facilityType" name="facilityType">
+
+                            <option value="">
+                                All Facility Types
+                            </option>
+
+                            <option value="study room" <?php
 
                             echo $facilityType === 'study room'
                                 ? 'selected'
                                 : '';
-                            ?>
-                        >
-                            Study Room
-                        </option>
+                            ?>>
+                                Study Room
+                            </option>
 
-                        <option
-                            value="gym"
-                            <?php
+                            <option value="gym" <?php
 
                             echo $facilityType === 'gym'
                                 ? 'selected'
                                 : '';
-                            ?>
-                        >
-                            Gym
-                        </option>
+                            ?>>
+                                Gym
+                            </option>
 
-                        <option
-                            value="lecture hall"
-                            <?php
+                            <option value="lecture hall" <?php
 
                             echo $facilityType === 'lecture hall'
                                 ? 'selected'
                                 : '';
-                            ?>
-                        >
-                            Lecture Hall
-                        </option>
+                            ?>>
+                                Lecture Hall
+                            </option>
 
-                        <option
-                            value="lab"
-                            <?php
+                            <option value="lab" <?php
 
                             echo $facilityType === 'lab'
                                 ? 'selected'
                                 : '';
-                            ?>
-                        >
-                            Lab
-                        </option>
+                            ?>>
+                                Lab
+                            </option>
 
-                    </select>
+                        </select>
 
-                </div>
+                    </div>
 
-                <div class="report-filter-group">
+                    <div class="report-filter-group">
 
-                    <label for="usageType">
-                        Usage Type
-                    </label>
+                        <label for="usageType">
+                            Usage Type
+                        </label>
 
-                    <select
-                        id="usageType"
-                        name="usageType"
-                    >
+                        <select id="usageType" name="usageType">
 
-                        <option value="">
-                            All Usage
-                        </option>
+                            <option value="">
+                                All Usage
+                            </option>
 
-                        <option
-                            value="student"
-                            <?php
+                            <option value="student" <?php
 
                             echo $usageType === 'student'
                                 ? 'selected'
                                 : '';
-                            ?>
-                        >
-                            Student Booking
-                        </option>
+                            ?>>
+                                Student Booking
+                            </option>
 
-                        <option
-                            value="event"
-                            <?php
+                            <option value="event" <?php
 
                             echo $usageType === 'event'
                                 ? 'selected'
                                 : '';
+                            ?>>
+                                Event
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <button type="submit" class="report-filter-button">
+                        Apply
+                    </button>
+
+                </form>
+
+                <!-- Summary Cards -->
+                <div class="report-summary">
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Total Bookings
+                        </span>
+
+                        <span class="summary-value">
+                            <?php
+
+                            echo (int) (
+                                $utilisationSummary['totalBookings']
+                                ?? 0
+                            );
                             ?>
-                        >
-                            Event
-                        </option>
+                        </span>
 
-                    </select>
+                    </div>
 
-                </div>
+                    <div class="summary-card">
 
+                        <span class="summary-label">
+                            Hours Used
+                        </span>
 
-                <button
-                    type="submit"
-                    class="report-filter-button"
-                >
-                    Apply
-                </button>
-
-            </form>
-
-            <!-- Summary Cards -->
-            <div class="report-summary">
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Total Bookings
-                    </span>
-
-                    <span class="summary-value">
-                        <?php
-
-                        echo (int) (
-                            $utilisationSummary['totalBookings']
-                            ?? 0
-                        );
-                        ?>
-                    </span>
-
-                </div>
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Hours Used
-                    </span>
-
-                    <span class="summary-value">
-
-                        <?php
-
-                        echo number_format(
-                            $utilisationSummary['totalHours']
-                            ?? 0,
-                            1
-                        );
-                        ?>
-
-                        hrs
-
-                    </span>
-
-                </div>
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Average Utilisation
-                    </span>
-
-                    <span class="summary-value">
-
-                        <?php
-
-                        echo number_format(
-                            $utilisationSummary['averageRate']
-                            ?? 0,
-                            0
-                        );
-                        ?>%
-
-                    </span>
-
-                </div>
-
-                <div class="summary-card">
-
-                    <span class="summary-label">
-                        Most Utilised
-                    </span>
-
-                    <span class="summary-value summary-facility">
-
-                        <?php
-
-                        echo htmlspecialchars(
-                            $utilisationSummary[
-                                'mostUsedFacility'
-                            ] ?? '-'
-                        );
-                        ?>
-
-                    </span>
-
-                </div>
-
-            </div>
-
-            <!-- Report Table -->
-            <div class="utilisation-table-wrapper">
-
-                <table class="utilisation-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Facility
-                            </th>
-
-                            <th>
-                                Type
-                            </th>
-
-                            <th>
-                                Bookings
-                            </th>
-
-                            <th>
-                                Hours Used
-                            </th>
-
-                            <th>
-                                Available Hours / Week
-                            </th>
-
-                            <th>
-                                Utilisation
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        <?php
-
-                        if (
-                            empty($utilisationReport)
-                        ): ?>
-
-                            <tr>
-
-                                <td
-                                    colspan="6"
-                                    class="report-empty"
-                                >
-                                    No facility utilisation
-                                    data available.
-                                </td>
-
-                            </tr>
-
-                        <?php else: ?>
+                        <span class="summary-value">
 
                             <?php
 
-                            foreach (
-                                $utilisationReport
-                                as $row
+                            echo number_format(
+                                $utilisationSummary['totalHours']
+                                ?? 0,
+                                1
+                            );
+                            ?>
+
+                            hrs
+
+                        </span>
+
+                    </div>
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Average Utilisation
+                        </span>
+
+                        <span class="summary-value">
+
+                            <?php
+
+                            echo number_format(
+                                $utilisationSummary['averageRate']
+                                ?? 0,
+                                0
+                            );
+                            ?>%
+
+                        </span>
+
+                    </div>
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Most Utilised
+                        </span>
+
+                        <span class="summary-value summary-facility">
+
+                            <?php
+
+                            echo htmlspecialchars(
+                                $utilisationSummary[
+                                    'mostUsedFacility'
+                                ] ?? '-'
+                            );
+                            ?>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <!-- Report Table -->
+                <div class="utilisation-table-wrapper">
+
+                    <table class="utilisation-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Facility
+                                </th>
+
+                                <th>
+                                    Type
+                                </th>
+
+                                <th>
+                                    Bookings
+                                </th>
+
+                                <th>
+                                    Hours Used
+                                </th>
+
+                                <th>
+                                    Available Hours / Week
+                                </th>
+
+                                <th>
+                                    Utilisation
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            <?php
+
+                            if (
+                                empty($utilisationReport)
                             ): ?>
 
                                 <tr>
 
-                                    <td>
-
-                                        <strong>
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $row['facilityName']
-                                            );
-                                            ?>
-                                        </strong>
-
-                                        <span
-                                            class="facility-location"
-                                        >
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $row['location']
-                                            );
-                                            ?>,
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $row['blockFloor']
-                                            );
-                                            ?>
-                                        </span>
-
+                                    <td colspan="6" class="report-empty">
+                                        No facility utilisation
+                                        data available.
                                     </td>
 
+                                </tr>
 
-                                    <td>
+                            <?php else: ?>
 
-                                        <?php
+                                <?php
 
-                                        echo htmlspecialchars(
-                                            $row['type']
-                                        );
-                                        ?>
+                                foreach (
+                                    $utilisationReport
+                                    as $row
+                                ): ?>
 
-                                    </td>
+                                    <tr>
 
+                                        <td>
 
-                                    <td>
-
-                                        <?php
-
-                                        echo (int) 
-                                            $row['totalBookings'];
-                                        ?>
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <?php
-
-                                        echo number_format(
-                                            $row['hoursUsed'],
-                                            1
-                                        );
-                                        ?>
-
-                                        hrs
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <?php
-
-                                        echo number_format(
-                                            $row['availableHours'],
-                                            1
-                                        );
-                                        ?>
-
-                                        hrs
-
-                                    </td>
-
-
-                                    <td>
-
-                                        <div class="utilisation-cell">
-
-                                            <span class="utilisation-value">
-
+                                            <strong>
                                                 <?php
 
-                                                echo number_format(
-                                                    $row[
-                                                        'utilisationRate'
-                                                    ],
-                                                    0
+                                                echo htmlspecialchars(
+                                                    $row['facilityName']
                                                 );
-                                                ?>%
+                                                ?>
+                                            </strong>
 
+                                            <span class="facility-location">
+                                                <?php
+
+                                                echo htmlspecialchars(
+                                                    $row['location']
+                                                );
+                                                ?>,
+                                                <?php
+
+                                                echo htmlspecialchars(
+                                                    $row['blockFloor']
+                                                );
+                                                ?>
                                             </span>
 
+                                        </td>
 
-                                            <div class="utilisation-bar">
 
-                                                <div
-                                                    class="utilisation-fill"
-                                                    style="width:
+                                        <td>
+
+                                            <?php
+
+                                            echo htmlspecialchars(
+                                                $row['type']
+                                            );
+                                            ?>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?php
+
+                                            echo (int) 
+                                                $row['totalBookings'];
+                                            ?>
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?php
+
+                                            echo number_format(
+                                                $row['hoursUsed'],
+                                                1
+                                            );
+                                            ?>
+
+                                            hrs
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <?php
+
+                                            echo number_format(
+                                                $row['availableHours'],
+                                                1
+                                            );
+                                            ?>
+
+                                            hrs
+
+                                        </td>
+
+
+                                        <td>
+
+                                            <div class="utilisation-cell">
+
+                                                <span class="utilisation-value">
+
+                                                    <?php
+
+                                                    echo number_format(
+                                                        $row[
+                                                            'utilisationRate'
+                                                        ],
+                                                        0
+                                                    );
+                                                    ?>%
+
+                                                </span>
+
+
+                                                <div class="utilisation-bar">
+
+                                                    <div class="utilisation-fill" style="width:
                                                         <?php
 
                                                         echo min(
@@ -1585,134 +1407,131 @@ if ($universityId !== null) {
                                                                 ]
                                                             )
                                                         );
-                                                        ?>%;"
-                                                ></div>
+                                                        ?>%;"></div>
+
+                                                </div>
 
                                             </div>
 
-                                        </div>
+                                        </td>
 
-                                    </td>
+                                    </tr>
 
-                                </tr>
+                                <?php endforeach; ?>
 
-                            <?php endforeach; ?>
+                            <?php endif; ?>
 
-                        <?php endif; ?>
+                        </tbody>
 
-                    </tbody>
+                    </table>
 
-                </table>
+                </div>
 
-            </div>
+            <?php endif; ?>
 
-        <?php endif; ?>
+        </div>
 
-    </div>
+    </main>
 
-</main>
+    <footer>
 
-<footer>
+        <div class="footer-bottom-bar">
 
-    <div class="footer-bottom-bar">
+            &copy; 2026 UniBee.
+            All rights reserved.
 
-        &copy; 2026 UniBee.
-        All rights reserved.
+        </div>
 
-    </div>
+    </footer>
 
-</footer>
+    <script src="../script.js"></script>
 
-<script src="../script.js"></script>
+    <script>
 
-<script>
+        function filterFacilities() {
+            const typeSelect =
+                document.getElementById(
+                    'facilityType'
+                );
 
-function filterFacilities()
-{
-    const typeSelect =
-        document.getElementById(
-            'facilityType'
-        );
+            const facilitySelect =
+                document.getElementById(
+                    'facilityId'
+                );
 
-    const facilitySelect =
-        document.getElementById(
-            'facilityId'
-        );
+            const selectedType =
+                typeSelect.value;
 
-    const selectedType =
-        typeSelect.value;
-
-    const options =
-        facilitySelect.querySelectorAll(
-            'option'
-        );
+            const options =
+                facilitySelect.querySelectorAll(
+                    'option'
+                );
 
 
-    options.forEach(
-        function(option)
-        {
-            if (
-                option.value === ''
-            ) {
-                option.hidden = false;
+            options.forEach(
+                function (option) {
+                    if (
+                        option.value === ''
+                    ) {
+                        option.hidden = false;
+                        return;
+                    }
+
+
+                    const facilityType =
+                        option.dataset.type;
+
+
+                    if (
+                        selectedType === '' ||
+                        facilityType === selectedType
+                    ) {
+
+                        option.hidden = false;
+
+                    } else {
+
+                        option.hidden = true;
+
+                        if (
+                            option.selected
+                        ) {
+                            facilitySelect.value = '';
+                        }
+                    }
+                }
+            );
+        }
+
+        function openEditPopup(facilityId) {
+            const popup = document.getElementById('editPopup' + facilityId);
+
+            if (popup) {
+                popup.style.display = 'flex';
+            }
+        }
+
+        function closeEditPopup(event, facilityId) {
+            if (event && event.target !== event.currentTarget) {
                 return;
             }
 
+            const popup = document.getElementById('editPopup' + facilityId);
 
-            const facilityType =
-                option.dataset.type;
-
-
-            if (
-                selectedType === '' ||
-                facilityType === selectedType
-            ) {
-
-                option.hidden = false;
-
-            } else {
-
-                option.hidden = true;
-
-                if (
-                    option.selected
-                ) {
-                    facilitySelect.value = '';
-                }
+            if (popup) {
+                popup.style.display = 'none';
             }
         }
-    );
-}
 
-function openEditPopup(facilityId) {
-    const popup = document.getElementById('editPopup' + facilityId);
-
-    if (popup) {
-        popup.style.display = 'flex';
-    }
-}
-
-function closeEditPopup(event, facilityId) {
-    if (event && event.target !== event.currentTarget) {
-        return;
-    }
-
-    const popup = document.getElementById('editPopup' + facilityId);
-
-    if (popup) {
-        popup.style.display = 'none';
-    }
-}
-
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        document.querySelectorAll('.edit-popup-overlay').forEach(function (popup) {
-            popup.style.display = 'none';
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.edit-popup-overlay').forEach(function (popup) {
+                    popup.style.display = 'none';
+                });
+            }
         });
-    }
-});
 
-</script>
+    </script>
 
 </body>
 

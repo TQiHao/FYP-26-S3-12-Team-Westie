@@ -19,6 +19,51 @@ $universityId = $_SESSION['university_id'] ?? 0;
 
 $buildingsWithNodes = $controller->getBuildingsWithNodes($universityId);
 
+if (isset($_GET['facility']) && !isset($_GET['to'])) {
+    $bookableFacilityId = (int) $_GET['facility'];
+    if ($bookableFacilityId > 0) {
+        try {
+            $db = new Database();
+            $db = $db->connect();
+            $nodeId = null;
+            $buildingId = null;
+
+            // Attempt 1: Match by facilityId (Primary logic)
+            $sql = "SELECT n.id AS nodeId, cf.buildingId
+                    FROM BookableFacilities bf
+                    INNER JOIN Facilities f ON f.id = bf.facilityId
+                    INNER JOIN NavigationNodes n ON n.facilityId = f.id
+                    INNER JOIN CampusFloors cf ON n.floorId = cf.id
+                    WHERE bf.id = ?
+                    LIMIT 1";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$bookableFacilityId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Attempt 2: Fallback match by Name or Room Code
+            if (!$row) {
+                $sql = "SELECT n.id AS nodeId, cf.buildingId
+                        FROM BookableFacilities bf
+                        INNER JOIN Facilities f ON f.id = bf.facilityId
+                        INNER JOIN NavigationNodes n ON (n.name = f.name OR n.name = f.roomCode OR n.name LIKE CONCAT('%', f.roomCode, '%'))
+                        INNER JOIN CampusFloors cf ON n.floorId = cf.id
+                        WHERE bf.id = ?
+                        LIMIT 1";
+                $stmt = $db->prepare($sql);
+                $stmt->execute([$bookableFacilityId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+
+            if ($row) {
+                $_GET['to'] = (int) $row['nodeId'];
+                $_GET['building'] = (int) $row['buildingId'];
+            }
+        } catch (PDOException $e) {
+            error_log("Facility redirect lookup error: " . $e->getMessage());
+        }
+    }
+}
+
 $requestedBuildingId = isset($_GET['building']) ? (int) $_GET['building'] : 0;
 $building = null;
 
@@ -61,39 +106,19 @@ foreach ($nodes as $n) {
     }
 }
 
-if (isset($_GET['facility']) && !isset($_GET['to'])) {
-    $bookableFacilityId = (int) $_GET['facility'];
-    if ($bookableFacilityId > 0) {
-        try {
-            $db = new Database();
-            $db = $db->connect();
-            $sql = "SELECT n.id AS nodeId
-                    FROM BookableFacilities bf
-                    INNER JOIN Facilities f ON f.id = bf.facilityId
-                    INNER JOIN NavigationNodes n ON n.facilityId = f.id
-                    WHERE bf.id = ?
-                    LIMIT 1";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([$bookableFacilityId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) {
-                $_GET['to'] = (int) $row['nodeId'];
-            }
-        } catch (PDOException $e) {
-            error_log("Facility redirect lookup error: " . $e->getMessage());
-        }
-    }
-}
 $fromId   = isset($_GET['from']) ? (int) $_GET['from'] : 0;
 $toId     = isset($_GET['to'])   ? (int) $_GET['to']   : 0;
 $stepFree = isset($_GET['step_free']) && $_GET['step_free'] === '1';
 
-if ($fromId === 0) {
+// CHANGED: Only auto-select the "From" location if the user DID NOT come from an event navigation link
+if ($fromId === 0 && !isset($_GET['facility'])) {
     foreach ($nodes as $n) {
         if (strtolower($n['type']) === 'entrance') { $fromId = (int) $n['id']; break; }
     }
 }
-if ($toId === 0) {
+
+// Fallback for "To" if no facility was provided at all
+if ($toId === 0 && !isset($_GET['facility'])) {
     foreach ($nodes as $n) {
         if (strtolower($n['type']) === 'room') { $toId = (int) $n['id']; break; }
     }

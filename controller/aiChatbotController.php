@@ -127,7 +127,7 @@ class AIChatbotController
             return ['answer' => $exact['answer'], 'source' => 'faq'];
         }
 
-        $similar = $this->faqEntity->findSimilarMatch($universityId, $question, 0.25);
+        $similar = $this->faqEntity->findSimilarMatch($universityId, $question, 0.45);
         if ($similar && !empty($similar['answer'])) {
             $this->saveChat($userId, $question, $similar['answer'], 'tfidf');
             return ['answer' => $similar['answer'], 'source' => 'tfidf'];
@@ -152,9 +152,6 @@ class AIChatbotController
         ];
     }
 
-    /**
-     * Role-aware off-topic message.
-     */
     private function getOffTopicMessage()
     {
         $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
@@ -179,7 +176,6 @@ class AIChatbotController
         $q = strtolower($question);
 
         $keywords = [
-            // Academic
             'class',
             'course',
             'module',
@@ -203,7 +199,6 @@ class AIChatbotController
             'uni',
             'school',
             'college',
-            // Exam
             'exam',
             'test',
             'quiz',
@@ -213,12 +208,10 @@ class AIChatbotController
             'result',
             'gpa',
             'score',
-            // Time
             'timetable',
             'schedule',
             'attendance',
             'lesson',
-            // People
             'lecturer',
             'professor',
             'teacher',
@@ -226,7 +219,6 @@ class AIChatbotController
             'coordinator',
             'staff',
             'student',
-            // Location / campus
             'campus',
             'room',
             'hall',
@@ -240,13 +232,11 @@ class AIChatbotController
             'parking',
             'wifi',
             'floor plan',
-            // Booking
             'book',
             'reserve',
             'booking',
             'gym',
             'slot',
-            // Events
             'event',
             'seminar',
             'workshop',
@@ -254,7 +244,6 @@ class AIChatbotController
             'orientation',
             'ceremony',
             'talk',
-            // System / UniBee
             'unibee',
             'account',
             'login',
@@ -270,7 +259,6 @@ class AIChatbotController
             'feature',
             'explain',
             'tutorial',
-            // Money / admin
             'fee',
             'tuition',
             'scholarship',
@@ -289,6 +277,14 @@ class AIChatbotController
     private function getIntent($question)
     {
         $q = strtolower($question);
+
+        if (preg_match('/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|day)|howdy|sup)\b/i', $q)) {
+            return 'greeting';
+        }
+
+        if (preg_match('/\b(school|university|uni|college)\b.*\b(name|location|address|email|info|information|details)\b/i', $q) || preg_match('/\b(name|location|address|email|info|information|details)\b.*\b(of|for|about)\b.*\b(school|university|uni|college)\b/i', $q)) {
+            return 'university_info';
+        }
 
         if (preg_match('/\b(create|add|new|manage|make)\b.*\bclass(es)?\b/', $q))
             return 'create_class';
@@ -338,14 +334,19 @@ class AIChatbotController
         if (preg_match('/\b(logout|log out|sign out|exit)\b/', $q))
             return 'logout';
 
-        // Guide / features — broad, so checked LAST
         if (preg_match('/\b(guides?|tutorials?|manuals?|features?|capabilities|getting started|what can (you|i) do|show (me )?(the )?features?|list (the )?features?|how (do i|can i|to) use|how to use|use the (system|page|chatbot|website|app)|use this (system|page|chatbot|website|app))\b/i', $q))
             return 'features_guide';
+
+        return null;
     }
 
     private function handleIntent($intent, $userId, $universityId, $question)
     {
         switch ($intent) {
+            case 'greeting':
+                return $this->handleGreeting();
+            case 'university_info':
+                return $this->handleUniversityInfo();
             case 'create_class':
                 return $this->handleCreateClass($userId, $question);
             case 'book_room':
@@ -384,9 +385,65 @@ class AIChatbotController
         return null;
     }
 
-    /* ============================================================
-     * INTENT HANDLERS
-     * ============================================================ */
+    private function handleGreeting()
+    {
+        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
+        $name = $_SESSION['user_name'] ?? 'there';
+        $greeting = "Hello $name! ";
+
+        if ($role === 'course_coordinator' || $role === 'course coordinator') {
+            $greeting .= "I'm your UniBee AI assistant. How can I help you manage your classes today?";
+        } elseif ($role === 'lecturer') {
+            $greeting .= "I'm your UniBee AI assistant. How can I help you with your teaching schedule or campus events today?";
+        } elseif ($role === 'university_admin' || $role === 'university admin') {
+            $greeting .= "I'm your UniBee AI assistant. How can I help you manage the university today?";
+        } else {
+            $greeting .= "I'm your UniBee AI assistant. How can I help you with your studies, facilities, or campus events today?";
+        }
+
+        return [
+            'answer' => $greeting,
+            'source' => 'faq'
+        ];
+    }
+
+    private function handleUniversityInfo()
+    {
+        $universityId = $_SESSION['university_id'] ?? null;
+        if (!$universityId) {
+            return [
+                'answer' => "I couldn't find your university information.",
+                'source' => 'database'
+            ];
+        }
+
+        try {
+            $stmt = $this->db->prepare("SELECT name, institutionType, email, country, postalCode FROM Universities WHERE id = ?");
+            $stmt->execute([$universityId]);
+            $uni = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($uni) {
+                $answer = "Here is the information for " . $uni['name'] . ":\n\n";
+                $answer .= "• Name: " . $uni['name'] . "\n";
+                $answer .= "• Institution Type: " . ($uni['institutionType'] ?: 'N/A') . "\n";
+                $answer .= "• Country: " . ($uni['country'] ?: 'N/A') . "\n";
+                $answer .= "• Postal Code: " . ($uni['postalCode'] ?: 'N/A') . "\n";
+                $answer .= "• Contact Email: " . ($uni['email'] ?: 'N/A') . "\n";
+
+                return [
+                    'answer' => $answer,
+                    'source' => 'database'
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("handleUniversityInfo error: " . $e->getMessage());
+        }
+
+        return [
+            'answer' => "I'm sorry, I couldn't retrieve your university details at the moment.",
+            'source' => 'database'
+        ];
+    }
 
     private function handleFeaturesGuide()
     {
@@ -394,84 +451,34 @@ class AIChatbotController
 
         if ($role === 'course_coordinator' || $role === 'course coordinator') {
             return [
-                'answer' =>
-                    "Here's what I can help you with as a Course Coordinator:\n\n" .
-                    "• Manage Classes — create, edit, suspend, or search classes\n" .
-                    "• Suggest a Classroom — find free rooms for a given day and time\n" .
-                    "• Enrol Students — add one by one or import from a CSV file\n" .
-                    "• Exam Scheduling — set exam date, time, and venue\n" .
-                    "• Assign Lecturers — assign or change a lecturer for a class\n\n" .
-                    "Try asking things like:\n" .
-                    "• \"Create a class CS201-L5 on Monday 9am to 12pm for 40 students\"\n" .
-                    "• \"Show my classes\"\n" .
-                    "• \"How do I enrol a student?\"",
+                'answer' => "Here's what I can help you with as a Course Coordinator:\n\n" . "• Manage Classes — create, edit, suspend, or search classes\n" . "• Suggest a Classroom — find free rooms for a given day and time\n" . "• Enrol Students — add one by one or import from a CSV file\n" . "• Exam Scheduling — set exam date, time, and venue\n" . "• Assign Lecturers — assign or change a lecturer for a class\n\n" . "Try asking things like:\n" . "• \"Create a class CS201-L5 on Monday 9am to 12pm for 40 students\"\n" . "• \"Show my classes\"\n" . "• \"How do I enrol a student?\"",
                 'source' => 'faq'
             ];
         }
 
         if ($role === 'lecturer') {
             return [
-                'answer' =>
-                    "Here's what I can help you with as a Lecturer:\n\n" .
-                    "• Personal Timetable — view your weekly teaching schedule\n" .
-                    "• Assigned Modules — see the modules you teach\n" .
-                    "• Campus Events — browse and register for events\n" .
-                    "• Notifications — check your latest updates\n\n" .
-                    "Try asking things like:\n" .
-                    "• \"Show my timetable\"\n" .
-                    "• \"What modules am I teaching?\"\n" .
-                    "• \"Show upcoming events\"",
+                'answer' => "Here's what I can help you with as a Lecturer:\n\n" . "• Personal Timetable — view your weekly teaching schedule\n" . "• Assigned Modules — see the modules you teach\n" . "• Campus Events — browse and register for events\n" . "• Notifications — check your latest updates\n\n" . "Try asking things like:\n" . "• \"Show my timetable\"\n" . "• \"What modules am I teaching?\"\n" . "• \"Show upcoming events\"",
                 'source' => 'faq'
             ];
         }
 
         if ($role === 'university_admin' || $role === 'university admin') {
             return [
-                'answer' =>
-                    "Here's what I can help you with as a University Admin:\n\n" .
-                    "• Manage University Info — faculty, programmes, modules, facilities, users\n" .
-                    "• Campus Events — create and manage events\n" .
-                    "• FAQ Database — manage frequently asked questions\n" .
-                    "• Feedback — view feedback from users\n" .
-                    "• License — renew or check your university license\n\n" .
-                    "Try asking things like:\n" .
-                    "• \"How do I upload the student list?\"\n" .
-                    "• \"Show upcoming events\"\n" .
-                    "• \"How do I renew my license?\"",
+                'answer' => "Here's what I can help you with as a University Admin:\n\n" . "• Manage University Info — faculty, programmes, modules, facilities, users\n" . "• Campus Events — create and manage events\n" . "• FAQ Database — manage frequently asked questions\n" . "• Feedback — view feedback from users\n" . "• License — renew or check your university license\n\n" . "Try asking things like:\n" . "• \"How do I upload the student list?\"\n" . "• \"Show upcoming events\"\n" . "• \"How do I renew my license?\"",
                 'source' => 'faq'
             ];
         }
 
         if ($role === 'system_admin' || $role === 'system admin') {
             return [
-                'answer' =>
-                    "Here's what I can help you with as a System Admin:\n\n" .
-                    "• Manage Universities — approve registrations, suspend, or reactivate\n" .
-                    "• Landing Page — update public content\n" .
-                    "• AI Model — deploy or roll back model versions\n" .
-                    "• System Operations — view logs, backup, or restore\n\n" .
-                    "Try asking things like:\n" .
-                    "• \"Show pending university registrations\"\n" .
-                    "• \"View system logs\"\n" .
-                    "• \"How do I backup the database?\"",
+                'answer' => "Here's what I can help you with as a System Admin:\n\n" . "• Manage Universities — approve registrations, suspend, or reactivate\n" . "• Landing Page — update public content\n" . "• AI Model — deploy or roll back model versions\n" . "• System Operations — view logs, backup, or restore\n\n" . "Try asking things like:\n" . "• \"Show pending university registrations\"\n" . "• \"View system logs\"\n" . "• \"How do I backup the database?\"",
                 'source' => 'faq'
             ];
         }
 
         return [
-            'answer' =>
-                "Here's what I can help you with as a Student:\n\n" .
-                "• Personal Timetable — view your weekly schedule\n" .
-                "• Enrolled Courses — see your registered modules\n" .
-                "• Exam Schedule — check upcoming exams\n" .
-                "• Facility Booking — book study rooms or gym slots\n" .
-                "• Campus Events — browse and register for events\n" .
-                "• Study Groups — create or join study groups\n" .
-                "• Notifications — check your latest updates\n\n" .
-                "Try asking things like:\n" .
-                "• \"Show my timetable\"\n" .
-                "• \"When is my next exam?\"\n" .
-                "• \"Book a study room\"",
+            'answer' => "Here's what I can help you with as a Student:\n\n" . "• Personal Timetable — view your weekly schedule\n" . "• Enrolled Courses — see your registered modules\n" . "• Exam Schedule — check upcoming exams\n" . "• Facility Booking — book study rooms or gym slots\n" . "• Campus Events — browse and register for events\n" . "• Study Groups — create or join study groups\n" . "• Notifications — check your latest updates\n\n" . "Try asking things like:\n" . "• \"Show my timetable\"\n" . "• \"When is my next exam?\"\n" . "• \"Book a study room\"",
             'source' => 'faq'
         ];
     }
@@ -773,12 +780,12 @@ class AIChatbotController
             : "Here are the next upcoming events:";
 
         return [
-            'answer'  => $answer,
-            'source'  => 'faq',
-            'events'  => $events,
-            'action'  => [
+            'answer' => $answer,
+            'source' => 'faq',
+            'events' => $events,
+            'action' => [
                 'label' => 'View Campus Events',
-                'url'   => 'viewEventsPage.php'
+                'url' => 'viewEventsPage.php'
             ]
         ];
     }
@@ -886,14 +893,15 @@ class AIChatbotController
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['question' => $question]));
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($httpCode !== 200 || !$response) {
-            error_log("Phi-3 error: HTTP $httpCode");
+            error_log("Phi-3 ERROR! Code: $httpCode | cURL: $curlError | Response: " . $response);
             return null;
         }
 
@@ -907,37 +915,21 @@ class AIChatbotController
         return $this->cleanAiResponse($raw);
     }
 
-    /**
-     * Strip markdown formatting from AI responses so they display as plain text.
-     */
     private function cleanAiResponse($text)
     {
-        // Remove code fences
+        $text = strip_tags($text);
         $text = preg_replace('/^```[\w]*\s*$/m', '', $text);
-
-        // Strip heading markers (### Heading -> Heading)
         $text = preg_replace('/^#{1,6}\s+/m', '', $text);
-
-        // **bold** -> bold
         $text = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
-
-        // *italic* -> italic (only when standalone)
         $text = preg_replace('/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/', '$1', $text);
-
-        // __bold__ -> bold
         $text = preg_replace('/__(.+?)__/', '$1', $text);
-
-        // `code` -> code
         $text = preg_replace('/`([^`]+)`/', '$1', $text);
-
-        // Collapse 3+ blank lines to 2
         $text = preg_replace("/\n{3,}/", "\n\n", $text);
 
         return trim($text);
     }
 }
 
-// ===== AJAX ENDPOINTS =====
 if (
     !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
     strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'

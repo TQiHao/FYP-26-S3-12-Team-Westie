@@ -13,7 +13,7 @@ $controller = new BookFacilityController();
 
 // Load both study rooms and gym slots for the sidebar
 $studyRooms = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'Study Room');
-$gymSlots   = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'Gym');
+$gymSlots = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'Gym');
 
 // If a facility is selected, load the booking form
 $selectedFacility = null;
@@ -39,7 +39,7 @@ if (isset($_GET['facilityId'])) {
     <header class="header">
         <div class="logo-container">
             <a href="studentDashboardPage.php">
-            <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
+                <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
             </a>
         </div>
 
@@ -113,7 +113,7 @@ if (isset($_GET['facilityId'])) {
                     <?php if ($studyRooms && !empty($studyRooms)): ?>
                         <?php foreach ($studyRooms as $sr): ?>
                             <a href="bookFacilityPage.php?facilityId=<?php echo urlencode($sr['facilityId']); ?>"
-                               class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $sr['facilityId']) ? 'active' : ''; ?>">
+                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $sr['facilityId']) ? 'active' : ''; ?>">
                                 <?php echo htmlspecialchars($sr['name']); ?>
                             </a>
                         <?php endforeach; ?>
@@ -125,8 +125,8 @@ if (isset($_GET['facilityId'])) {
                     <h3>Gym Slots</h3>
                     <?php if ($gymSlots && !empty($gymSlots)): ?>
                         <?php foreach ($gymSlots as $gs): ?>
-                            <a href="BookGymSlotPage.php?facilityId=<?php echo urlencode($gs['facilityId']); ?>"
-                               class="book-sidebar-item">
+                            <a href="bookFacilityPage.php?facilityId=<?php echo urlencode($gs['facilityId']); ?>"
+                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $gs['facilityId']) ? 'active' : ''; ?>">
                                 <?php echo htmlspecialchars($gs['name']); ?>
                             </a>
                         <?php endforeach; ?>
@@ -149,7 +149,10 @@ if (isset($_GET['facilityId'])) {
 
                         <form action="../controller/BookFacilityController.php" method="POST" class="book-form">
 
-                            <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($selectedFacility['facilityId']); ?>">
+                            <input type="hidden" name="facilityId"
+                                value="<?php echo htmlspecialchars($selectedFacility['facilityId']); ?>">
+                            <input type="hidden" id="slotDuration"
+                                value="<?php echo (int) ($selectedFacility['slotDuration'] ?? 60); ?>">
 
                             <div class="book-form-row">
                                 <div class="form-group">
@@ -198,24 +201,39 @@ if (isset($_GET['facilityId'])) {
     </footer>
 
     <script>
-        // Auto-fill endTime based on startTime + 1 hour
         document.addEventListener("DOMContentLoaded", function () {
             var startTime = document.getElementById("startTime");
             var endTime = document.getElementById("endTime");
+            var slotDurationEl = document.getElementById("slotDuration");
 
-            if (startTime && endTime) {
-                startTime.addEventListener("change", function () {
-                    if (this.value) {
-                        var parts = this.value.split(":");
-                        var hours = parseInt(parts[0]) + 1;
-                        var minutes = parts[1];
-                        var newTime = (hours < 10 ? "0" + hours : hours) + ":" + minutes;
-                        endTime.value = newTime;
-                    }
-                });
+            if (!startTime || !endTime) return;
+
+            var slotDuration = slotDurationEl ? (parseInt(slotDurationEl.value, 10) || 60) : 60;
+
+            function formatTime(totalMinutes) {
+                var hours = Math.floor(totalMinutes / 60);
+                var minutes = totalMinutes % 60;
+                return (hours < 10 ? "0" + hours : hours) + ":" + (minutes < 10 ? "0" + minutes : minutes);
             }
+
+            startTime.addEventListener("change", function () {
+                if (!this.value) {
+                    endTime.value = "";
+                    return;
+                }
+                var parts = this.value.split(":");
+                var startMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                var endMinutes = startMinutes + slotDuration;
+
+                if (endMinutes >= 24 * 60) {
+                    endMinutes = 23 * 60 + 59;
+                }
+
+                endTime.value = formatTime(endMinutes);
+            });
         });
     </script>
 
 </body>
+
 </html>

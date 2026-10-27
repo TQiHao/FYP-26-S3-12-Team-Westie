@@ -17,12 +17,6 @@ class BookGymSlotController
         $this->db = $database->connect();
     }
 
-    /**
-     * Get bookable gym slots by keyword
-     * @param int $universityId
-     * @param string $keyword
-     * @return array|false
-     */
     public function getBookableFacilitiesByName($universityId, $keyword)
     {
         try {
@@ -43,15 +37,10 @@ class BookGymSlotController
 
         } catch (Exception $e) {
             error_log("Bookable gym slots fetch error: " . $e->getMessage());
-            return false;  // <-- Alt flow: unable to display
+            return false;
         }
     }
 
-    /**
-     * Get booking form details for a gym slot
-     * @param int $facilityId
-     * @return array|false
-     */
     public function getBookingForm($facilityId)
     {
         try {
@@ -72,13 +61,6 @@ class BookGymSlotController
         }
     }
 
-    /**
-     * Check availability of a gym slot for a date/time
-     * @param int $facilityId
-     * @param string $bookingDate
-     * @param string $startTime
-     * @return bool
-     */
     public function checkAvailability($facilityId, $bookingDate, $startTime)
     {
         try {
@@ -97,29 +79,50 @@ class BookGymSlotController
         }
     }
 
-    /**
-     * Confirm a gym slot booking
-     * @return bool|null (true = success, null = not available, false = error)
-     */
     public function confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
     {
         try {
-            // Check availability first
+            $facilityStmt = $this->db->prepare(
+                "SELECT bf.slotDuration FROM BookableFacilities bf WHERE bf.facilityId = ? AND bf.isBookable = TRUE LIMIT 1"
+            );
+            $facilityStmt->execute([$facilityId]);
+            $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$facility) {
+                return false;
+            }
+
+            $slotDuration = (int) $facility['slotDuration'];
+            $startParts = explode(':', $startTime);
+            $endParts = explode(':', $endTime);
+
+            if (count($startParts) < 2 || count($endParts) < 2) {
+                return 'invalid_time';
+            }
+
+            $startMinutes = (int) $startParts[0] * 60 + (int) $startParts[1];
+            $endMinutes = (int) $endParts[0] * 60 + (int) $endParts[1];
+            $duration = $endMinutes - $startMinutes;
+
+            if ($duration <= 0 || $duration > $slotDuration) {
+                return 'invalid_time';
+            }
+
             if (!$this->checkAvailability($facilityId, $bookingDate, $startTime)) {
-                return null;  // <-- Alt flow: not available
+                return null;
             }
 
             $sql = "INSERT INTO FacilityBookings
-                    (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
+                (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose]);
 
             return true;
 
         } catch (Exception $e) {
-            error_log("Gym booking confirm error: " . $e->getMessage());
-            return false;  // <-- Alt flow: error
+            error_log("Booking confirm error: " . $e->getMessage());
+            return false;
         }
     }
 }
@@ -139,10 +142,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
 
     if ($result === true) {
         $_SESSION['booking_success'] = "Gym slot booked successfully.";
+    } elseif ($result === 'invalid_time') {
+        $_SESSION['booking_error'] = "Invalid time range. Booking duration must be greater than zero and must not exceed the facility slot duration.";
     } elseif ($result === null) {
         $_SESSION['booking_error'] = "This gym room is no longer available for the selected time. Please choose another slot.";
     } else {
-        $_SESSION['booking_error'] = "Unable to load gym slots, please try again.";
+        $_SESSION['booking_error'] = "Unable to process booking. Please try again later.";
     }
 
     header("Location: ../boundary/BookGymSlotPage.php");

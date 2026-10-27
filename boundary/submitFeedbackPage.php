@@ -33,7 +33,13 @@ switch ($user_role) {
         break;
 }
 
-$showNotificationBell = in_array($user_role, ['student', 'lecturer']);
+$showNotificationBell = in_array($user_role, ['university admin', 'course coodinator', 'student', 'lecturer']);
+require_once "../database/database.php";
+$db = (new Database())->connect();
+$supportStmt = $db->prepare("SELECT email FROM Universities WHERE id = ?");
+$supportStmt->execute([$_SESSION['university_id'] ?? 0]);
+$supportRow = $supportStmt->fetch(PDO::FETCH_ASSOC);
+$supportEmail = $supportRow['email'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -194,11 +200,15 @@ $showNotificationBell = in_array($user_role, ['student', 'lecturer']);
                     administrative, or other university-related issues, please contact the relevant university
                     department.
                 </p>
-                <div class="notice-contacts">
-                    <p><strong>University Support Email:</strong> <a
-                            href="mailto:support@university.edu.sg">support@university.edu.sg</a></p>
-                    <p><strong>Student Service Hotline:</strong> +65 6767 8888</p>
-                </div>
+                <?php if (!empty($supportEmail)): ?>
+                    <div class="notice-contacts">
+                        <p><strong>University Support Email:</strong>
+                            <a href="mailto:<?php echo htmlspecialchars($supportEmail); ?>">
+                                <?php echo htmlspecialchars($supportEmail); ?>
+                            </a>
+                        </p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="form-group">

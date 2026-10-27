@@ -12,8 +12,7 @@ require_once "../controller/AIChatbotController.php";
 $controller = new AIChatbotController();
 $studentId = $_SESSION['user_id'];
 
-// ===== Session timeout: if user was away > 30 min, start fresh =====
-$SESSION_RESET_TIMEOUT = 1800; // 30 minutes
+$SESSION_RESET_TIMEOUT = 1800;
 $lastActive = $_SESSION['chat_last_active'] ?? 0;
 $shouldStartFresh = false;
 
@@ -307,8 +306,10 @@ if (!$shouldStartFresh && !empty($sessions)) {
             border-radius: 14px;
             font-size: 0.92rem;
             line-height: 1.55;
+            white-space: normal;
+            /* Forces normal alignment */
+            text-align: left;
             word-wrap: break-word;
-            white-space: pre-line;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             transition: outline 0.2s ease;
         }
@@ -365,10 +366,24 @@ if (!$shouldStartFresh && !empty($sessions)) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="academicsPage.php">Academics</a>
-                    <a href="viewFacilitiesPage.php">Facility Booking</a>
-                    <a href="viewEventsPage.php">University Campus Event</a>
+                    <?php if ($userRole === 'lecturer'): ?>
+                        <a href="teachingPage.php">Teaching</a>
+                        <a href="viewEventsPage.php">University Campus Events</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php elseif ($userRole === 'course_coordinator' || $userRole === 'course coordinator'): ?>
+                        <a href="manageClassPage.php">Manage Classes</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php elseif ($userRole === 'university_admin' || $userRole === 'university admin'): ?>
+                        <a href="renewLicensePage.php">Renew License</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php elseif ($userRole === 'system_admin' || $userRole === 'system admin'): ?>
+                        <a href="manageUniversityPage.php">Manage Universities</a>
+                    <?php else: ?>
+                        <a href="academicsPage.php">Academics</a>
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
+                        <a href="viewEventsPage.php">University Campus Event</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <?php endif; ?>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>
@@ -412,13 +427,11 @@ if (!$shouldStartFresh && !empty($sessions)) {
             <h2>Ask a Question</h2>
 
             <div class="chat-messages" id="chatMessages">
-                <?php if (!empty($initialMessages)): ?>     <?php foreach ($initialMessages as $m): ?>
+                <?php if (!empty($initialMessages)): ?>    <?php foreach ($initialMessages as $m): ?>
                         <div class="chat-bubble user-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
-                            <?php echo htmlspecialchars(trim($m['question'])); ?>
-                        </div>
+                            <?php echo nl2br(htmlspecialchars(trim($m['question']))); ?></div>
                         <div class="chat-bubble bot-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
-                            <?php echo htmlspecialchars(trim($m['answer'])); ?>
-                        </div><?php endforeach; ?><?php endif; ?>
+                            <?php echo nl2br(htmlspecialchars(trim($m['answer']))); ?></div><?php endforeach; ?><?php endif; ?>
             </div>
 
             <div class="chat-input-bar">
@@ -506,7 +519,10 @@ if (!$shouldStartFresh && !empty($sessions)) {
             const box = document.getElementById("chatMessages");
             const bubble = document.createElement("div");
             bubble.className = "chat-bubble " + (type === "user" ? "user-bubble" : "bot-bubble");
-            bubble.textContent = (text || '').replace(/^\s+/, '').replace(/\s+$/, '');
+
+            let safeText = (text || '').trim();
+            safeText = safeText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            bubble.innerHTML = safeText.replace(/\n/g, '<br>');
 
             if (chatId) {
                 bubble.setAttribute("data-chat-id", chatId);
