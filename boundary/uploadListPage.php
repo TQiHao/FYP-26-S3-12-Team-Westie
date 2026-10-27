@@ -3,7 +3,7 @@
 session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -119,17 +119,9 @@ unset($_SESSION['upload_error']);
 
                 <div class="profile-container" onclick="toggleDropdown()">
 
-                    <img
-                        src="../images/profilePic.png"
-                        alt="Profile"
-                        class="profile-icon"
-                    >
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                    <img
-                        src="../images/dropdown.png"
-                        alt="Menu"
-                        class="dropdown-arrow"
-                    >
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
                 </div>
 
@@ -161,10 +153,7 @@ unset($_SESSION['upload_error']);
 
         <section class="upload-page-header">
 
-            <img
-                src="../images/<?php echo htmlspecialchars($icon); ?>"
-                alt="<?php echo htmlspecialchars($title); ?>"
-            >
+            <img src="../images/<?php echo htmlspecialchars($icon); ?>" alt="<?php echo htmlspecialchars($title); ?>">
 
             <h1>
                 <?php echo htmlspecialchars($title); ?>
@@ -180,62 +169,41 @@ unset($_SESSION['upload_error']);
 
         <?php endif; ?>
 
-        <form
-            action="../controller/manageUniversityInformationController.php"
-            method="POST"
-            enctype="multipart/form-data"
-            class="upload-form"
-        >
+        <form action="../controller/manageUniversityInformationController.php" method="POST"
+            enctype="multipart/form-data" class="upload-form">
 
             <label for="uploadFile">
                 <?php
-                    echo $type === 'floorPlan'
-                        ? 'Attach Floor Plan to Upload'
-                        : 'Attach CSV File to Upload';
+                echo $type === 'floorPlan'
+                    ? 'Attach Floor Plan to Upload'
+                    : 'Attach CSV File to Upload';
                 ?>
             </label>
 
             <div class="upload-format">
-                Supported Format: 
+                Supported Format:
                 <?php echo htmlspecialchars($formatText); ?>
             </div>
 
             <div class="upload-file-row">
 
-               <input
-                    type="file"
-                    name="uploadFile"
-                    class="upload-file-input"
-                    accept="<?php echo htmlspecialchars($acceptTypes); ?>"
-                    required
-                >
+                <input type="file" name="uploadFile" class="upload-file-input"
+                    accept="<?php echo htmlspecialchars($acceptTypes); ?>" required>
 
             </div>
 
-            <input
-                type="hidden"
-                name="uploadType"
-                value="<?php echo htmlspecialchars($uploadType); ?>"
-            >
+            <input type="hidden" name="uploadType" value="<?php echo htmlspecialchars($uploadType); ?>">
 
             <!-- Keep the selected IDs -->
             <?php if ($facultyId !== null): ?>
 
-                <input
-                    type="hidden"
-                    name="facultyId"
-                    value="<?php echo htmlspecialchars($facultyId); ?>"
-                >
+                <input type="hidden" name="facultyId" value="<?php echo htmlspecialchars($facultyId); ?>">
 
             <?php endif; ?>
 
             <?php if ($programmeId !== null): ?>
 
-                <input
-                    type="hidden"
-                    name="programmeId"
-                    value="<?php echo htmlspecialchars($programmeId); ?>"
-                >
+                <input type="hidden" name="programmeId" value="<?php echo htmlspecialchars($programmeId); ?>">
 
             <?php endif; ?>
 
@@ -352,41 +320,41 @@ unset($_SESSION['upload_error']);
 
             <?php elseif ($type === 'facility'): ?>
 
-            <div class="csv-guide">
+                <div class="csv-guide">
 
-                <h3>Facility CSV Upload Guide</h3>
+                    <h3>Facility CSV Upload Guide</h3>
 
-                <p>
-                    <strong>File Name:</strong>
-                </p>
+                    <p>
+                        <strong>File Name:</strong>
+                    </p>
 
-                <pre>U01_FacilityList.csv</pre>
+                    <pre>U01_FacilityList.csv</pre>
 
-                <p>
-                    <strong>CSV Format:</strong>
-                </p>
+                    <p>
+                        <strong>CSV Format:</strong>
+                    </p>
 
-                <pre>name,type,description,location,blockFloor,capacity</pre>
+                    <pre>name,type,description,location,blockFloor,capacity</pre>
 
-                <p>
-                    <strong>Example:</strong>
-                </p>
+                    <p>
+                        <strong>Example:</strong>
+                    </p>
 
-                <pre>Central Study Room,study room,Quiet study area,Block A,Level 2,30</pre>
+                    <pre>Central Study Room,study room,Quiet study area,Block A,Level 2,30</pre>
 
-                <p>
-                    <strong>Requirements:</strong>
-                </p>
+                    <p>
+                        <strong>Requirements:</strong>
+                    </p>
 
-                <ul>
-                    <li>File name must follow the required naming convention.</li>
-                    <li>Facility name and type are required.</li>
-                    <li>Type must be study room, gym, lecture hall, or lab.</li>
-                    <li>Capacity must be a positive number.</li>
-                    <li>Only .csv files will be accepted.</li>
-                </ul>
+                    <ul>
+                        <li>File name must follow the required naming convention.</li>
+                        <li>Facility name and type are required.</li>
+                        <li>Type must be study room, gym, lecture hall, or lab.</li>
+                        <li>Capacity must be a positive number.</li>
+                        <li>Only .csv files will be accepted.</li>
+                    </ul>
 
-            </div>
+                </div>
 
             <?php elseif ($type === 'courseCoordinator'): ?>
 
@@ -501,7 +469,7 @@ unset($_SESSION['upload_error']);
                         <strong>Or:</strong>
                     </p>
 
-                   <pre>student_id,fullName,email,password,semesterStart,semesterEnd</pre>
+                    <pre>student_id,fullName,email,password,semesterStart,semesterEnd</pre>
 
                     <p>
                         <strong>Requirements:</strong>
@@ -542,11 +510,7 @@ unset($_SESSION['upload_error']);
 
             <?php endif; ?>
 
-            <button
-                type="submit"
-                name="upload"
-                class="upload-button"
-            >
+            <button type="submit" name="upload" class="upload-button">
                 Upload
             </button>
 
@@ -567,4 +531,5 @@ unset($_SESSION['upload_error']);
     <script src="../script.js"></script>
 
 </body>
+
 </html>

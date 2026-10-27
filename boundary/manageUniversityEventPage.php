@@ -36,6 +36,7 @@ $controller = new ManageUniversityEventController();
 $universityId = (int) ($_SESSION['university_id'] ?? 0);
 
 $createdBy = (int) ($_SESSION['user_id'] ?? 0);
+$allFacilities = $controller->getAllBookableFacilities($universityId);
 
 /* TAB */
 
@@ -128,22 +129,15 @@ if (
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
         Manage University Events - UniBee
     </title>
 
-    <link
-        rel="stylesheet"
-        href="../style.css"
-    >
+    <link rel="stylesheet" href="../style.css">
 
     <style>
-
         /* PAGE */
         .university-event-page {
             width: 80%;
@@ -356,7 +350,7 @@ if (
         }
 
         .facility-option:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
         }
 
         .facility-option-info {
@@ -563,7 +557,7 @@ if (
             .event-view-card {
                 flex-direction: column;
             }
-             
+
             .event-tabs {
                 gap: 20px;
                 overflow-x: auto;
@@ -782,1309 +776,1035 @@ if (
             font-weight: 700;
             color: #000;
         }
-
     </style>
 
 </head>
 
 <body>
 
-<script src="../script.js"></script>
+    <script src="../script.js"></script>
 
-<header class="header">
+    <header class="header">
 
-    <div class="logo-container">
+        <div class="logo-container">
 
-        <a href="universityAdminDashboardPage.php">
+            <a href="universityAdminDashboardPage.php">
 
-            <img
-                src="../images/uniBeeLogo.png"
-                alt="UniBee Logo"
-            >
+                <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
 
-        </a>
-
-    </div>
-
-    <div class="dashboard-header-right">
-
-        <div class="profile-dropdown">
-
-            <div
-                class="profile-container"
-                onclick="toggleDropdown()"
-            >
-
-                <img
-                    src="../images/profilePic.png"
-                    alt="Profile"
-                    class="profile-icon"
-                >
-
-                <img
-                    src="../images/dropdown.png"
-                    alt="Menu"
-                    class="dropdown-arrow"
-                >
-
-            </div>
-
-            <div id="profileMenu" class="dropdown-menu">
-                <a href="renewLicensePage.php">Renew License</a>
-                <a href="aiChatbotPage.php">AI Chatbot</a>
-                <a href="submitFeedbackPage.php">Submit Feedback</a>
-                <a href="../controller/logoutController.php">Log Out</a>
-            </div>
-
-        </div>
-
-    </div>
-
-</header>
-
-<main class="university-event-page">
-
-    <div class="event-container">
-
-        <div class="profile-header">
-
-            <a
-                href="universityAdminDashboardPage.php"
-                class="btn-back"
-            >
-                &#8592; Back
             </a>
 
-            <h1 class="section-label">
-                Manage University Events
-            </h1>
+        </div>
+
+        <div class="dashboard-header-right">
+
+            <div class="profile-dropdown">
+
+                <div class="profile-container" onclick="toggleDropdown()">
+
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
+
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
+
+                </div>
+
+                <div id="profileMenu" class="dropdown-menu">
+                    <a href="renewLicensePage.php">Renew License</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="submitFeedbackPage.php">Submit Feedback</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
+                </div>
+
+            </div>
 
         </div>
 
-    <!-- FLASH MESSAGES -->
-    <?php if ($success): ?>
+    </header>
 
-        <div
-            class="event-modal-overlay"
-            id="eventSuccessPopup"
-        >
+    <main class="university-event-page">
 
-            <div class="event-success-modal">
+        <div class="event-container">
 
-                <button
-                    type="button"
-                    class="event-modal-close"
-                    onclick="
+            <div class="profile-header">
+
+                <a href="universityAdminDashboardPage.php" class="btn-back">
+                    &#8592; Back
+                </a>
+
+                <h1 class="section-label">
+                    Manage University Events
+                </h1>
+
+            </div>
+
+            <!-- FLASH MESSAGES -->
+            <?php if ($success): ?>
+
+                <div class="event-modal-overlay" id="eventSuccessPopup">
+
+                    <div class="event-success-modal">
+
+                        <button type="button" class="event-modal-close" onclick="
                         document
                             .getElementById('eventSuccessPopup')
                             .remove();
-                    "
-                >
-                    &times;
-                </button>
+                    ">
+                            &times;
+                        </button>
 
-                <h2>
+                        <h2>
+                            <?php
+
+                            echo htmlspecialchars($success);
+                            ?>
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            <?php endif; ?>
+
+
+            <?php if ($error): ?>
+
+                <div class="event-message event-error">
+
                     <?php
 
-                    echo htmlspecialchars($success);
+                    echo htmlspecialchars($error);
                     ?>
-                </h2>
 
-            </div>
+                </div>
 
-        </div>
+            <?php endif; ?>
 
-    <?php endif; ?>
+            <!-- TABS -->
+            <div class="event-tabs">
 
-
-    <?php if ($error): ?>
-
-        <div class="event-message event-error">
-
-            <?php
-
-            echo htmlspecialchars($error);
-            ?>
-
-        </div>
-
-    <?php endif; ?>
-
-    <!-- TABS -->
-    <div class="event-tabs">
-
-        <a
-            class="event-tab
+                <a class="event-tab
                 <?php
 
                 echo $activeTab === 'create'
                     ? 'active'
                     : '';
-                ?>"
-            href="manageUniversityEventPage.php?tab=create"
-        >
-            Create University Event
-        </a>
+                ?>" href="manageUniversityEventPage.php?tab=create">
+                    Create University Event
+                </a>
 
-        <a
-            class="event-tab
+                <a class="event-tab
                 <?php
 
                 echo $activeTab === 'view'
                     ? 'active'
                     : '';
-                ?>"
-            href="manageUniversityEventPage.php?tab=view"
-        >
-            View University Events
-        </a>
-
-    </div>
-
-    <!-- CREATE TAB -->
-    <?php if ($activeTab === 'create'): ?>
-
-        <!-- EVENT DETAILS -->
-        <form
-            method="GET"
-            action="manageUniversityEventPage.php"
-        >
-
-            <input
-                type="hidden"
-                name="tab"
-                value="create"
-            >
-
-            <div class="event-card-section">
-
-                <h2>
-                    Event Details
-                </h2>
-
-                <p>
-                    Enter the event details to find suitable
-                    bookable facilities.
-                </p>
-
-                <!-- Event Title -->
-                <div class="event-form-group">
-
-                    <label for="title">
-                        Event Title
-                    </label>
-
-                    <input
-                        type="text"
-                        id="title"
-                        name="title"
-                        value="<?php echo htmlspecialchars($title); ?>"
-                        required
-                    >
-
-                </div>
-
-                <!-- Description -->
-                <div class="event-form-group">
-
-                    <label for="description">
-                        Description
-                    </label>
-
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="4"
-                        required
-                    ><?php echo htmlspecialchars($description); ?></textarea>
-
-                </div>
-
-                <!-- Capacity -->
-                <div class="event-form-group">
-
-                    <label for="capacity">
-                        Event Capacity
-                    </label>
-
-                    <input
-                        type="number"
-                        id="capacity"
-                        name="capacity"
-                        min="1"
-                        value="<?php echo htmlspecialchars($capacity); ?>"
-                        required
-                    >
-
-                </div>
-
-                <!-- Start -->
-                <div class="event-form-group">
-
-                    <label>
-                        Start Date & Time
-                    </label>
-
-                    <div class="event-datetime-row">
-
-                        <input
-                            type="date"
-                            name="startDate"
-                            value="<?php echo htmlspecialchars($startDate); ?>"
-                            required
-                        >
-
-                        <input
-                            type="time"
-                            name="startTime"
-                            value="<?php echo htmlspecialchars($startTime); ?>"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-                <!-- End -->
-                <div class="event-form-group">
-
-                    <label>
-                        End Date & Time
-                    </label>
-
-                    <div class="event-datetime-row">
-
-                        <input
-                            type="date"
-                            name="endDate"
-                            value="<?php echo htmlspecialchars($endDate); ?>"
-                            required
-                        >
-
-                        <input
-                            type="time"
-                            name="endTime"
-                            value="<?php echo htmlspecialchars($endTime); ?>"
-                            required
-                        >
-
-                    </div>
-
-                </div>
-
-                <!-- FIND FACILITIES -->
-                <div class="find-facilities-section">
-
-                    <button
-                        type="submit"
-                        name="findFacilities"
-                        value="1"
-                        class="event-btn event-btn-primary"
-                    >
-                        Find Available Facilities
-                    </button>
-
-                </div>
+                ?>" href="manageUniversityEventPage.php?tab=view">
+                    View University Events
+                </a>
 
             </div>
 
-        </form>
+            <!-- CREATE TAB -->
+            <?php if ($activeTab === 'create'): ?>
 
-        <!-- RECOMMENDED FACILITIES -->
+                <!-- EVENT DETAILS -->
+                <form method="GET" action="manageUniversityEventPage.php">
 
-        <?php if ($searched): ?>
+                    <input type="hidden" name="tab" value="create">
 
-            <div
-                class="event-card-section"
-                id="recommendedFacilities"
-            >
+                    <div class="event-card-section">
 
-                <h2>
-                    Recommended Facilities
-                </h2>
+                        <h2>
+                            Event Details
+                        </h2>
 
-                <p>
-                    Facilities shown below are bookable,
-                    have sufficient capacity, and are
-                    available during the selected period,
-                    including the 30-minute buffer before
-                    and after the event.
-                </p>
+                        <p>
+                            Enter the event details to find suitable
+                            bookable facilities.
+                        </p>
 
-                <?php if (empty($recommendedFacilities)): ?>
+                        <!-- Event Title -->
+                        <div class="event-form-group">
+
+                            <label for="title">
+                                Event Title
+                            </label>
+
+                            <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($title); ?>"
+                                required>
+
+                        </div>
+
+                        <!-- Description -->
+                        <div class="event-form-group">
+
+                            <label for="description">
+                                Description
+                            </label>
+
+                            <textarea id="description" name="description" rows="4"
+                                required><?php echo htmlspecialchars($description); ?></textarea>
+
+                        </div>
+
+                        <!-- Capacity -->
+                        <div class="event-form-group">
+
+                            <label for="capacity">
+                                Event Capacity
+                            </label>
+
+                            <input type="number" id="capacity" name="capacity" min="1"
+                                value="<?php echo htmlspecialchars($capacity); ?>" required>
+
+                        </div>
+
+                        <!-- Start -->
+                        <div class="event-form-group">
+
+                            <label>
+                                Start Date & Time
+                            </label>
+
+                            <div class="event-datetime-row">
+
+                                <input type="date" name="startDate" value="<?php echo htmlspecialchars($startDate); ?>"
+                                    required>
+
+                                <input type="time" name="startTime" value="<?php echo htmlspecialchars($startTime); ?>"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+                        <!-- End -->
+                        <div class="event-form-group">
+
+                            <label>
+                                End Date & Time
+                            </label>
+
+                            <div class="event-datetime-row">
+
+                                <input type="date" name="endDate" value="<?php echo htmlspecialchars($endDate); ?>"
+                                    required>
+
+                                <input type="time" name="endTime" value="<?php echo htmlspecialchars($endTime); ?>"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+                        <!-- FIND FACILITIES -->
+                        <div class="find-facilities-section">
+
+                            <button type="submit" name="findFacilities" value="1" class="event-btn event-btn-primary">
+                                Find Available Facilities
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+                <!-- RECOMMENDED FACILITIES -->
+
+                <?php if ($searched): ?>
+
+                    <div class="event-card-section" id="recommendedFacilities">
+
+                        <h2>
+                            Recommended Facilities
+                        </h2>
+
+                        <p>
+                            Facilities shown below are bookable,
+                            have sufficient capacity, and are
+                            available during the selected period,
+                            including the 30-minute buffer before
+                            and after the event.
+                        </p>
+
+                        <?php if (empty($recommendedFacilities)): ?>
+
+                            <div class="empty-event">
+
+                                No suitable facilities are available
+                                for the selected capacity and time.
+
+                            </div>
+
+                        <?php else: ?>
+
+                            <!-- CREATE EVENT FORM -->
+
+                            <form method="POST" action="../controller/manageUniversityEventController.php"
+                                enctype="multipart/form-data" class="event-form">
+
+                                <input type="hidden" name="action" value="createUniversityEvent">
+
+                                <input type="hidden" name="title" value="<?php echo htmlspecialchars($title); ?>">
+
+                                <input type="hidden" name="description" value="<?php echo htmlspecialchars($description); ?>">
+
+                                <input type="hidden" name="capacity" value="<?php echo htmlspecialchars($capacity); ?>">
+
+                                <input type="hidden" name="startDate" value="<?php echo htmlspecialchars($startDate); ?>">
+
+                                <input type="hidden" name="startTime" value="<?php echo htmlspecialchars($startTime); ?>">
+
+                                <input type="hidden" name="endDate" value="<?php echo htmlspecialchars($endDate); ?>">
+
+                                <input type="hidden" name="endTime" value="<?php echo htmlspecialchars($endTime); ?>">
+
+                                <!-- FACILITY LIST -->
+                                <div class="recommended-list">
+
+                                    <?php foreach (
+                                        $recommendedFacilities
+                                        as $facility
+                                    ): ?>
+
+                                        <label class="facility-option">
+
+                                            <input type="radio" name="facilityId" value="<?php
+                                            echo (int) 
+                                                $facility[
+                                                    'bookableFacilityId'
+                                                ];
+                                            ?>" required>
+
+
+                                            <div class="facility-option-info">
+
+                                                <div class="facility-option-name">
+
+                                                    <?php
+
+                                                    echo htmlspecialchars(
+                                                        $facility['name']
+                                                    );
+
+                                                    ?>
+
+                                                </div>
+
+
+                                                <div class="facility-option-details">
+
+                                                    <?php
+
+                                                    echo htmlspecialchars(
+                                                        $facility['type']
+                                                    );
+
+                                                    ?>
+
+                                                    &nbsp; • &nbsp;
+
+                                                    <?php
+
+                                                    echo htmlspecialchars(
+                                                        $facility['location']
+                                                    );
+
+                                                    ?>,
+
+                                                    <?php
+
+                                                    echo htmlspecialchars(
+                                                        $facility['blockFloor']
+                                                    );
+
+                                                    ?>
+
+                                                    <?php
+
+                                                    if (
+                                                        !empty(
+                                                        $facility[
+                                                            'roomCode'
+                                                        ]
+                                                    )
+                                                    ):
+
+                                                        ?>
+
+                                                        &nbsp; • &nbsp;
+
+                                                        Room
+
+                                                        <?php
+
+                                                        echo htmlspecialchars(
+                                                            $facility[
+                                                                'roomCode'
+                                                            ]
+                                                        );
+
+                                                        ?>
+
+                                                    <?php endif; ?>
+
+                                                </div>
+
+                                            </div>
+
+
+                                            <span class="facility-capacity">
+
+                                                Capacity:
+
+                                                <?php
+
+                                                echo (int) 
+                                                    $facility[
+                                                        'capacity'
+                                                    ];
+
+                                                ?>
+
+                                            </span>
+
+                                        </label>
+
+                                    <?php endforeach; ?>
+
+                                </div>
+
+                                <!-- SEPARATOR -->
+                                <div class="event-divider"></div>
+
+
+                                <!-- EVENT MATERIALS -->
+                                <h2>
+                                    Event Materials
+                                </h2>
+
+
+                                <!-- Event Poster -->
+
+                                <div class="event-form-group">
+
+                                    <label for="eventPoster">
+                                        Event Poster
+                                    </label>
+
+                                    <input type="file" id="eventPoster" name="eventPoster" class="event-file-input"
+                                        accept=".jpg,.jpeg,.png,.webp">
+
+                                    <div class="event-file-help">
+                                        Accepted formats:
+                                        JPG, JPEG, PNG and WEBP.
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Event Information -->
+
+                                <div class="event-form-group">
+
+                                    <label for="eventInfo">
+                                        Event Information
+                                    </label>
+
+                                    <textarea id="eventInfo" name="eventInfo" rows="5"
+                                        placeholder="Enter additional event information such as agenda, instructions, or requirements."></textarea>
+
+                                </div>
+
+
+                                <!-- CREATE BUTTON -->
+
+                                <div class="event-button-row">
+
+                                    <button type="submit" class="event-btn event-btn-primary">
+                                        Create Event
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        <?php endif; ?>
+
+                    </div>
+
+                <?php endif; ?>
+
+                <!-- VIEW TAB -->
+
+            <?php else: ?>
+
+                <form class="event-search" method="GET" action="manageUniversityEventPage.php">
+
+                    <input type="hidden" name="tab" value="view">
+
+                    <input type="text" name="search" placeholder="Search events by title, description or facility..." value="<?php
+
+                    echo htmlspecialchars(
+                        $searchQuery
+                    );
+                    ?>">
+
+                    <button type="submit">Search</button>
+
+                    <?php
+
+                    if (
+                        $searchQuery !== ''
+                    ): ?>
+
+                        <a class="event-search-clear" href="manageUniversityEventPage.php?tab=view">
+                            Clear
+                        </a>
+
+                    <?php endif; ?>
+
+                </form>
+
+                <?php
+
+                if (
+                    empty($eventList)
+                ): ?>
 
                     <div class="empty-event">
 
-                        No suitable facilities are available
-                        for the selected capacity and time.
+                        <?php
+
+                        if (
+                            $searchQuery !== ''
+                        ): ?>
+
+                            No events match your search.
+
+                        <?php else: ?>
+
+                            No university events found.
+
+                        <?php endif; ?>
 
                     </div>
 
                 <?php else: ?>
 
-                    <!-- CREATE EVENT FORM -->
+                    <div class="event-list">
 
-                    <form
-                        method="POST"
-                        action="../controller/manageUniversityEventController.php"
-                        enctype="multipart/form-data"
-                        class="event-form"
-                    >
+                        <?php
 
-                        <input
-                            type="hidden"
-                            name="action"
-                            value="createUniversityEvent"
-                        >
+                        foreach (
+                            $eventList
+                            as $event
+                        ): ?>
 
-                        <input
-                            type="hidden"
-                            name="title"
-                            value="<?php echo htmlspecialchars($title); ?>"
-                        >
+                            <div class="event-view-card">
 
-                        <input
-                            type="hidden"
-                            name="description"
-                            value="<?php echo htmlspecialchars($description); ?>"
-                        >
+                                <div class="event-view-info">
 
-                        <input
-                            type="hidden"
-                            name="capacity"
-                            value="<?php echo htmlspecialchars($capacity); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="startDate"
-                            value="<?php echo htmlspecialchars($startDate); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="startTime"
-                            value="<?php echo htmlspecialchars($startTime); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="endDate"
-                            value="<?php echo htmlspecialchars($endDate); ?>"
-                        >
-
-                        <input
-                            type="hidden"
-                            name="endTime"
-                            value="<?php echo htmlspecialchars($endTime); ?>"
-                        >
-
-                        <!-- FACILITY LIST -->
-                        <div class="recommended-list">
-
-                            <?php foreach (
-                                $recommendedFacilities
-                                as $facility
-                            ): ?>
-
-                                <label
-                                    class="facility-option"
-                                >
-
-                                    <input
-                                        type="radio"
-                                        name="facilityId"
-                                        value="<?php
-                                            echo (int)
-                                                $facility[
-                                                    'bookableFacilityId'
-                                                ];
-                                        ?>"
-                                        required
-                                    >
-
-
-                                    <div
-                                        class="facility-option-info"
-                                    >
-
-                                        <div
-                                            class="facility-option-name"
-                                        >
-
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $facility['name']
-                                            );
-
-                                            ?>
-
-                                        </div>
-
-
-                                        <div
-                                            class="facility-option-details"
-                                        >
-
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $facility['type']
-                                            );
-
-                                            ?>
-
-                                            &nbsp; • &nbsp;
-
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $facility['location']
-                                            );
-
-                                            ?>,
-
-                                            <?php
-
-                                            echo htmlspecialchars(
-                                                $facility['blockFloor']
-                                            );
-
-                                            ?>
-
-                                            <?php
-
-                                            if (
-                                                !empty(
-                                                    $facility[
-                                                        'roomCode'
-                                                    ]
-                                                )
-                                            ):
-
-                                            ?>
-
-                                                &nbsp; • &nbsp;
-
-                                                Room
-
-                                                <?php
-
-                                                echo htmlspecialchars(
-                                                    $facility[
-                                                        'roomCode'
-                                                    ]
-                                                );
-
-                                                ?>
-
-                                            <?php endif; ?>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <span
-                                        class="facility-capacity"
-                                    >
-
-                                        Capacity:
+                                    <h3>
 
                                         <?php
 
-                                        echo (int)
-                                            $facility[
-                                                'capacity'
-                                            ];
-
+                                        echo htmlspecialchars(
+                                            $event['title']
+                                        );
                                         ?>
 
-                                    </span>
+                                    </h3>
 
-                                </label>
+                                    <p>
 
-                            <?php endforeach; ?>
+                                        <?php
 
-                        </div>
+                                        echo htmlspecialchars(
+                                            $event['description']
+                                            ?? ''
+                                        );
+                                        ?>
 
-                        <!-- SEPARATOR -->
-                        <div class="event-divider"></div>
+                                    </p>
 
+                                    <div class="event-meta">
 
-                        <!-- EVENT MATERIALS -->
-                        <h2>
-                            Event Materials
-                        </h2>
+                                        <?php
 
+                                        echo htmlspecialchars(
+                                            $event['location']
+                                            ?? 'Facility'
+                                        );
+                                        ?>
 
-                        <!-- Event Poster -->
+                                        <br>
 
-                        <div class="event-form-group">
+                                        <?php
 
-                            <label for="eventPoster">
-                                Event Poster
-                            </label>
+                                        echo date(
+                                            'd/m/Y h:i A',
+                                            strtotime(
+                                                $event[
+                                                    'startDatetime'
+                                                ]
+                                            )
+                                        );
+                                        ?>
 
-                            <input
-                                type="file"
-                                id="eventPoster"
-                                name="eventPoster"
-                                class="event-file-input"
-                                accept=".jpg,.jpeg,.png,.webp"
-                            >
+                                        &nbsp; –
+                                        &nbsp;
 
-                            <div class="event-file-help">
-                                Accepted formats:
-                                JPG, JPEG, PNG and WEBP.
+                                        <?php
+
+                                        echo date(
+                                            'd/m/Y h:i A',
+                                            strtotime(
+                                                $event[
+                                                    'endDatetime'
+                                                ]
+                                            )
+                                        );
+                                        ?>
+
+                                        <br>
+
+                                        Capacity:
+                                        <?php
+
+                                        echo (int) 
+                                            $event['capacity'];
+                                        ?>
+
+                                    </div>
+
+                                </div>
+
+                                <span class="event-status status-<?php
+
+                                echo strtolower(
+                                    $event['status']
+                                );
+                                ?>">
+
+                                    <?php
+
+                                    echo htmlspecialchars(
+                                        ucfirst($event['status'])
+                                    );
+                                    ?>
+
+                                </span>
+
+                                <div class="event-actions">
+
+                                    <?php if (strtolower($event['status']) === 'active'): ?>
+
+                                        <?php if (!empty($event['eventPoster'])): ?>
+                                            <button type="button" class="btn-event-poster" onclick='openPosterModal(
+                                            "../<?php echo htmlspecialchars($event["eventPoster"], ENT_QUOTES); ?>",
+                                            <?php echo json_encode($event["title"]); ?>
+                                        )'>
+                                                View Poster
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <button type="button" class="btn-event-edit" onclick='openEditEventModal(
+                                        <?php echo json_encode($event, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
+                                    )'>
+                                            Edit
+                                        </button>
+
+                                        <button type="button" class="btn-event-suspend"
+                                            onclick="openSuspendEventModal(<?php echo (int) $event['id']; ?>)">
+                                            Suspend
+                                        </button>
+
+                                    <?php endif; ?>
+
+                                </div>
+
                             </div>
 
-                        </div>
+                        <?php endforeach; ?>
 
+                    </div>
 
-                        <!-- Event Information -->
+                <?php endif; ?>
 
-                        <div class="event-form-group">
+            <?php endif; ?>
 
-                            <label for="eventInfo">
-                                Event Information
-                            </label>
+            <!-- EDIT EVENT MODAL -->
+            <div class="event-modal-overlay" id="editEventPopup" style="display: none;">
 
-                            <textarea
-                                id="eventInfo"
-                                name="eventInfo"
-                                rows="5"
-                                placeholder="Enter additional event information such as agenda, instructions, or requirements."
-                            ></textarea>
+                <div class="edit-event-modal">
 
-                        </div>
+                    <button type="button" class="event-modal-close" onclick="closeEditEventModal()">
+                        &times;
+                    </button>
 
+                    <h2>
+                        Edit University Event
+                    </h2>
 
-                        <!-- CREATE BUTTON -->
+                    <form method="POST" action="../controller/manageUniversityEventController.php"
+                        enctype="multipart/form-data" class="edit-event-form">
 
-                        <div class="event-button-row">
+                        <input type="hidden" name="action" value="updateUniversityEvent">
 
-                            <button
-                                type="submit"
-                                class="event-btn event-btn-primary"
-                            >
-                                Create Event
+                        <input type="hidden" id="editEventId" name="eventId">
+
+                        <label for="editTitle">
+                            Event Title
+                        </label>
+
+                        <input type="text" id="editTitle" name="title" required>
+
+                        <label for="editDescription">
+                            Description
+                        </label>
+
+                        <textarea id="editDescription" name="description" required></textarea>
+
+                        <label for="editFacilityId">
+                            Facility
+                        </label>
+                        <select id="editFacilityId" name="facilityId" required
+                            style="padding: 8px 10px; border: 1px solid #999; border-radius: 10px; font-size: 0.75rem; font-family: inherit; outline: none;">
+                            <option value="">-- Select a Facility --</option>
+                            <?php foreach ($allFacilities as $fac): ?>
+                                <option value="<?php echo (int) $fac['id']; ?>">
+                                    <?php echo htmlspecialchars($fac['name'] . ' — ' . $fac['location']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <label for="editCapacity">
+                            Event Capacity
+                        </label>
+
+                        <input type="number" id="editCapacity" name="capacity" min="1" required>
+
+                        <label for="editStartDate">
+                            Start Date
+                        </label>
+
+                        <input type="date" id="editStartDate" name="startDate" required>
+
+                        <label for="editStartTime">
+                            Start Time
+                        </label>
+
+                        <input type="time" id="editStartTime" name="startTime" required>
+
+                        <label for="editEndDate">
+                            End Date
+                        </label>
+
+                        <input type="date" id="editEndDate" name="endDate" required>
+
+                        <label for="editEndTime">
+                            End Time
+                        </label>
+
+                        <input type="time" id="editEndTime" name="endTime" required>
+
+                        <label for="editEventInfo">
+                            Event Information
+                        </label>
+
+                        <textarea id="editEventInfo" name="eventInfo"></textarea>
+
+                        <label for="editEventPoster">
+                            Event Poster
+                        </label>
+
+                        <input type="file" id="editEventPoster" name="eventPoster" accept=".jpg,.jpeg,.png,.webp">
+
+                        <button type="submit" class="edit-event-submit">
+                            Update Event
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            <!-- SUSPEND EVENT MODAL -->
+            <div class="event-modal-overlay" id="suspendEventPopup" style="display: none;">
+
+                <div class="suspend-event-modal">
+
+                    <button type="button" class="event-modal-close" onclick="closeSuspendEventModal()">
+                        &times;
+                    </button>
+
+                    <h2>
+                        Are you sure you want to suspend this university event?
+                    </h2>
+
+                    <form method="POST" action="../controller/manageUniversityEventController.php">
+
+                        <input type="hidden" name="action" value="suspendUniversityEvent">
+
+                        <input type="hidden" id="suspendEventId" name="eventId">
+
+                        <div class="suspend-event-buttons">
+
+                            <button type="button" class="suspend-cancel-button" onclick="closeSuspendEventModal()">
+                                Cancel
+                            </button>
+
+                            <button type="submit" class="suspend-confirm-button">
+                                Confirm
                             </button>
 
                         </div>
 
                     </form>
 
-                <?php endif; ?>
+                </div>
 
             </div>
 
-        <?php endif; ?>
+            <!-- VIEW POSTER MODAL -->
+            <div class="event-modal-overlay" id="posterEventPopup" style="display: none;">
 
-    <!-- VIEW TAB -->
+                <div class="poster-event-modal">
 
-    <?php else: ?>
-
-        <form
-            class="event-search"
-            method="GET"
-            action="manageUniversityEventPage.php"
-        >
-
-            <input
-                type="hidden"
-                name="tab"
-                value="view"
-            >
-
-            <input
-                type="text"
-                name="search"
-                placeholder="Search events by title, description or facility..."
-                value="<?php
-
-                echo htmlspecialchars(
-                    $searchQuery
-                );
-                ?>"
-            >
-
-            <button type="submit">Search</button>
-
-            <?php
-
-            if (
-                $searchQuery !== ''
-            ): ?>
-
-                <a
-                    class="event-search-clear"
-                    href="manageUniversityEventPage.php?tab=view"
-                >
-                    Clear
-                </a>
-
-            <?php endif; ?>
-
-        </form>
-
-        <?php
-
-        if (
-            empty($eventList)
-        ): ?>
-
-            <div class="empty-event">
-
-                <?php
-
-                if (
-                    $searchQuery !== ''
-                ): ?>
-
-                    No events match your search.
-
-                <?php else: ?>
-
-                    No university events found.
-
-                <?php endif; ?>
-
-            </div>
-
-        <?php else: ?>
-
-            <div class="event-list">
-
-                <?php
-
-                foreach (
-                    $eventList
-                    as $event
-                ): ?>
-
-                    <div class="event-view-card">
-
-                        <div class="event-view-info">
-
-                            <h3>
-
-                                <?php
-
-                                echo htmlspecialchars(
-                                    $event['title']
-                                );
-                                ?>
-
-                            </h3>
-
-                            <p>
-
-                                <?php
-
-                                echo htmlspecialchars(
-                                    $event['description']
-                                    ?? ''
-                                );
-                                ?>
-
-                            </p>
-
-                            <div
-                                class="event-meta"
-                            >
-
-                                <?php
-
-                                echo htmlspecialchars(
-                                    $event['location']
-                                    ?? 'Facility'
-                                );
-                                ?>
-
-                                <br>
-
-                                <?php
-
-                                echo date(
-                                    'd/m/Y h:i A',
-                                    strtotime(
-                                        $event[
-                                            'startDatetime'
-                                        ]
-                                    )
-                                );
-                                ?>
-
-                                &nbsp; –
-                                &nbsp;
-
-                                <?php
-
-                                echo date(
-                                    'd/m/Y h:i A',
-                                    strtotime(
-                                        $event[
-                                            'endDatetime'
-                                        ]
-                                    )
-                                );
-                                ?>
-
-                                <br>
-
-                                Capacity:
-                                <?php
-
-                                echo (int) 
-                                    $event['capacity'];
-                                ?>
-
-                            </div>
-
-                        </div>
-
-                        <span
-                            class="event-status status-<?php
-
-                            echo strtolower(
-                                $event['status']
-                            );
-                            ?>"
-                        >
-
-                            <?php
-
-                            echo htmlspecialchars(
-                                ucfirst($event['status'])
-                            );
-                            ?>
-
-                        </span>
-
-                        <div class="event-actions">
-
-                            <?php if (strtolower($event['status']) === 'active'): ?>
-
-                                <?php if (!empty($event['eventPoster'])): ?>
-                                    <button
-                                        type="button"
-                                        class="btn-event-poster"
-                                        onclick='openPosterModal(
-                                            "../<?php echo htmlspecialchars($event["eventPoster"], ENT_QUOTES); ?>",
-                                            <?php echo json_encode($event["title"]); ?>
-                                        )'
-                                    >
-                                        View Poster
-                                    </button>
-                                <?php endif; ?>
-
-                                <button
-                                    type="button"
-                                    class="btn-event-edit"
-                                    onclick='openEditEventModal(
-                                        <?php echo json_encode($event, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>
-                                    )'
-                                >
-                                    Edit
-                                </button>
-
-                                <button
-                                    type="button"
-                                    class="btn-event-suspend"
-                                    onclick="openSuspendEventModal(<?php echo (int) $event['id']; ?>)"
-                                >
-                                    Suspend
-                                </button>
-
-                            <?php endif; ?>
-
-                        </div>
-
-                    </div>
-
-                <?php endforeach; ?>
-
-            </div>
-
-        <?php endif; ?>
-
-    <?php endif; ?>
-
-    <!-- EDIT EVENT MODAL -->
-    <div
-        class="event-modal-overlay"
-        id="editEventPopup"
-        style="display: none;"
-    >
-
-        <div class="edit-event-modal">
-
-            <button
-                type="button"
-                class="event-modal-close"
-                onclick="closeEditEventModal()"
-            >
-                &times;
-            </button>
-
-            <h2>
-                Edit University Event
-            </h2>
-
-            <form
-                method="POST"
-                action="../controller/manageUniversityEventController.php"
-                enctype="multipart/form-data"
-                class="edit-event-form"
-            >
-
-                <input
-                    type="hidden"
-                    name="action"
-                    value="updateUniversityEvent"
-                >
-
-                <input
-                    type="hidden"
-                    id="editEventId"
-                    name="eventId"
-                >
-
-                <input
-                    type="hidden"
-                    id="editFacilityId"
-                    name="facilityId"
-                >
-
-                <label for="editTitle">
-                    Event Title
-                </label>
-
-                <input
-                    type="text"
-                    id="editTitle"
-                    name="title"
-                    required
-                >
-
-                <label for="editDescription">
-                    Description
-                </label>
-
-                <textarea
-                    id="editDescription"
-                    name="description"
-                    required
-                ></textarea>
-
-                <label for="editCapacity">
-                    Event Capacity
-                </label>
-
-                <input
-                    type="number"
-                    id="editCapacity"
-                    name="capacity"
-                    min="1"
-                    required
-                >
-
-                <label for="editStartDate">
-                    Start Date
-                </label>
-
-                <input
-                    type="date"
-                    id="editStartDate"
-                    name="startDate"
-                    required
-                >
-
-                <label for="editStartTime">
-                    Start Time
-                </label>
-
-                <input
-                    type="time"
-                    id="editStartTime"
-                    name="startTime"
-                    required
-                >
-
-                <label for="editEndDate">
-                    End Date
-                </label>
-
-                <input
-                    type="date"
-                    id="editEndDate"
-                    name="endDate"
-                    required
-                >
-
-                <label for="editEndTime">
-                    End Time
-                </label>
-
-                <input
-                    type="time"
-                    id="editEndTime"
-                    name="endTime"
-                    required
-                >
-
-                <label for="editEventInfo">
-                    Event Information
-                </label>
-
-                <textarea
-                    id="editEventInfo"
-                    name="eventInfo"
-                ></textarea>
-
-                <label for="editEventPoster">
-                    Event Poster
-                </label>
-
-                <input
-                    type="file"
-                    id="editEventPoster"
-                    name="eventPoster"
-                    accept=".jpg,.jpeg,.png,.webp"
-                >
-
-                <button
-                    type="submit"
-                    class="edit-event-submit"
-                >
-                    Update Event
-                </button>
-
-            </form>
-
-        </div>
-
-    </div>
-
-    <!-- SUSPEND EVENT MODAL -->
-    <div
-        class="event-modal-overlay"
-        id="suspendEventPopup"
-        style="display: none;"
-    >
-
-        <div class="suspend-event-modal">
-
-            <button
-                type="button"
-                class="event-modal-close"
-                onclick="closeSuspendEventModal()"
-            >
-                &times;
-            </button>
-
-            <h2>
-                Are you sure you want to suspend this university event?
-            </h2>
-
-            <form
-                method="POST"
-                action="../controller/manageUniversityEventController.php"
-            >
-
-                <input
-                    type="hidden"
-                    name="action"
-                    value="suspendUniversityEvent"
-                >
-
-                <input
-                    type="hidden"
-                    id="suspendEventId"
-                    name="eventId"
-                >
-
-                <div class="suspend-event-buttons">
-
-                    <button
-                        type="button"
-                        class="suspend-cancel-button"
-                        onclick="closeSuspendEventModal()"
-                    >
-                        Cancel
+                    <button type="button" class="event-modal-close" onclick="closePosterModal()">
+                        &times;
                     </button>
 
-                    <button
-                        type="submit"
-                        class="suspend-confirm-button"
-                    >
-                        Confirm
-                    </button>
+                    <h2 id="posterEventTitle">
+                        Event Poster
+                    </h2>
+
+                    <img id="posterEventImage" src="" alt="Event Poster">
 
                 </div>
 
-            </form>
+            </div>
+
+    </main>
+
+    <footer>
+
+        <div class="footer-bottom-bar">
+
+            &copy; 2026 UniBee.
+            All rights reserved.
 
         </div>
 
-    </div>
+    </footer>
 
-    <!-- VIEW POSTER MODAL -->
-    <div
-        class="event-modal-overlay"
-        id="posterEventPopup"
-        style="display: none;"
-    >
+    <script>
 
-        <div class="poster-event-modal">
+        /* FIND AVAILABLE FACILITIES SCROLL */
+        window.addEventListener(
+            'load',
+            function () {
 
-            <button
-                type="button"
-                class="event-modal-close"
-                onclick="closePosterModal()"
-            >
-                &times;
-            </button>
-
-            <h2 id="posterEventTitle">
-                Event Poster
-            </h2>
-
-            <img
-                id="posterEventImage"
-                src=""
-                alt="Event Poster"
-            >
-
-        </div>
-
-    </div>
-
-</main>
-
-<footer>
-
-    <div class="footer-bottom-bar">
-
-        &copy; 2026 UniBee.
-        All rights reserved.
-
-    </div>
-
-</footer>
-
- <script>
-
-    /* FIND AVAILABLE FACILITIES SCROLL */
-    window.addEventListener(
-        'load',
-        function () {
-
-            const params =
-                new URLSearchParams(
-                    window.location.search
-                );
-
-            if (
-                params.get('findFacilities') === '1'
-            ) {
-
-                const section =
-                    document.getElementById(
-                        'recommendedFacilities'
+                const params =
+                    new URLSearchParams(
+                        window.location.search
                     );
 
-                if (section) {
+                if (
+                    params.get('findFacilities') === '1'
+                ) {
 
-                    section.scrollIntoView({
-                        behavior: 'smooth'
-                    });
+                    const section =
+                        document.getElementById(
+                            'recommendedFacilities'
+                        );
 
+                    if (section) {
+
+                        section.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+
+                    }
                 }
             }
-        }
-    );
+        );
 
-    /* EDIT EVENT MODAL */
-    function openEditEventModal(event)
-    {
-        document.getElementById(
-            'editEventPopup'
-        ).style.display = 'flex';
-
-        document.getElementById(
-            'editEventId'
-        ).value = event.id;
-
-        document.getElementById(
-            'editFacilityId'
-        ).value = event.facilityId;
-
-        document.getElementById(
-            'editTitle'
-        ).value = event.title || '';
-
-        document.getElementById(
-            'editDescription'
-        ).value = event.description || '';
-
-        document.getElementById(
-            'editCapacity'
-        ).value = event.capacity || '';
-
-        document.getElementById(
-            'editEventInfo'
-        ).value = event.eventInfo || '';
-
-        if (event.startDatetime) {
+        /* EDIT EVENT MODAL */
+        function openEditEventModal(event) {
+            document.getElementById(
+                'editEventPopup'
+            ).style.display = 'flex';
 
             document.getElementById(
-                'editStartDate'
-            ).value =
-                event.startDatetime.substring(
-                    0,
-                    10
-                );
+                'editEventId'
+            ).value = event.id;
 
             document.getElementById(
-                'editStartTime'
-            ).value =
-                event.startDatetime.substring(
-                    11,
-                    16
-                );
-        }
-
-        if (event.endDatetime) {
+                'editFacilityId'
+            ).value = event.facilityId;
 
             document.getElementById(
-                'editEndDate'
-            ).value =
-                event.endDatetime.substring(
-                    0,
-                    10
-                );
+                'editTitle'
+            ).value = event.title || '';
 
             document.getElementById(
-                'editEndTime'
-            ).value =
-                event.endDatetime.substring(
-                    11,
-                    16
-                );
-        }
-    }
+                'editDescription'
+            ).value = event.description || '';
 
-    function closeEditEventModal()
-    {
-        document.getElementById(
-            'editEventPopup'
-        ).style.display = 'none';
-    }
+            document.getElementById(
+                'editCapacity'
+            ).value = event.capacity || '';
 
-    /* SUSPEND MODAL */
-    function openSuspendEventModal(eventId)
-    {
-        document.getElementById(
-            'suspendEventId'
-        ).value = eventId;
+            document.getElementById(
+                'editEventInfo'
+            ).value = event.eventInfo || '';
 
-        document.getElementById(
-            'suspendEventPopup'
-        ).style.display = 'flex';
-    }
+            if (event.startDatetime) {
 
-    function closeSuspendEventModal()
-    {
-        document.getElementById(
-            'suspendEventPopup'
-        ).style.display = 'none';
-    }
-
-    /* POSTER MODAL */
-    function openPosterModal(
-        posterPath,
-        eventTitle
-    )
-    {
-        document.getElementById(
-            'posterEventImage'
-        ).src = posterPath;
-
-        document.getElementById(
-            'posterEventTitle'
-        ).textContent =
-            eventTitle + ' - Event Poster';
-
-        document.getElementById(
-            'posterEventPopup'
-        ).style.display = 'flex';
-    }
-
-    function closePosterModal()
-    {
-        document.getElementById(
-            'posterEventPopup'
-        ).style.display = 'none';
-
-        document.getElementById(
-            'posterEventImage'
-        ).src = '';
-    }
-
-    /* CLOSE MODALS BY CLICKING OUTSIDE */
-    document.addEventListener(
-        'click',
-        function (event) {
-
-            const editPopup =
                 document.getElementById(
-                    'editEventPopup'
-                );
+                    'editStartDate'
+                ).value =
+                    event.startDatetime.substring(
+                        0,
+                        10
+                    );
 
-            const suspendPopup =
                 document.getElementById(
-                    'suspendEventPopup'
-                );
-
-            const posterPopup =
-                document.getElementById(
-                    'posterEventPopup'
-                );
-
-
-            if (
-                event.target === editPopup
-            ) {
-
-                closeEditEventModal();
-
+                    'editStartTime'
+                ).value =
+                    event.startDatetime.substring(
+                        11,
+                        16
+                    );
             }
 
+            if (event.endDatetime) {
 
-            if (
-                event.target === suspendPopup
-            ) {
+                document.getElementById(
+                    'editEndDate'
+                ).value =
+                    event.endDatetime.substring(
+                        0,
+                        10
+                    );
 
-                closeSuspendEventModal();
-
+                document.getElementById(
+                    'editEndTime'
+                ).value =
+                    event.endDatetime.substring(
+                        11,
+                        16
+                    );
             }
-
-
-            if (
-                event.target === posterPopup
-            ) {
-
-                closePosterModal();
-
-            }
-
         }
-    );
 
-</script>
+        function closeEditEventModal() {
+            document.getElementById(
+                'editEventPopup'
+            ).style.display = 'none';
+        }
+
+        /* SUSPEND MODAL */
+        function openSuspendEventModal(eventId) {
+            document.getElementById(
+                'suspendEventId'
+            ).value = eventId;
+
+            document.getElementById(
+                'suspendEventPopup'
+            ).style.display = 'flex';
+        }
+
+        function closeSuspendEventModal() {
+            document.getElementById(
+                'suspendEventPopup'
+            ).style.display = 'none';
+        }
+
+        /* POSTER MODAL */
+        function openPosterModal(
+            posterPath,
+            eventTitle
+        ) {
+            document.getElementById(
+                'posterEventImage'
+            ).src = posterPath;
+
+            document.getElementById(
+                'posterEventTitle'
+            ).textContent =
+                eventTitle + ' - Event Poster';
+
+            document.getElementById(
+                'posterEventPopup'
+            ).style.display = 'flex';
+        }
+
+        function closePosterModal() {
+            document.getElementById(
+                'posterEventPopup'
+            ).style.display = 'none';
+
+            document.getElementById(
+                'posterEventImage'
+            ).src = '';
+        }
+
+        /* CLOSE MODALS BY CLICKING OUTSIDE */
+        document.addEventListener(
+            'click',
+            function (event) {
+
+                const editPopup =
+                    document.getElementById(
+                        'editEventPopup'
+                    );
+
+                const suspendPopup =
+                    document.getElementById(
+                        'suspendEventPopup'
+                    );
+
+                const posterPopup =
+                    document.getElementById(
+                        'posterEventPopup'
+                    );
+
+
+                if (
+                    event.target === editPopup
+                ) {
+
+                    closeEditEventModal();
+
+                }
+
+
+                if (
+                    event.target === suspendPopup
+                ) {
+
+                    closeSuspendEventModal();
+
+                }
+
+
+                if (
+                    event.target === posterPopup
+                ) {
+
+                    closePosterModal();
+
+                }
+
+            }
+        );
+
+    </script>
 
 </body>
 

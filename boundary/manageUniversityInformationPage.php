@@ -36,13 +36,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
                 <div class="profile-container" onclick="toggleDropdown()">
 
-                    <img src="../images/profilePic.png"
-                         alt="Profile"
-                         class="profile-icon">
+                    <img src="../images/profilePic.png" alt="Profile" class="profile-icon">
 
-                    <img src="../images/dropdown.png"
-                         alt="Menu"
-                         class="dropdown-arrow">
+                    <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
 
                 </div>
 
@@ -64,7 +60,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <main class="manage-university-information">
 
         <div class="profile-header">
-            <a href="UniversityAdminDashboardPage.php" class="btn-back">
+            <a href="universityAdminDashboardPage.php" class="btn-back">
                 &#8592; Back
             </a>
         </div>
@@ -116,9 +112,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <!-- Course Coordinator -->
             <a href="uploadCourseCoordinatorPage.php?type=courseCoordinator" class="university-management-card">
                 <div class="management-card-icon">
-                    <img src="../images/courseCoordinator.png"
-                         alt="Course Coordinator"
-                         class="icon-course-coordinator">
+                    <img src="../images/courseCoordinator.png" alt="Course Coordinator" class="icon-course-coordinator">
                 </div>
 
                 <h2>Upload Course Coordinator</h2>
@@ -171,4 +165,5 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     <script src="../script.js"></script>
 
 </body>
+
 </html>

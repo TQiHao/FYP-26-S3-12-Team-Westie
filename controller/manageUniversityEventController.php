@@ -24,6 +24,11 @@ class ManageUniversityEventController
         $this->facilityBooking = new FacilityBooking();
     }
 
+    public function getAllBookableFacilities($universityId)
+    {
+        return $this->bookableFacilities->getBookableFacilitiesByUniversity($universityId);
+    }
+
     public function getRecommendedFacilities(
         $universityId,
         $capacity,
@@ -121,15 +126,7 @@ class ManageUniversityEventController
             return "Selected bookable facility is invalid.";
         }
 
-        $slotDuration = (int) ($bookableFacility['slotDuration'] ?? 0);
 
-        if ($slotDuration > 0) {
-            $durationMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
-
-            if ($durationMinutes > $slotDuration) {
-                return "Event duration cannot exceed " . $slotDuration . " minutes.";
-            }
-        }
 
         $openTime = $bookableFacility['openTime'] ?? null;
         $closeTime = $bookableFacility['closeTime'] ?? null;
@@ -393,14 +390,6 @@ class ManageUniversityEventController
 
         if ($eventStartTime < $openTime || $eventEndTime > $closeTime) {
             return "Event must be within the facility opening hours.";
-        }
-
-        if ($slotDuration !== null && (int) $slotDuration > 0) {
-            $durationMinutes = ($end->getTimestamp() - $start->getTimestamp()) / 60;
-
-            if ($durationMinutes > (int) $slotDuration) {
-                return "Event duration cannot exceed " . (int) $slotDuration . " minutes.";
-            }
         }
 
         if (!(int) $bookableFacility['isBookable']) {
