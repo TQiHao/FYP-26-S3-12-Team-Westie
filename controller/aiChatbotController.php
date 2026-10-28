@@ -499,17 +499,24 @@ class AIChatbotController
         }
 
         $prefillData = $this->parseClassPrefill($question);
-
-        $url = 'manageClassPage.php';
-        if (!empty($prefillData)) {
-            $encoded = base64_encode(json_encode($prefillData));
-            $url .= '?prefill=' . urlencode($encoded);
-        }
-
         $answer = "I've opened the Manage Classes page for you. ";
+
         if (!empty($prefillData)) {
+            // Suggest a room based on the parsed data
+            $universityId = $_SESSION['university_id'] ?? 0;
+            $suggestedRoom = $this->suggestRoomForPrefill($prefillData, $universityId);
+
+            if ($suggestedRoom) {
+                $prefillData['room'] = $suggestedRoom;
+                $answer .= "I also suggested the most suitable venue: " . $suggestedRoom . ". ";
+            }
+
+            $encoded = base64_encode(json_encode($prefillData));
+            $url = 'manageClassPage.php?prefill=' . urlencode($encoded);
+
             $answer .= "I pre-filled " . count($prefillData) . " field(s) I understood — please review and adjust before saving.";
         } else {
+            $url = 'manageClassPage.php';
             $answer .= "Click the button below to go there.";
         }
 
@@ -523,6 +530,47 @@ class AIChatbotController
         ];
     }
 
+    private function suggestRoomForPrefill($data, $universityId)
+    {
+        if (empty($data['dayOfWeek']) || empty($data['startTime']) || empty($data['endTime']) || empty($data['capacity'])) {
+            return null;
+        }
+
+        try {
+            $sql = "SELECT f.roomCode 
+                    FROM Facilities f
+                    WHERE f.universityId = ?
+                      AND f.type IN ('lecture hall', 'classroom', 'lab')
+                      AND f.status = 'active'
+                      AND f.roomCode IS NOT NULL
+                      AND f.capacity >= ?
+                      AND NOT EXISTS (
+                          SELECT 1 FROM Classes c
+                          WHERE c.room = f.roomCode
+                            AND c.dayOfWeek = ?
+                            AND c.status = 'active'
+                            AND c.startTime < ?
+                            AND c.endTime > ?
+                      )
+                    ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
+                    LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $universityId,
+                $data['capacity'],
+                $data['dayOfWeek'],
+                $data['endTime'],
+                $data['startTime'],
+                $data['capacity']
+            ]);
+            $room = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $room ? $room['roomCode'] : null;
+        } catch (Exception $e) {
+            error_log("suggestRoomForPrefill error: " . $e->getMessage());
+            return null;
+        }
+    }
+
     private function parseClassPrefill($question)
     {
         $q = $question;
@@ -532,7 +580,10 @@ class AIChatbotController
             $data['moduleName'] = trim($m[1]);
         }
 
-        if (preg_match('/class\s*code\s*(?:is|:)\s*([^,]+?)(?=\s*,|\s+class|\s+it\'?s|\s+suggest|\s+start|\s+end|\s+capacity|\s+academic|\s+assigned|\s+venue|$)/i', $q, $m)) {
+        // Smarter Class Code detection (catches "CS201-L5" even without "class code is")
+        if (preg_match('/(?:class\s*code\s*(?:is|:)|class)\s+([a-z]{2,4}[0-9]{2,4}(?:-[a-z0-9]+)?)/i', $q, $m)) {
+            $data['classCode'] = trim($m[1]);
+        } elseif (preg_match('/class\s*code\s*(?:is|:)\s*([^,]+?)(?=\s*,|\s+class|\s+it\'?s|\s+suggest|\s+start|\s+end|\s+capacity|\s+academic|\s+assigned|\s+venue|$)/i', $q, $m)) {
             $data['classCode'] = trim($m[1]);
         }
 
@@ -563,15 +614,23 @@ class AIChatbotController
             }
         }
 
-        if (preg_match('/start\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
+        // Smarter Time detection (catches "9am to 12pm" without "start time is")
+        if (preg_match('/(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
             $data['startTime'] = $this->normalizeTime($m[1]);
+            $data['endTime'] = $this->normalizeTime($m[2]);
+        } else {
+            if (preg_match('/start\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
+                $data['startTime'] = $this->normalizeTime($m[1]);
+            }
+            if (preg_match('/end\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
+                $data['endTime'] = $this->normalizeTime($m[1]);
+            }
         }
 
-        if (preg_match('/end\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
-            $data['endTime'] = $this->normalizeTime($m[1]);
-        }
-
-        if (preg_match('/capacity\s*(?:is|:)?\s*(\d+)/i', $q, $m)) {
+        // Smarter Capacity detection (catches "for 40 students")
+        if (preg_match('/(?:capacity\s*(?:is|:)?|for)\s*(\d+)\s*(?:students)?/i', $q, $m)) {
+            $data['capacity'] = (int) $m[1];
+        } elseif (preg_match('/capacity\s*(?:is|:)?\s*(\d+)/i', $q, $m)) {
             $data['capacity'] = (int) $m[1];
         }
 

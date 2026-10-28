@@ -82,33 +82,39 @@ class ClassEntity
         }
     }
 
-    public function getAllModules()
+    public function getAllModules($universityId)
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, code, name FROM Modules ORDER BY code ASC");
-            $stmt->execute();
+            $sql = "SELECT m.id, m.code, m.name 
+                    FROM Modules m
+                    JOIN Programmes p ON m.programmeId = p.id
+                    JOIN Faculties f ON p.facultyId = f.id
+                    WHERE f.universityId = ?
+                    ORDER BY m.code ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$universityId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];
         }
     }
 
-    public function getLecturers()
+    public function getLecturers($universityId)
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, fullName, email FROM Users WHERE role = 'lecturer' AND status = 'active' ORDER BY fullName ASC");
-            $stmt->execute();
+            $stmt = $this->db->prepare("SELECT id, fullName, email FROM Users WHERE role = 'lecturer' AND status = 'active' AND universityId = ? ORDER BY fullName ASC");
+            $stmt->execute([$universityId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];
         }
     }
 
-    public function getStudents()
+    public function getStudents($universityId)
     {
         try {
-            $stmt = $this->db->prepare("SELECT id, fullName, email FROM Users WHERE role = 'student' AND status = 'active' ORDER BY fullName ASC");
-            $stmt->execute();
+            $stmt = $this->db->prepare("SELECT id, fullName, email FROM Users WHERE role = 'student' AND status = 'active' AND universityId = ? ORDER BY fullName ASC");
+            $stmt->execute([$universityId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];
@@ -164,6 +170,7 @@ class ClassEntity
 
         return ['fileName' => $fileName, 'fullPath' => $fullPath];
     }
+
     public function checkClassConflict($moduleId, $classCode, $dayOfWeek, $room, $startTime, $endTime, $excludeClassId = null)
     {
         $sqlDup = "SELECT id FROM Classes WHERE moduleId = ? AND classCode = ?";
@@ -421,7 +428,13 @@ class ClassEntity
     public function findActiveStudentByIdentifier($identifier)
     {
         try {
-            $stmt = $this->db->prepare("SELECT id FROM Users WHERE (email = ? OR id = ?) AND role = 'student' AND status = 'active'");
+            $sql = "SELECT u.id 
+                    FROM Users u 
+                    LEFT JOIN Students s ON u.id = s.userId 
+                    WHERE (u.email = ? OR s.studentId = ?) 
+                      AND u.role = 'student' 
+                      AND u.status = 'active'";
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$identifier, $identifier]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {

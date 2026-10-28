@@ -21,12 +21,13 @@ $controller = new ManageClassController();
 $searchQuery = $_GET['search'] ?? '';
 $statusFilter = array_key_exists('status', $_GET) ? $_GET['status'] : 'active';
 
-$classList = $controller->getClasses($searchQuery, '', '', $statusFilter);
-$modulesList = $controller->getAllModules();
-$lecturersList = $controller->getLecturers();
-$studentsList = $controller->getStudents();
-
 $universityId = $_SESSION['university_id'] ?? 0;
+
+$classList = $controller->getClasses($searchQuery, '', '', $statusFilter);
+$modulesList = $controller->getAllModules($universityId);
+$lecturersList = $controller->getLecturers($universityId);
+$studentsList = $controller->getStudents($universityId);
+
 $studentFiles = $controller->getUniversityStudentFiles($universityId);
 
 foreach ($classList as &$cls) {
@@ -1027,14 +1028,15 @@ foreach ($classList as $c) {
                         <label>Academic Year</label>
                         <input type="text" name="academicYear" id="modalAcademicYear" placeholder="e.g. 2026/2027"
                             required>
-                        <span class="field-hint">Free text. e.g. 2026/2027, 2027/2028.</span>
+                        <span class="field-hint">Follow your university's exact format (e.g. 2026/2027).</span>
                     </div>
 
                     <div class="form-group">
                         <label>Semester / Term</label>
                         <input type="text" name="semester" id="modalSemester" placeholder="e.g. 1, 2, Special Term 1"
                             required>
-                        <span class="field-hint">Free text. Follow your university's naming.</span>
+                        <span class="field-hint">Follow your university's exact naming (e.g. Semester 1, Trimester
+                            2).</span>
                     </div>
 
                     <div class="form-group form-group-full">
@@ -1043,7 +1045,7 @@ foreach ($classList as $c) {
                             <option value="">-- Unassigned --</option>
                             <?php foreach ($lecturersList as $lec): ?>
                                 <option value="<?php echo $lec['id']; ?>">
-                                    <?php echo htmlspecialchars($lec['fullName']); ?>
+                                    <?php echo htmlspecialchars($lec['fullName'] . ' (' . $lec['email'] . ')'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

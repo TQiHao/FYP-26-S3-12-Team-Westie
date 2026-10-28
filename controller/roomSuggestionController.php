@@ -276,4 +276,4 @@ function buildReason($room, $requestedCapacity)
     }
     return 'Large room with ' . $diff . ' spare seats.';
 }
-
+?>

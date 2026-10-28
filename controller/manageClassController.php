@@ -29,19 +29,19 @@ class ManageClassController
         return $this->classEntity->getExamsByClassId($classId);
     }
 
-    public function getAllModules()
+    public function getAllModules($universityId)
     {
-        return $this->classEntity->getAllModules();
+        return $this->classEntity->getAllModules($universityId);
     }
 
-    public function getLecturers()
+    public function getLecturers($universityId)
     {
-        return $this->classEntity->getLecturers();
+        return $this->classEntity->getLecturers($universityId);
     }
 
-    public function getStudents()
+    public function getStudents($universityId)
     {
-        return $this->classEntity->getStudents();
+        return $this->classEntity->getStudents($universityId);
     }
 
     public function getUniversityStudentFiles($universityId)
