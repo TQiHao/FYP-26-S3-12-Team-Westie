@@ -264,6 +264,13 @@ $hours = range(8, 22);
             text-align: center !important;
             white-space: nowrap;
         }
+
+        /* Fix for the Student Interaction Search Bar Alignment */
+        .student-interaction-bar {
+            margin: 15px 0 25px 0; /* Remove auto-centering and match left margin */
+            max-width: 100%;       /* Let it span the full width of the container */
+            width: 100%;
+        }
     </style>
 </head>
 

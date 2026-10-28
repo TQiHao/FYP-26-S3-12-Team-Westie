@@ -65,7 +65,6 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
     <nav class="facilities-nav">
         <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="bookFacilityPage.php" class="facilities-tab">Book Facilities</a>
         <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
         <a href="cancelMyBookingPage.php" class="facilities-tab active">Cancel My Booking</a>
     </nav>

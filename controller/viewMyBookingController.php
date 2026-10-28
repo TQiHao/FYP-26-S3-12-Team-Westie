@@ -25,25 +25,26 @@ class ViewMyBookingController
     public function getMyBookings($studentId)
     {
         try {
-            $sql = "SELECT fb.id AS bookingId,
-                           fb.facilityId,
-                           fb.userId,
-                           fb.bookingDate,
-                           fb.startTime,
-                           fb.endTime,
-                           fb.purpose,
-                           fb.status,
-                           fb.cancelledAt,
-                           fb.createdAt,
-                           fb.updatedAt,
-                           f.name AS facilityName,
-                           f.type AS facilityType,
-                           f.location AS facilityLocation,
-                           f.capacity AS facilityCapacity
-                    FROM FacilityBookings fb
-                    INNER JOIN Facilities f ON fb.facilityId = f.id
-                    WHERE fb.userId = ?
-                    ORDER BY fb.bookingDate DESC, fb.startTime DESC";
+            $sql =  "SELECT fb.id AS bookingId,
+                            fb.facilityId,
+                            fb.userId,
+                            fb.bookingDate,
+                            fb.startTime,
+                            fb.endTime,
+                            fb.purpose,
+                            fb.status,
+                            fb.cancelledAt,
+                            fb.createdAt,
+                            fb.updatedAt,
+                            f.name AS facilityName,
+                            f.type AS facilityType,
+                            f.location AS facilityLocation,
+                            f.capacity AS facilityCapacity
+                        FROM FacilityBookings fb
+                        INNER JOIN BookableFacilities bf ON fb.facilityId = bf.id
+                        INNER JOIN Facilities f ON bf.facilityId = f.id
+                        WHERE fb.userId = ?
+                        ORDER BY fb.bookingDate DESC, fb.startTime DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$studentId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);

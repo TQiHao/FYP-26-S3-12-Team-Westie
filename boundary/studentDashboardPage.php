@@ -221,7 +221,7 @@ $fullName = $_SESSION['user_name'];
                 <!-- Study Groups -->
                 <a href="academicsPage.php?tab=interaction" class="dashboard-card">
                     <img src="../images/studyGrp.png" alt="Study Groups" class="card-icon">
-                    <h2>Study Groups</h2>
+                    <h2>Student Interaction</h2>
                     <p><?php echo $groupsJoined . ' Group' . ($groupsJoined === 1 ? '' : 's') . ' joined'; ?></p>
                 </a>
 

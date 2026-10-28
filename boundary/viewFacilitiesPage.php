@@ -21,13 +21,23 @@ if ($facilities !== false && !empty($facilities)) {
     }
 }
 
-// Map type to detail page
+// In viewFacilitiesPage.php
 function getDetailPage($type) {
+    // Map the facility type to the "tab" parameter expected by the Book page
     $map = [
-        'study room' => 'ViewStudyRoomPage.php',
-        'gym'        => 'ViewGymSlotPage.php',
+        'study room' => 'studyroom',
+        'gym'        => 'gym',
     ];
-    return $map[strtolower($type)] ?? 'ViewFacilitiesPage.php';
+    
+    $typeKey = strtolower($type);
+    
+    if (isset($map[$typeKey])) {
+        // Points to BookFacilitiesPage.php with the category pre-selected
+        return 'BookFacilityPage.php?type=' . $map[$typeKey];
+    }
+    
+    // For Lecture Halls / Labs (non-bookable by students), fall back to the view page
+    return 'ViewFacilitiesPage.php'; 
 }
 ?>
 
@@ -84,9 +94,8 @@ function getDetailPage($type) {
     <nav class="facilities-nav">
         <a href="ViewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="BookFacilityPage.php" class="facilities-tab">Book Facilities</a>
         <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
-        <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
+        
     </nav>
 
     <!-- Main Content -->

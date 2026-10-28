@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['cancel_booking'])) {
         $_SESSION['cancel_error'] = "Unable to cancel booking. Please try again later.";
     }
 
-    header("Location: ../boundary/cancelMyBookingPage.php");
+    header("Location: ../boundary/viewMyBookingPage.php");
     exit();
 }
 ?>

@@ -76,7 +76,6 @@ if (isset($_GET['facilityId'])) {
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
         <a href="bookFacilityPagePage.php" class="facilities-tab">Book Facilities</a>
         <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
-        <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
     </nav>
 
     <!-- Main Content -->
@@ -142,7 +141,7 @@ if (isset($_GET['facilityId'])) {
 
                         <form action="../controller/BookGymSlotController.php" method="POST" class="book-form">
 
-                            <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($selectedFacility['facilityId']); ?>">
+                            <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($_GET['facilityId']); ?>">
 
                             <div class="book-form-row">
                                 <div class="form-group">

@@ -24,6 +24,7 @@ class ViewFacilitiesController
                     FROM Facilities
                     WHERE universityId = ?
                       AND status = 'active'
+                      AND type IN ('study room', 'gym')
                     ORDER BY type, name ASC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId]);

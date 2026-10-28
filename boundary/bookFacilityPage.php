@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+$selectedType = $_GET['type'] ?? ''; // 'studyroom' or 'gym'
+
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     $_SESSION['login_error'] = "Session expired. Please log in again.";
     header("Location: loginPage.php");
@@ -12,8 +14,8 @@ require_once "../controller/BookFacilityController.php";
 $controller = new BookFacilityController();
 
 // Load both study rooms and gym slots for the sidebar
-$studyRooms = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'Study Room');
-$gymSlots = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'Gym');
+$studyRooms = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'study room');
+$gymSlots = $controller->getBookableFacilitiesByName($_SESSION['university_id'], 'gym');
 
 // If a facility is selected, load the booking form
 $selectedFacility = null;
@@ -73,18 +75,16 @@ if (isset($_GET['facilityId'])) {
 
     <!-- Facilities Nav Tabs -->
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
+        <a href="ViewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="BookFacilityPage.php" class="facilities-tab active">Book Facilities</a>
         <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
-        <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
     </nav>
 
     <!-- Main Content -->
     <main class="dashboard">
 
         <div class="facility-back-bar facility-back-bar--wide">
-            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+            <a href="ViewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
         </div>
 
         <?php
@@ -109,29 +109,39 @@ if (isset($_GET['facilityId'])) {
                 <aside class="book-sidebar">
 
                     <!-- Study Rooms -->
-                    <h3>Study Rooms</h3>
-                    <?php if ($studyRooms && !empty($studyRooms)): ?>
-                        <?php foreach ($studyRooms as $sr): ?>
-                            <a href="bookFacilityPage.php?facilityId=<?php echo urlencode($sr['facilityId']); ?>"
-                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $sr['facilityId']) ? 'active' : ''; ?>">
-                                <?php echo htmlspecialchars($sr['name']); ?>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="book-empty">No study rooms available.</p>
+                    <?php if ($selectedType === '' || $selectedType === 'studyroom'): ?>
+                        
+                        <h3 style="<?php echo ($selectedType === 'studyroom') ? 'color: #f5c400;' : ''; ?>">Study Rooms</h3>
+                        
+                        <?php if ($studyRooms && !empty($studyRooms)): ?>
+                            <?php foreach ($studyRooms as $sr): ?>
+                                <a href="bookFacilityPage.php?type=studyroom&facilityId=<?php echo urlencode($sr['bookableFacilityId']); ?>"
+                                    class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $sr['bookableFacilityId']) ? 'active' : ''; ?>">
+                                    <?php echo htmlspecialchars($sr['name']); ?>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <p class="book-empty">No study rooms available.</p>
+                        <?php endif; ?>
+
                     <?php endif; ?>
 
                     <!-- Gym Slots -->
-                    <h3>Gym Slots</h3>
-                    <?php if ($gymSlots && !empty($gymSlots)): ?>
+                    <?php if ($selectedType === '' || $selectedType === 'gym'): ?>
+                        
+                        <h3 style="<?php echo ($selectedType === 'gym') ? 'color: #f5c400;' : ''; ?>">Gym Slots</h3>
+                        
+                        <?php if ($gymSlots && !empty($gymSlots)): ?>
                         <?php foreach ($gymSlots as $gs): ?>
-                            <a href="bookFacilityPage.php?facilityId=<?php echo urlencode($gs['facilityId']); ?>"
-                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $gs['facilityId']) ? 'active' : ''; ?>">
+                            <a href="bookFacilityPage.php?type=gym&facilityId=<?php echo urlencode($gs['bookableFacilityId']); ?>"
+                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $gs['bookableFacilityId']) ? 'active' : ''; ?>">
                                 <?php echo htmlspecialchars($gs['name']); ?>
                             </a>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="book-empty">No gym slots available.</p>
+                        <?php else: ?>
+                            <p class="book-empty">No gym slots available.</p>
+                        <?php endif; ?>
+
                     <?php endif; ?>
 
                 </aside>
@@ -149,8 +159,8 @@ if (isset($_GET['facilityId'])) {
 
                         <form action="../controller/BookFacilityController.php" method="POST" class="book-form">
 
-                            <input type="hidden" name="facilityId"
-                                value="<?php echo htmlspecialchars($selectedFacility['facilityId']); ?>">
+                            <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($_GET['facilityId'] ?? ''); ?>">
+                            <input type="hidden" name="type" value="<?php echo htmlspecialchars($selectedType); ?>">
                             <input type="hidden" id="slotDuration"
                                 value="<?php echo (int) ($selectedFacility['slotDuration'] ?? 60); ?>">
 
@@ -174,7 +184,7 @@ if (isset($_GET['facilityId'])) {
 
                             <div class="book-form-actions">
                                 <button type="submit" name="confirm_booking" class="btn-confirm">Confirm Booking</button>
-                                <a href="BookFacilityPage.php" class="btn-cancel">Cancel</a>
+                                <a href="BookFacilityPage.php?type=<?php echo urlencode($selectedType); ?>" class="btn-cancel">Cancel</a>
                             </div>
 
                         </form>

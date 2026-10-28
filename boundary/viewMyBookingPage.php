@@ -65,16 +65,14 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
     <nav class="facilities-nav">
         <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="bookFacilityPage.php" class="facilities-tab">Book Facilities</a>
         <a href="viewMyBookingPage.php" class="facilities-tab active">View My Booking</a>
-        <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
     </nav>
 
     <!-- Main Content -->
     <main class="dashboard">
 
         <div class="facility-back-bar facility-back-bar--list">
-            <a href="studentDashboardPage.php" class="btn-back">&#8592; Back</a>
+            <a href="ViewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
         </div>
         
         <div class="booking-header">
@@ -123,10 +121,20 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
                             </p>
                         </div>
 
-                        <div class="booking-status">
+                        <div class="booking-status" style="display: flex; align-items: center; gap: 15px;">
                             <span class="status-badge <?php echo $statusClass; ?>">
                                 <?php echo $statusLabel; ?>
                             </span>
+
+                            <!-- Add the Cancel button only if the status is confirmed -->
+                            <?php if ($booking['status'] === 'confirmed'): ?>
+                                <form action="../controller/cancelMyBookingController.php" method="POST" style="margin: 0;" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                    <input type="hidden" name="bookingId" value="<?php echo $booking['bookingId']; ?>">
+                                    <button type="submit" name="cancel_booking" class="btn-cancel-booking" style="padding: 6px 12px; font-size: 0.8rem;">
+                                        Cancel Booking
+                                    </button>
+                                </form>
+                            <?php endif; ?>
                         </div>
 
                     </div>

@@ -18,14 +18,20 @@ class BookFacilityController
     }
 
     /**
-     * Get bookable facilities by type/name keyword
+     * Get bookable facilities by facility TYPE (e.g. 'study room', 'gym').
+     * Matching ignores case, spacing, hyphens and underscores, so
+     * 'study Room', 'studyroom', 'Study-Room' and 'study room' all match
+     * the ENUM value 'study room'.
      * @param int $universityId
-     * @param string $keyword
+     * @param string $type
      * @return array|false
      */
-    public function getBookableFacilitiesByName($universityId, $keyword)
+    public function getBookableFacilitiesByName($universityId, $type)
     {
         try {
+            // Normalise input: lowercase, strip everything except letters/digits
+            $normalizedType = preg_replace('/[^a-z0-9]/', '', strtolower($type));
+
             $sql = "SELECT f.id AS facilityId, f.name, f.type, f.location, f.capacity,
                            f.description, bf.id AS bookableFacilityId, bf.slotDuration,
                            bf.openTime, bf.closeTime, bf.status AS bookableStatus
@@ -35,10 +41,10 @@ class BookFacilityController
                       AND f.status = 'active'
                       AND bf.isBookable = TRUE
                       AND bf.status = 'available'
-                      AND f.name LIKE ?
+                      AND REPLACE(REPLACE(REPLACE(LOWER(f.type), ' ', ''), '-', ''), '_', '') = ?
                     ORDER BY f.name ASC";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId, '%' . $keyword . '%']);
+            $stmt->execute([$universityId, $normalizedType]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         } catch (Exception $e) {
@@ -55,11 +61,11 @@ class BookFacilityController
     public function getBookingForm($facilityId)
     {
         try {
-            $sql = "SELECT f.id AS facilityId, f.name, f.type, f.location, f.capacity,
-                           bf.slotDuration, bf.openTime, bf.closeTime
+            $sql = "SELECT bf.id AS bookableFacilityId, f.name, f.type, f.location, f.capacity,
+                        bf.slotDuration, bf.openTime, bf.closeTime
                     FROM Facilities f
                     INNER JOIN BookableFacilities bf ON f.id = bf.facilityId
-                    WHERE f.id = ?
+                    WHERE bf.id = ?
                       AND bf.isBookable = TRUE
                       AND bf.status = 'available'";
             $stmt = $this->db->prepare($sql);
@@ -107,11 +113,12 @@ class BookFacilityController
      * @param string $purpose
      * @return bool
      */
-    public function confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
+        public function confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
     {
         try {
+            // $facilityId is now the BookableFacilities.id
             $facilityStmt = $this->db->prepare(
-                "SELECT bf.slotDuration FROM BookableFacilities bf WHERE bf.facilityId = ? AND bf.isBookable = TRUE LIMIT 1"
+                "SELECT slotDuration FROM BookableFacilities WHERE id = ? AND isBookable = TRUE LIMIT 1"
             );
             $facilityStmt->execute([$facilityId]);
             $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
@@ -140,6 +147,7 @@ class BookFacilityController
                 return null;
             }
 
+            // INSERT now uses the correct BookableFacilities.id
             $sql = "INSERT INTO FacilityBookings
                 (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
@@ -178,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
         $_SESSION['booking_error'] = "Unable to process booking. Please try again later.";
     }
 
-    header("Location: ../boundary/BookFacilityPage.php");
+    header("Location: ../boundary/BookFacilityPage.php?type=" . urlencode($_POST['type'] ?? '') . "&facilityId=" . urlencode($facilityId));
     exit();
 }
 ?>

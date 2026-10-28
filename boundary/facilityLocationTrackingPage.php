@@ -247,9 +247,8 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
     <nav class="facilities-nav">
         <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
         <a href="FacilityLocationTrackingPage.php" class="facilities-tab active">Facility Location Tracking</a>
-        <a href="BookFacilityPage.php" class="facilities-tab">Book Facilities</a>
         <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
-        <a href="CancelMyBookingPage.php" class="facilities-tab">Cancel My Booking</a>
+
     </nav>
     <?php endif; ?>
 
