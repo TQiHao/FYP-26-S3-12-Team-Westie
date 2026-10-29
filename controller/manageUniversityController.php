@@ -1,13 +1,17 @@
 <?php
 
 require_once "../database/database.php";
+require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+if (
+    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
+    ($_SESSION['user_role'] ?? '') !== 'system_admin'
+) {
+    header("Location: ../boundary/loginPage.php");
     exit();
 }
 
@@ -90,6 +94,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
 
         if ($result === true) {
             $_SESSION['university_action_success'] = "University suspended successfully.";
+            SystemLog::record('university', 'warning', 'University Suspended',
+                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was suspended. Reason: ' . substr(trim($reason), 0, 200));
+        } elseif ($result === "missing_reason") {
         } elseif ($result === "missing_reason") {
             $_SESSION['university_action_error'] = "Please provide a reason for suspending this university.";
         } else {
@@ -102,6 +109,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
 
         if ($result === true) {
             $_SESSION['university_action_success'] = "University reactivated successfully.";
+            SystemLog::record('university', 'info', 'University Reactivated',
+                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was reactivated.');
         } else {
             $_SESSION['university_action_error'] = "Unable to reactivate this university. Please try again.";
         }

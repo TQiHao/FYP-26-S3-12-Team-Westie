@@ -595,6 +595,17 @@ CREATE TABLE PasswordResetTokens (
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
 
+-- System Admin Password Reset Token Table
+CREATE TABLE IF NOT EXISTS SystemAdminResetTokens (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    adminId INT NOT NULL,
+    tokenHash CHAR(64) NOT NULL UNIQUE,
+    expiresAt DATETIME NOT NULL,
+    isUsed BOOLEAN DEFAULT FALSE,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (adminId) REFERENCES SystemAdmins(id) ON DELETE CASCADE
+);
+
 -- Student Table for Student List
 CREATE TABLE Students (
     id INT PRIMARY KEY AUTO_INCREMENT,

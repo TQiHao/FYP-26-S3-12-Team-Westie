@@ -1,13 +1,17 @@
 <?php
 
 require_once "../database/database.php";
+require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+if (
+    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
+    ($_SESSION['user_role'] ?? '') !== 'system_admin'
+) {
+    header("Location: ../boundary/loginPage.php");
     exit();
 }
 
@@ -136,28 +140,32 @@ class ViewRegistrationController
 
 // Handle POST actions (Approve / Reject)
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_POST['registration_id'])) {
- 
+
     $controller = new ViewRegistrationController();
     $registrationId = (int) $_POST['registration_id'];
     $reviewerId = $_SESSION['user_id'];
- 
+
     if ($_POST['action'] === 'approve') {
- 
+
         $result = $controller->approveRegistration($registrationId, $reviewerId);
- 
+
         if ($result === true) {
             $_SESSION['registration_review_success'] = "University registration approved.";
+            SystemLog::record('university', 'info', 'Registration Approved',
+                'University registration REG-' . str_pad($registrationId, 4, '0', STR_PAD_LEFT) . ' was approved.');
         } else {
             $_SESSION['registration_review_error'] = "Unable to approve this registration. Please try again.";
         }
- 
+
     } elseif ($_POST['action'] === 'reject') {
- 
+
         $reason = $_POST['rejection_reason'] ?? '';
         $result = $controller->rejectRegistration($registrationId, $reviewerId, $reason);
- 
+
         if ($result === true) {
             $_SESSION['registration_review_success'] = "University registration rejected.";
+            SystemLog::record('university', 'info', 'Registration Rejected',
+                'University registration REG-' . str_pad($registrationId, 4, '0', STR_PAD_LEFT) . ' was rejected.');
         } elseif ($result === "missing_reason") {
             $_SESSION['registration_review_error'] = "Please provide a reason for rejecting this registration.";
             header("Location: ../boundary/viewRegistrationPage.php?id=" . $registrationId);
@@ -166,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
             $_SESSION['registration_review_error'] = "Unable to reject this registration. Please try again.";
         }
     }
- 
+
     header("Location: ../boundary/manageUniversityPage.php");
     exit();
 }

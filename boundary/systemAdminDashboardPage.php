@@ -1,9 +1,14 @@
 <?php
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+if (
+    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
+    ($_SESSION['user_role'] ?? '') !== 'system_admin'
+) {
+    header("Location: loginPage.php");
     exit();
 }
 ?>
@@ -49,13 +54,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
                     <a href="systemAdminProfilePage.php">Profile</a>
-                    <a href="ManageUniversityPage.php">Manage Universities</a>
+                    <a href="manageUniversityPage.php">Universities</a>
                     <a href="manageLandingPage.php">Manage Landing Page</a>
-                    <a href="UpdateAIModelPage.php">Update AI Model</a>
-                    <a href="SystemOperationPage.php">System Operations</a>
+                    <a href="updateAIModelPage.php">Update AI Model</a>
+                    <a href="systemOperationPage.php">System Operations</a>
+                    <a href="reviewFeedbackPage.php">Review Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
-
+                
             </div>
 
         </div>
@@ -72,27 +78,33 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             <div class="dashboard-grid system-admin-dashboard">
 
                 <!-- Manage University -->
-                <a href="ManageUniversityPage.php" class="dashboard-card">
+                <a href="manageUniversityPage.php" class="dashboard-card">
                     <img src="../images/manageUni.png" alt="Manage University" class="card-icon system-admin-dashboard">
                     <h2>Manage University</h2>
                 </a>
 
                 <!-- Manage Landing Page -->
-                <a href="ManageLandingPage.php" class="dashboard-card">
+                <a href="manageLandingPage.php" class="dashboard-card">
                     <img src="../images/manageLandingPage.png" alt="Manage Landing Page" class="card-icon system-admin-dashboard">
                     <h2>Manage Landing Page</h2>
                 </a>
 
                 <!-- Update AI Model -->
-                <a href="UpdateAIModelPage.php" class="dashboard-card">
+                <a href="updateAIModelPage.php" class="dashboard-card">
                     <img src="../images/updateAI.png" alt="Update AI Model" class="card-icon system-admin-dashboard">
                     <h2>Update AI Model</h2>
                 </a>
 
                 <!-- System Operation -->
-                <a href="SystemOperationPage.php" class="dashboard-card">
+                <a href="systemOperationPage.php" class="dashboard-card">
                     <img src="../images/SystemOps.png" alt="System Operation" class="card-icon system-admin-dashboard">
                     <h2>System Operation</h2>
+                </a>
+
+                <!-- Review Feedback -->
+                <a href="reviewFeedbackPage.php" class="dashboard-card">
+                    <img src="../images/feedback.png" alt="Review Feedback" class="card-icon system-admin-dashboard">
+                    <h2>Review Feedback</h2>
                 </a>
 
             </div>

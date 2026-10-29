@@ -22,4 +22,18 @@ class Database
             die("Database connection failed: " . $e->getMessage());
         }
     }
+
+    public function getConfig()
+    {
+        $parts = explode(':', $this->host, 2);
+        $host = $parts[0] === 'localhost' ? '127.0.0.1' : $parts[0];
+
+        return [
+            'host'     => $host,
+            'port'     => $parts[1] ?? '3306',
+            'database' => $this->dbname,
+            'username' => $this->username,
+            'password' => $this->password,
+        ];
+    }
 }

@@ -15,3 +15,6 @@ database/database.php
 
 # User-generated uploads (floorplans, posters, campus maps)
 uploads/
+
+# Database backups (contain real data, created by Backup / Restore)
+backups/
