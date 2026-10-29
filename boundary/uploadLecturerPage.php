@@ -287,7 +287,7 @@ if ($universityId !== null) {
         <div class="upload-lecturer-container">
 
             <a
-                href="UploadListPage.php?type=lecturer"
+                href="uploadListPage.php?type=lecturer"
                 class="upload-lecturer-button"
             >
                 Upload Lecturer

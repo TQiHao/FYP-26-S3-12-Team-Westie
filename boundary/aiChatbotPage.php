@@ -365,7 +365,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="anageProfilePage.php">Manage Profile</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
                     <?php if ($userRole === 'lecturer'): ?>
                         <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>

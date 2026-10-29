@@ -235,7 +235,7 @@ $fullName = $_SESSION['user_name'];
 
 
                 <!-- AI Chatbot -->
-                <a href="AIChatbotPage.php" class="dashboard-card">
+                <a href="aiChatbotPage.php" class="dashboard-card">
                     <img src="../images/aiChatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>
