@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/fAQ.php";
+require_once "../entity/faq.php";
 require_once "../entity/chatHistory.php";
 require_once "../entity/chatSession.php";
 
@@ -797,7 +797,7 @@ class AIChatbotController
                 'source' => 'faq',
                 'action' => [
                     'label' => 'View All Notifications',
-                    'url' => 'NotificationPage.php'
+                    'url' => 'notificationPage.php'
                 ]
             ];
         }
@@ -808,7 +808,7 @@ class AIChatbotController
             'notifications' => $notifications,
             'action' => [
                 'label' => 'View All Notifications',
-                'url' => 'NotificationPage.php'
+                'url' => 'notificationPage.php'
             ]
         ];
     }
@@ -868,7 +868,7 @@ class AIChatbotController
             'source' => 'faq',
             'action' => [
                 'label' => 'Manage Profile',
-                'url' => 'ManageProfilePage.php'
+                'url' => 'manageProfilePage.php'
             ]
         ];
     }
