@@ -1,5 +1,5 @@
 <?php
-require_once '../controller/ViewLandingPageController.php';
+require_once '../controller/viewLandingPageController.php';
 
 $controller = new ViewLandingPageController();
 

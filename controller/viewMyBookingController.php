@@ -4,8 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/FacilityBooking.php";
-require_once "../entity/BookableFacilities.php";
+require_once "../entity/facilityBooking.php";
+require_once "../entity/bookableFacilities.php";
 
 class ViewMyBookingController
 {

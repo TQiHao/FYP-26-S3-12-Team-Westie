@@ -6,7 +6,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/ViewGymSlotController.php";
+require_once "../controller/viewGymSlotController.php";
 
 $controller = new ViewGymSlotController();
 $gymSlots = $controller->getAvailableGymSlots($_SESSION['university_id']);
@@ -39,7 +39,7 @@ $gymSlots = $controller->getAvailableGymSlots($_SESSION['university_id']);
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -50,10 +50,10 @@ $gymSlots = $controller->getAvailableGymSlots($_SESSION['university_id']);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="academicsPage.php">Academics</a>
+                    <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>
@@ -67,7 +67,7 @@ $gymSlots = $controller->getAvailableGymSlots($_SESSION['university_id']);
         <!-- Back Button + Date/Time Filters (same row) -->
         <div class="studyroom-top-bar">
 
-            <a href="ViewFacilitiesPage.php" class="studyroom-back-btn">&#8592; Back</a>
+            <a href="viewFacilitiesPage.php" class="studyroom-back-btn">&#8592; Back</a>
 
             <div class="facility-filters">
                 <div class="filter-item">

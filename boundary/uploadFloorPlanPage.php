@@ -614,7 +614,7 @@ $campusMap = $controller->getCampusMap($universityId);
     <main class="campus-floor-plan-page">
 
         <div class="profile-header">
-            <a href="ManageUniversityInformationPage.php" class="btn-back">&#8592; Back</a>
+            <a href="manageUniversityInformationPage.php" class="btn-back">&#8592; Back</a>
         </div>
 
         <section class="page-title-section">

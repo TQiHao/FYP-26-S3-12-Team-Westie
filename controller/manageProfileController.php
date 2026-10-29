@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once "../database/database.php";
 require_once "../entity/users.php";
-require_once "../entity/UserProfiles.php";
+require_once "../entity/userProfiles.php";
 
 class ManageProfileController
 {

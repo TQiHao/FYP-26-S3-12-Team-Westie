@@ -11,7 +11,7 @@ $userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student')
 $isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
 $dashboardPage = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 
-require_once __DIR__ . '/../controller/FacilityLocationTrackingController.php';
+require_once __DIR__ . '/../controller/facilityLocationTrackingController.php';
 require_once __DIR__ . '/../database/database.php';
 
 $controller   = new FacilityLocationTrackingController();
@@ -245,9 +245,9 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
     <?php if (!$isLecturer): ?>
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
-        <a href="FacilityLocationTrackingPage.php" class="facilities-tab active">Facility Location Tracking</a>
-        <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
+        <a href="viewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
+        <a href="facilityLocationTrackingPage.php" class="facilities-tab active">Facility Location Tracking</a>
+        <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
 
     </nav>
     <?php endif; ?>
@@ -272,7 +272,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
             <?php else: ?>
 
-                <form method="GET" action="FacilityLocationTrackingPage.php" class="flt-form">
+                <form method="GET" action="facilityLocationTrackingPage.php" class="flt-form">
                         <?php if (count($buildingsWithNodes) > 1): ?>
                         <div class="flt-form-row">
                             <div class="flt-form-col">

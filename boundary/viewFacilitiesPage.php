@@ -7,7 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/ViewFacilitiesController.php";
+require_once "../controller/viewFacilitiesController.php";
 
 $controller = new ViewFacilitiesController();
 $facilities = $controller->getAvailableFacilities($_SESSION['university_id']);
@@ -68,7 +68,7 @@ function getDetailPage($type) {
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -79,10 +79,10 @@ function getDetailPage($type) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="academicsPage.php">Academics</a>
+                    <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>
@@ -92,9 +92,9 @@ function getDetailPage($type) {
 
     <!-- Facilities Nav Tabs -->
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
-        <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
+        <a href="viewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
+        <a href="facilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
+        <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
         
     </nav>
 

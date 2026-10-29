@@ -157,8 +157,8 @@ unset($_SESSION['search_keyword']);
                         <a href="viewEventsPage.php">University Campus Events</a>
                         <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
-                        <a href="AIChatbotPage.php">AI Chatbot</a>
-                        <a href="AcademicsPage.php">Academics</a>
+                        <a href="aiChatbotPage.php">AI Chatbot</a>
+                        <a href="academicsPage.php">Academics</a>
                         <a href="viewFacilitiesPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
@@ -241,7 +241,7 @@ unset($_SESSION['search_keyword']);
                                 onclick='openEventView(<?php echo htmlspecialchars(json_encode($event), ENT_QUOTES); ?>)'>
                                 View
                             </button>
-                            <a href="FacilityLocationTrackingPage.php?facility=<?php echo urlencode($event['facilityId']); ?>"
+                            <a href="facilityLocationTrackingPage.php?facility=<?php echo urlencode($event['facilityId']); ?>"
                             class="btn-event-nav">
                                 Navigate
                             </a>

@@ -163,6 +163,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "Unable to submit the registration request.";
     }
 
-    header("Location: ../boundary/UniversityRegistrationPage.php");
+    header("Location: ../boundary/universityRegistrationPage.php");
     exit();
 }

@@ -10,7 +10,7 @@ if (
     exit();
 }
 
-require_once "../controller/ManageUniversityEventController.php";
+require_once "../controller/manageUniversityEventController.php";
 
 $universityId =
     $_SESSION['university_id'] ?? null;
@@ -627,11 +627,11 @@ $status =
                 class="dropdown-menu"
             >
 
-                <a href="UniversityAdminDashboardPage.php">
+                <a href="universityAdminDashboardPage.php">
                     Dashboard
                 </a>
 
-                <a href="ManageUniversityEventsPage.php">
+                <a href="manageUniversityEventsPage.php">
                     Manage University Events
                 </a>
 
@@ -655,7 +655,7 @@ $status =
     <div class="profile-header">
 
         <a
-            href="ViewUniversityEventPage.php"
+            href="viewUniversityEventPage.php"
             class="btn-back"
         >
             &#8592; Back
@@ -990,7 +990,7 @@ $status =
         </h2>
 
         <form
-            action="../controller/ManageUniversityEventController.php"
+            action="../controller/manageUniversityEventController.php"
             method="POST"
             class="update-event-form"
         >
@@ -1194,7 +1194,7 @@ $status =
             </button>
 
             <form
-                action="../controller/ManageUniversityEventController.php"
+                action="../controller/manageUniversityEventController.php"
                 method="POST"
             >
 

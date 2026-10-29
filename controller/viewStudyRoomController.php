@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/Facilities.php";
+require_once "../entity/facilities.php";
 
 class ViewStudyRoomController
 {

@@ -75,16 +75,16 @@ if (isset($_GET['facilityId'])) {
 
     <!-- Facilities Nav Tabs -->
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
-        <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
+        <a href="viewFacilitiesPage.php" class="facilities-tab active">View Available Facilities</a>
+        <a href="facilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
+        <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
     </nav>
 
     <!-- Main Content -->
     <main class="dashboard">
 
         <div class="facility-back-bar facility-back-bar--wide">
-            <a href="ViewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
+            <a href="viewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
         </div>
 
         <?php
@@ -157,7 +157,7 @@ if (isset($_GET['facilityId'])) {
                             · Capacity <?php echo htmlspecialchars($selectedFacility['capacity'] ?? ''); ?>
                         </p>
 
-                        <form action="../controller/BookFacilityController.php" method="POST" class="book-form">
+                        <form action="../controller/bookFacilityController.php" method="POST" class="book-form">
 
                             <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($_GET['facilityId'] ?? ''); ?>">
                             <input type="hidden" name="type" value="<?php echo htmlspecialchars($selectedType); ?>">
@@ -184,7 +184,7 @@ if (isset($_GET['facilityId'])) {
 
                             <div class="book-form-actions">
                                 <button type="submit" name="confirm_booking" class="btn-confirm">Confirm Booking</button>
-                                <a href="BookFacilityPage.php?type=<?php echo urlencode($selectedType); ?>" class="btn-cancel">Cancel</a>
+                                <a href="bookFacilityPage.php?type=<?php echo urlencode($selectedType); ?>" class="btn-cancel">Cancel</a>
                             </div>
 
                         </form>

@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/StudyGroup.php";
+require_once "../entity/studyGroup.php";
 
 class StudentInteractionController
 {
@@ -71,7 +71,7 @@ class StudentInteractionController
         $isMember = $this->studyGroupEntity->isMember($groupId, $studentId);
         $isAdmin  = ((int)$group['adminId'] === (int)$studentId);
 
-        require_once "../entity/StudyGroupMember.php";
+        require_once "../entity/studyGroupMember.php";
         $memberEntity = new StudyGroupMember(null, null, null, null, null, null, $this->db);
         $members = $memberEntity->getMembersByGroupId($groupId);
         if ($members === false) return false;
@@ -115,7 +115,7 @@ class StudentInteractionController
         }
 
         // 4. Join the group immediately
-        require_once "../entity/StudyGroupMember.php";
+        require_once "../entity/studyGroupMember.php";
         $memberEntity = new StudyGroupMember(null, null, null, null, null, null, $this->db);
 
         if ($memberEntity->joinGroup($groupId, $studentId)) {

@@ -7,7 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/ManageProfileController.php";
+require_once "../controller/manageProfileController.php";
 
 $controller = new ManageProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
@@ -54,7 +54,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -65,16 +65,16 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
 
                     <?php if ($userRole === 'lecturer'): ?>
-                        <a href="TeachingPage.php">Teaching</a>
+                        <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
-                        <a href="SubmitFeedbackPage.php">Submit Feedback</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
-                        <a href="AIChatbotPage.php">AI Chatbot</a>
-                        <a href="AcademicsPage.php">Academics</a>
-                        <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                        <a href="aiChatbotPage.php">AI Chatbot</a>
+                        <a href="academicsPage.php">Academics</a>
+                        <a href="facilitiesBookingPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
@@ -106,7 +106,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
 
                 <h2 class="section-label">My Profile</h2>
 
-                <a href="UpdateProfilePage.php" class="btn-update">Update</a>
+                <a href="updateProfilePage.php" class="btn-update">Update</a>
             </div>
 
             <div class="profile-view">

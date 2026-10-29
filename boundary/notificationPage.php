@@ -7,7 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/NotificationController.php";
+require_once "../controller/notificationController.php";
 
 $controller = new NotificationController();
 $userId = $_SESSION['user_id'] ?? null;

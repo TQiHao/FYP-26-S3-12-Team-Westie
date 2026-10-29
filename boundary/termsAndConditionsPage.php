@@ -35,7 +35,7 @@ session_start();
 
         <div class="dashboard-header-right">
             <?php if (isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true): ?>
-                <a href="NotificationPage.php" class="header-icon">
+                <a href="notificationPage.php" class="header-icon">
                     <img src="../images/notification.png" alt="Notifications">
                 </a>
             <?php else: ?>

@@ -151,7 +151,7 @@ if ($universityId !== null) {
         <div class="profile-header">
 
             <a
-                href="ManageUniversityInformationPage.php"
+                href="manageUniversityInformationPage.php"
                 class="btn-back"
             >
                 &#8592; Back

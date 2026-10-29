@@ -198,7 +198,7 @@ if ($universityId !== null) {
                         </span>
 
                         <a
-                            href="UploadProgrammeListPage.php?facultyId=<?php echo urlencode($faculty['id']); ?>"
+                            href="uploadProgrammeListPage.php?facultyId=<?php echo urlencode($faculty['id']); ?>"
                             class="select-button"
                         >
                             Select

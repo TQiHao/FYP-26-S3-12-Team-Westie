@@ -72,10 +72,10 @@ if (isset($_GET['facilityId'])) {
 
     <!-- Facilities Nav Tabs -->
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
-        <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
+        <a href="viewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
+        <a href="facilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
         <a href="bookFacilityPagePage.php" class="facilities-tab">Book Facilities</a>
-        <a href="ViewMyBookingPage.php" class="facilities-tab">View My Booking</a>
+        <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
     </nav>
 
     <!-- Main Content -->
@@ -117,7 +117,7 @@ if (isset($_GET['facilityId'])) {
                     <h3>Gym Slots</h3>
                     <?php if ($gymSlots && !empty($gymSlots)): ?>
                         <?php foreach ($gymSlots as $gs): ?>
-                            <a href="BookGymSlotPage.php?facilityId=<?php echo urlencode($gs['facilityId']); ?>"
+                            <a href="bookGymSlotPage.php?facilityId=<?php echo urlencode($gs['facilityId']); ?>"
                                class="book-sidebar-item <?php echo (isset($_GET['facilityId']) && $_GET['facilityId'] == $gs['facilityId']) ? 'active' : ''; ?>">
                                 <?php echo htmlspecialchars($gs['name']); ?>
                             </a>
@@ -139,7 +139,7 @@ if (isset($_GET['facilityId'])) {
                             · Capacity <?php echo htmlspecialchars($selectedFacility['capacity'] ?? ''); ?>
                         </p>
 
-                        <form action="../controller/BookGymSlotController.php" method="POST" class="book-form">
+                        <form action="../controller/bookGymSlotController.php" method="POST" class="book-form">
 
                             <input type="hidden" name="facilityId" value="<?php echo htmlspecialchars($_GET['facilityId']); ?>">
 
@@ -163,7 +163,7 @@ if (isset($_GET['facilityId'])) {
 
                             <div class="book-form-actions">
                                 <button type="submit" name="confirm_booking" class="btn-confirm">Confirm Booking</button>
-                                <a href="BookGymSlotPage.php" class="btn-cancel">Cancel</a>
+                                <a href="bookGymSlotPage.php" class="btn-cancel">Cancel</a>
                             </div>
 
                         </form>

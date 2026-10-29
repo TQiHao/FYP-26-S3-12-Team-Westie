@@ -82,7 +82,7 @@ $hours = range(8, 22); // 8am to 10pm
     <main class="dashboard">
 
         <div class="profile-header">
-            <a href="TeachingPage.php" class="btn-back">&#8592; Back</a>
+            <a href="teachingPage.php" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Personal Timetable</h2>
             <div></div>
         </div>

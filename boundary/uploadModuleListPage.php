@@ -27,7 +27,7 @@ if (
     $facultyId <= 0 ||
     $universityId === null
 ) {
-    header("Location: UploadFacultyListPage.php");
+    header("Location: uploadFacultyListPage.php");
     exit();
 }
 
@@ -43,7 +43,7 @@ $programme = $controller->getProgrammeById(
 // Check whether programme exists
 if ($programme === false) {
     header(
-        "Location: UploadProgrammeListPage.php?facultyId="
+        "Location: uploadProgrammeListPage.php?facultyId="
         . urlencode($facultyId)
     );
     exit();
@@ -58,7 +58,7 @@ $faculty = $controller->getFacultyById(
 // Check whether faculty exists
 if ($faculty === false) {
     header(
-        "Location: UploadFacultyListPage.php"
+        "Location: uploadFacultyListPage.php"
     );
     exit();
 }
@@ -197,7 +197,7 @@ unset($_SESSION['upload_error']);
         <div class="profile-header">
 
             <a
-                href="UploadProgrammeListPage.php?facultyId=<?php echo urlencode($facultyId); ?>"
+                href="uploadProgrammeListPage.php?facultyId=<?php echo urlencode($facultyId); ?>"
                 class="btn-back"
             >
                 &#8592; Back
@@ -304,7 +304,7 @@ unset($_SESSION['upload_error']);
         <!-- Upload Module -->
         <div class="upload-module-container">
 
-            <a href="UploadListPage.php?type=module&facultyId=<?php echo urlencode($facultyId); ?>&programmeId=<?php echo urlencode($programmeId); ?>" class="upload-module-button">
+            <a href="uploadListPage.php?type=module&facultyId=<?php echo urlencode($facultyId); ?>&programmeId=<?php echo urlencode($programmeId); ?>" class="upload-module-button">
                 Upload Module
             </a>
 

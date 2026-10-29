@@ -6,14 +6,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/UpdateProfileController.php";
+require_once "../controller/updateProfileController.php";
 
 $controller = new UpdateProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
 
 if (!$user) {
     $_SESSION['profile_error'] = "Unable to load profile information. Please try again.";
-    header("Location: ManageProfilePage.php");
+    header("Location: manageProfilePage.php");
     exit();
 }
 ?>
@@ -43,7 +43,7 @@ if (!$user) {
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -54,10 +54,10 @@ if (!$user) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="academicsPage.php">Academics</a>
+                    <a href="facilitiesBookingPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>
@@ -77,10 +77,10 @@ if (!$user) {
 
         <div class="profile-header">
             <h2 class="section-label">Update Profile</h2>
-            <a href="ManageProfilePage.php" class="btn-secondary">Cancel</a>
+            <a href="manageProfilePage.php" class="btn-secondary">Cancel</a>
         </div>
 
-        <form action="../controller/UpdateProfileController.php" method="POST" class="profile-form">
+        <form action="../controller/updateProfileController.php" method="POST" class="profile-form">
 
             <div class="form-group">
                 <label>Email address (cannot be changed)</label>

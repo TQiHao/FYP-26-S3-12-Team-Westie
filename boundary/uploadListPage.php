@@ -74,7 +74,7 @@ switch ($type) {
         break;
 
     default:
-        header("Location: ManageUniversityInformationPage.php");
+        header("Location: manageUniversityInformationPage.php");
         exit();
 }
 

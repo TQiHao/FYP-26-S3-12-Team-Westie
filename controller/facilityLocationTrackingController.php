@@ -4,8 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../entity/NavigationNode.php';
-require_once __DIR__ . '/../entity/NavigationEdge.php';
+require_once __DIR__ . '/../entity/navigationNode.php';
+require_once __DIR__ . '/../entity/navigationEdge.php';
 
 class FacilityLocationTrackingController
 {

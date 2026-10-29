@@ -157,7 +157,7 @@ if ($universityId !== null) {
         <!-- Back -->
         <div class="profile-header">
 
-            <a href="ManageUniversityInformationPage.php" class="btn-back">
+            <a href="manageUniversityInformationPage.php" class="btn-back">
                 &#8592; Back
             </a>
 
@@ -271,7 +271,7 @@ if ($universityId !== null) {
         <!-- Upload Facility -->
         <div class="upload-facility-container">
 
-            <a href="UploadListPage.php?type=facility" class="upload-facility-button">
+            <a href="uploadListPage.php?type=facility" class="upload-facility-button">
                 Upload Facility
             </a>
 

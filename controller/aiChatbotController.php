@@ -4,9 +4,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/FAQ.php";
-require_once "../entity/ChatHistory.php";
-require_once "../entity/ChatSession.php";
+require_once "../entity/fAQ.php";
+require_once "../entity/chatHistory.php";
+require_once "../entity/chatSession.php";
 
 class AIChatbotController
 {
@@ -927,7 +927,7 @@ class AIChatbotController
             'source' => 'faq',
             'action' => [
                 'label' => 'Log Out',
-                'url' => '../controller/logoutController.php'
+                'url' => '../controller/logOutController.php'
             ]
         ];
     }

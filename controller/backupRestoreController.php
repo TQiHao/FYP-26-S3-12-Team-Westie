@@ -11,7 +11,7 @@ if (
     !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
     ($_SESSION['user_role'] ?? '') !== 'system_admin'
 ) {
-    header("Location: ../boundary/LoginPage.php");
+    header("Location: ../boundary/loginPage.php");
     exit();
 }
 

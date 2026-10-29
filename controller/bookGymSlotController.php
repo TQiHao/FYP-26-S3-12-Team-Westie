@@ -4,8 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../database/database.php";
-require_once "../entity/BookableFacilities.php";
-require_once "../entity/FacilityBooking.php";
+require_once "../entity/bookableFacilities.php";
+require_once "../entity/facilityBooking.php";
 
 class BookGymSlotController
 {
@@ -150,7 +150,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
         $_SESSION['booking_error'] = "Unable to process booking. Please try again later.";
     }
 
-    header("Location: ../boundary/BookGymSlotPage.php");
+    header("Location: ../boundary/bookGymSlotPage.php");
     exit();
 }
 ?>

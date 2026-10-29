@@ -6,7 +6,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/ManageClassController.php";
+require_once "../controller/manageClassController.php";
 
 $controller = new ManageClassController();
 $activeClasses = $controller->getClasses('', '', '', 'active');
@@ -83,7 +83,7 @@ $activeClassCount = is_array($activeClasses) ? count($activeClasses) : 0;
                 </a>
 
                 <!-- AI Chatbot -->
-                <a href="AIChatbotPage.php" class="dashboard-card">
+                <a href="aiChatbotPage.php" class="dashboard-card">
                     <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>

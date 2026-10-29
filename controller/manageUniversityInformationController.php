@@ -13,8 +13,8 @@ require_once "../entity/students.php";
 require_once "../entity/floorPlans.php";
 require_once "../entity/campusBuildings.php";
 require_once "../entity/campusFloors.php";
-require_once "../entity/NavigationNode.php";
-require_once "../entity/NavigationEdge.php";
+require_once "../entity/navigationNode.php";
+require_once "../entity/navigationEdge.php";
 
 class ManageUniversityInformationController
 {
@@ -1391,7 +1391,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=faculty");
+        header("Location: ../boundary/uploadListPage.php?type=faculty");
         exit();
     }
 
@@ -1399,11 +1399,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($result === true) {
         $_SESSION['upload_success'] = "Faculty list uploaded successfully.";
-        header("Location: ../boundary/UploadFacultyListPage.php");
+        header("Location: ../boundary/uploadFacultyListPage.php");
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=faculty");
+        header("Location: ../boundary/uploadListPage.php?type=faculty");
         exit();
     }
 }
@@ -1418,13 +1418,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=programme&facultyId=" . urlencode($facultyId));
+        header("Location: ../boundary/uploadListPage.php?type=programme&facultyId=" . urlencode($facultyId));
         exit();
     }
 
     if ($facultyId === null || $facultyId <= 0) {
         $_SESSION['upload_error'] = "Unable to identify the selected faculty.";
-        header("Location: ../boundary/UploadFacultyListPage.php");
+        header("Location: ../boundary/uploadFacultyListPage.php");
         exit();
     }
 
@@ -1432,7 +1432,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($faculty === false) {
         $_SESSION['upload_error'] = "Invalid faculty selected.";
-        header("Location: ../boundary/UploadFacultyListPage.php");
+        header("Location: ../boundary/uploadFacultyListPage.php");
         exit();
     }
 
@@ -1440,11 +1440,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($result === true) {
         $_SESSION['upload_success'] = "Programme list uploaded successfully.";
-        header("Location: ../boundary/UploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
+        header("Location: ../boundary/uploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=programme&facultyId=" . urlencode($facultyId));
+        header("Location: ../boundary/uploadListPage.php?type=programme&facultyId=" . urlencode($facultyId));
         exit();
     }
 }
@@ -1460,19 +1460,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=module&facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
+        header("Location: ../boundary/uploadListPage.php?type=module&facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
         exit();
     }
 
     if ($facultyId === null || $facultyId <= 0) {
         $_SESSION['upload_error'] = "Unable to identify the selected faculty.";
-        header("Location: ../boundary/UploadFacultyListPage.php");
+        header("Location: ../boundary/uploadFacultyListPage.php");
         exit();
     }
 
     if ($programmeId === null || $programmeId <= 0) {
         $_SESSION['upload_error'] = "Unable to identify the selected programme.";
-        header("Location: ../boundary/UploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
+        header("Location: ../boundary/uploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
         exit();
     }
 
@@ -1480,7 +1480,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($programme === false) {
         $_SESSION['upload_error'] = "Invalid programme selected.";
-        header("Location: ../boundary/UploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
+        header("Location: ../boundary/uploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
         exit();
     }
 
@@ -1488,11 +1488,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($result === true) {
         $_SESSION['upload_success'] = "Module list uploaded successfully.";
-        header("Location: ../boundary/UploadModuleListPage.php?facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
+        header("Location: ../boundary/uploadModuleListPage.php?facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=module&facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
+        header("Location: ../boundary/uploadListPage.php?type=module&facultyId=" . urlencode($facultyId) . "&programmeId=" . urlencode($programmeId));
         exit();
     }
 }
@@ -1506,7 +1506,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=facility");
+        header("Location: ../boundary/uploadListPage.php?type=facility");
         exit();
     }
 
@@ -1514,11 +1514,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($result === true) {
         $_SESSION['upload_success'] = "Facility list uploaded successfully.";
-        header("Location: ../boundary/UploadFacilityListPage.php");
+        header("Location: ../boundary/uploadFacilityListPage.php");
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=facility");
+        header("Location: ../boundary/uploadListPage.php?type=facility");
         exit();
     }
 }
@@ -1532,7 +1532,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=courseCoordinator");
+        header("Location: ../boundary/uploadListPage.php?type=courseCoordinator");
         exit();
     }
 
@@ -1544,7 +1544,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=courseCoordinator");
+        header("Location: ../boundary/uploadListPage.php?type=courseCoordinator");
         exit();
     }
 }
@@ -1558,7 +1558,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=lecturer");
+        header("Location: ../boundary/uploadListPage.php?type=lecturer");
         exit();
     }
 
@@ -1570,7 +1570,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
         exit();
     } else {
         $_SESSION['upload_error'] = $result;
-        header("Location: ../boundary/UploadListPage.php?type=lecturer");
+        header("Location: ../boundary/uploadListPage.php?type=lecturer");
         exit();
     }
 }
@@ -1584,7 +1584,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     if ($universityId === null) {
         $_SESSION['upload_error'] = "Unable to identify your university.";
-        header("Location: ../boundary/UploadListPage.php?type=student");
+        header("Location: ../boundary/uploadListPage.php?type=student");
         exit();
     }
 
@@ -1597,7 +1597,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
     }
 
     $_SESSION['upload_error'] = $result;
-    header("Location: ../boundary/UploadListPage.php?type=student");
+    header("Location: ../boundary/uploadListPage.php?type=student");
     exit();
 }
 

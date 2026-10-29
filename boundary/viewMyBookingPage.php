@@ -39,7 +39,7 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -50,10 +50,10 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="academicsPage.php">Academics</a>
+                    <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>
@@ -63,8 +63,8 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
 
     <!-- Facilities Nav Tabs -->
     <nav class="facilities-nav">
-        <a href="ViewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
-        <a href="FacilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
+        <a href="viewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
+        <a href="facilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
         <a href="viewMyBookingPage.php" class="facilities-tab active">View My Booking</a>
     </nav>
 
@@ -72,7 +72,7 @@ $bookings = $controller->getMyBookings($_SESSION['user_id']);
     <main class="dashboard">
 
         <div class="facility-back-bar facility-back-bar--list">
-            <a href="ViewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
+            <a href="viewFacilitiesPage.php" class="btn-back">&#8592; Back</a>
         </div>
         
         <div class="booking-header">

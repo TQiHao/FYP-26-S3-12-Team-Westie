@@ -5,8 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once "../database/database.php";
 require_once "../entity/timetableEntry.php";
-require_once "../entity/StudentEnrolment.php";
-require_once "../entity/Exam.php";
+require_once "../entity/studentEnrolment.php";
+require_once "../entity/exam.php";
 
 class AcademicsController
 {

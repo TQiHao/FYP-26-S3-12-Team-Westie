@@ -14,7 +14,7 @@ if ($userRole !== 'course_coordinator' && $userRole !== 'course coordinator') {
     exit();
 }
 
-require_once "../controller/ManageClassController.php";
+require_once "../controller/manageClassController.php";
 
 $controller = new ManageClassController();
 
@@ -911,7 +911,7 @@ foreach ($classList as $c) {
     </main>
 
     <form id="statusForm"
-        action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+        action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
         method="POST" style="display:none;">
         <input type="hidden" name="action" value="toggle_status">
         <input type="hidden" name="class_id" id="statusClassId">
@@ -958,7 +958,7 @@ foreach ($classList as $c) {
             </div>
             <div id="modalErrorBanner" class="modal-error-banner" style="display:none;"></div>
             <form id="classForm"
-                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST">
                 <input type="hidden" name="action" id="classFormAction" value="update_class">
                 <input type="hidden" name="class_id" id="classId">
@@ -1137,7 +1137,7 @@ foreach ($classList as $c) {
             </form>
 
             <form id="enrolPostForm"
-                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST" style="display: none;">
                 <input type="hidden" name="action" id="enrolFormAction" value="enroll_student_single">
                 <input type="hidden" name="class_id" id="enrolClassId">

@@ -146,7 +146,7 @@ $supportEmail = $supportRow['email'] ?? '';
 
         <div class="dashboard-header-right">
             <?php if ($showNotificationBell): ?>
-                <a href="NotificationPage.php" class="header-icon">
+                <a href="notificationPage.php" class="header-icon">
                     <img src="../images/notification.png" alt="Notifications">
                 </a>
             <?php endif; ?>
@@ -189,7 +189,7 @@ $supportEmail = $supportRow['email'] ?? '';
             <h2 class="section-label">Submit Feedback</h2>
         </div>
 
-        <form action="../controller/SubmitFeedbackController.php" method="POST" class="feedback-form">
+        <form action="../controller/submitFeedbackController.php" method="POST" class="feedback-form">
 
             <div class="feedback-notice-box">
                 <div class="notice-header">

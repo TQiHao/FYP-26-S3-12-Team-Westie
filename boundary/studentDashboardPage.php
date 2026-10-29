@@ -60,7 +60,7 @@ $fullName = $_SESSION['user_name'];
         <!-- Header Icons -->
         <div class="dashboard-header-right">
 
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 

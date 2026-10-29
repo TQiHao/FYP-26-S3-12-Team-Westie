@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once "../database/database.php";
 require_once "../entity/users.php";
-require_once "../entity/UserProfiles.php";
+require_once "../entity/userProfiles.php";
 
 class UpdateProfileController
 {
@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_profile'])) {
         $_SESSION['profile_error'] = "Profile update failed. Please try again later.";
     }
 
-    header("Location: ../boundary/ManageProfilePage.php");
+    header("Location: ../boundary/manageProfilePage.php");
     exit();
 }
 ?>
