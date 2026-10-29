@@ -290,7 +290,7 @@ $hours = range(8, 22);
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -301,12 +301,12 @@ $hours = range(8, 22);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="academicsPage.php">Academics</a>
                     <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

@@ -48,7 +48,7 @@ $notifications = $controller->getNotification($userId);
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -59,17 +59,17 @@ $notifications = $controller->getNotification($userId);
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
                     <?php if ($isLecturer): ?>
                         <!-- Lecturer Menu Items -->
-                        <a href="TeachingPage.php">Teaching</a>
+                        <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
-                        <a href="SubmitFeedbackPage.php">Submit Feedback</a>
+                        <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
                         <!-- Student Menu Items -->
-                        <a href="AIChatbotPage.php">AI Chatbot</a>
-                        <a href="AcademicsPage.php">Academics</a>
-                        <a href="FacilitiesBookingPage.php">Facility Booking</a>
+                        <a href="aiChatbotPage.php">AI Chatbot</a>
+                        <a href="academicsPage.php">Academics</a>
+                        <a href="facilitiesBookingPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
                     <a href="../controller/logOutController.php">Log Out</a>

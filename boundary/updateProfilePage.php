@@ -59,7 +59,7 @@ if (!$user) {
                     <a href="AcademicsPage.php">Academics</a>
                     <a href="FacilitiesBookingPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

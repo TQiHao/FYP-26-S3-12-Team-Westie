@@ -215,7 +215,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -226,18 +226,18 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
                     <?php if ($isLecturer): ?>
                         <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
                         <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
-                        <a href="AIChatbotPage.php">AI Chatbot</a>
-                        <a href="AcademicsPage.php">Academics</a>
-                        <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                        <a href="aiChatbotPage.php">AI Chatbot</a>
+                        <a href="academicsPage.php">Academics</a>
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

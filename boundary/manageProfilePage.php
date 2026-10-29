@@ -3,7 +3,7 @@ session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     $_SESSION['login_error'] = "Session expired. Please log in again.";
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -78,7 +78,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

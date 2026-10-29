@@ -9,7 +9,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/BookFacilityController.php";
+require_once "../controller/bookFacilityController.php";
 
 $controller = new BookFacilityController();
 
@@ -51,7 +51,7 @@ if (isset($_GET['facilityId'])) {
         </div>
 
         <div class="dashboard-header-right">
-            <a href="NotificationPage.php" class="header-icon">
+            <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
@@ -62,12 +62,12 @@ if (isset($_GET['facilityId'])) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
-                    <a href="AcademicsPage.php">Academics</a>
-                    <a href="ViewFacilitiesPage.php">Facility Booking</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="academicsPage.php">Academics</a>
+                    <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

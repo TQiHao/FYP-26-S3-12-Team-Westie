@@ -788,9 +788,9 @@ foreach ($classList as $c) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageClassPage.php">Manage Classes</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

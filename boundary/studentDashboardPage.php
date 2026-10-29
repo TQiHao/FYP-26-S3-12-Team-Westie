@@ -3,7 +3,7 @@ session_start();
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     $_SESSION['login_error'] = "Session expired. Please log in again.";
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -77,12 +77,12 @@ $fullName = $_SESSION['user_name'];
 
                 <div id="profileMenu" class="dropdown-menu">
 
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="academicsPage.php">Academics</a>
                     <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
 
                 </div>
 

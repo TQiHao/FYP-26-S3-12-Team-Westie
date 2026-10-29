@@ -7,7 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/AIChatbotController.php";
+require_once "../controller/aiChatbotController.php";
 
 $controller = new AIChatbotController();
 $studentId = $_SESSION['user_id'];
@@ -353,7 +353,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
 
         <div class="dashboard-header-right">
             <?php if ($showNotifications): ?>
-                <a href="NotificationPage.php" class="header-icon">
+                <a href="notificationPage.php" class="header-icon">
                     <img src="../images/notification.png" alt="Notifications">
                 </a>
             <?php endif; ?>
@@ -365,7 +365,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
                     <?php if ($userRole === 'lecturer'): ?>
                         <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
@@ -384,7 +384,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
                         <a href="viewEventsPage.php">University Campus Event</a>
                         <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php endif; ?>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

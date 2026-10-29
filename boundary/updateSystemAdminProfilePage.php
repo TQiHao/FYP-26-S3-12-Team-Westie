@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -63,7 +63,7 @@ if (isset($_SESSION['sysadmin_profile_error'])) {
                     <a href="updateAIModelPage.php">Update AI Model</a>
                     <a href="systemOperationPage.php">System Operations</a>
                     <a href="reviewFeedbackPage.php">Review Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
 
             </div>

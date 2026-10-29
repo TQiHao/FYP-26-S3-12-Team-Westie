@@ -6,7 +6,7 @@ if (
     !isset($_SESSION['logged_in']) ||
     $_SESSION['logged_in'] !== true
 ) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -635,7 +635,7 @@ $status =
                     Manage University Events
                 </a>
 
-                <a href="../controller/logoutController.php">
+                <a href="../controller/logOutController.php">
                     Log Out
                 </a>
 

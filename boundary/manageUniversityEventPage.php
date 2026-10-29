@@ -812,7 +812,7 @@ if (
                     <a href="renewLicensePage.php">Renew License</a>
                     <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                   <a href="../controller/logOutController.php">Log Out</a>
                 </div>
 
             </div>

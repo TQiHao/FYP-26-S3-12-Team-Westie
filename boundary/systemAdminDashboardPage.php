@@ -59,9 +59,9 @@ if (
                     <a href="updateAIModelPage.php">Update AI Model</a>
                     <a href="systemOperationPage.php">System Operations</a>
                     <a href="reviewFeedbackPage.php">Review Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
-                
+
             </div>
 
         </div>

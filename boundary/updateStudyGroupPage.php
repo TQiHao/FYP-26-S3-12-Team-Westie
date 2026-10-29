@@ -88,12 +88,12 @@ $group = $data['group'];
                 </div>
 
                 <div id="profileMenu" class="dropdown-menu">
-                    <a href="ManageProfilePage.php">Manage Profile</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <a href="manageProfilePage.php">Manage Profile</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="academicsPage.php">Academics</a>
                     <a href="viewFacilitiesPage.php">Facility Booking</a>
                     <a href="viewEventsPage.php">University Campus Event</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>

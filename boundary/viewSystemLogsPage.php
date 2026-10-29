@@ -8,7 +8,7 @@ if (
     !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
     ($_SESSION['user_role'] ?? '') !== 'system_admin'
 ) {
-    header("Location: LoginPage.php");
+    header("Location: loginPage.php");
     exit();
 }
 
@@ -98,7 +98,7 @@ $lastShown  = $firstShown === 0 ? 0 : $firstShown + count($logRows) - 1;
                     <a href="updateAIModelPage.php">Update AI Model</a>
                     <a href="systemOperationPage.php">System Operations</a>
                     <a href="reviewFeedbackPage.php">Review Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
 
             </div>
