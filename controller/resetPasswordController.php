@@ -1,8 +1,8 @@
 <?php
 
-require_once __DIR__ . "/../database/database.php";
-require_once __DIR__ . "../entity/users.php";
-require_once __DIR__ . "../entity/systemLog.php";
+require_once "../database/database.php";
+require_once "../entity/users.php";
+require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
