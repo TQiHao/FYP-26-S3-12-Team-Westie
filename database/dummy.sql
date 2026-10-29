@@ -473,3 +473,96 @@ WHERE NOT EXISTS (
     WHERE (fromNodeId = @l1 AND toNodeId = @l2)
        OR (fromNodeId = @l2 AND toNodeId = @l1)
 );
+
+-- 1. Create a group where the student is the Admin
+INSERT INTO StudyGroups (universityId, moduleId, adminId, name, description, maxMembers, status)
+SELECT 1, 1, u.id, 'FYP Study Squad', 'Let\'s finish this project together!', 10, 'active'
+FROM Users u WHERE u.email = 'student@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM StudyGroups WHERE name = 'FYP Study Squad');
+
+-- 2. Add the student to their own group
+INSERT INTO StudyGroupMembers (groupId, studentId, status)
+SELECT sg.id, u.id, 'active' 
+FROM StudyGroups sg, Users u 
+WHERE sg.name = 'FYP Study Squad' AND u.email = 'student@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM StudyGroupMembers WHERE groupId = sg.id AND studentId = u.id);
+
+-- 3. Create a second group (Admin is Lecturer) that the student can join
+INSERT INTO StudyGroups (universityId, moduleId, adminId, name, description, maxMembers, status)
+SELECT 1, 2, u.id, 'Web Dev Group', 'Looking for frontend helpers.', 5, 'active'
+FROM Users u WHERE u.email = 'lecturer@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM StudyGroups WHERE name = 'Web Dev Group');
+
+-- Insert 2 upcoming exams
+INSERT INTO Exam (classId, examDate, startTime, endTime, venue)
+SELECT 1, DATE_ADD(CURDATE(), INTERVAL 7 DAY), '09:00:00', '11:00:00', 'Exam Hall A'
+WHERE NOT EXISTS (SELECT 1 FROM Exam WHERE classId = 1);
+
+INSERT INTO Exam (classId, examDate, startTime, endTime, venue)
+SELECT 3, DATE_ADD(CURDATE(), INTERVAL 10 DAY), '14:00:00', '16:00:00', 'Exam Hall B'
+WHERE NOT EXISTS (SELECT 1 FROM Exam WHERE classId = 3);
+
+-- 1. Insert Study Room
+INSERT INTO Facilities (universityId, name, roomCode, type, description, location, blockFloor, capacity, status)
+SELECT 1, 'Quiet Study Room 1', 'SR-01', 'study room', 'Silent zone', 'Library Level 2', 'L2', 4, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM Facilities WHERE roomCode = 'SR-01');
+
+-- Mark it as bookable
+INSERT INTO BookableFacilities (facilityId, isBookable, slotDuration, bookingCapacity, openTime, closeTime, status)
+SELECT id, TRUE, 60, 4, '08:00:00', '22:00:00', 'available'
+FROM Facilities WHERE roomCode = 'SR-01'
+AND NOT EXISTS (SELECT 1 FROM BookableFacilities bf JOIN Facilities f ON f.id = bf.facilityId WHERE f.roomCode = 'SR-01');
+
+-- 2. Insert Gym
+INSERT INTO Facilities (universityId, name, roomCode, type, description, location, blockFloor, capacity, status)
+SELECT 1, 'Main Gymnasium', 'GYM-01', 'gym', 'Full equipment gym', 'Sports Block', 'L1', 50, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM Facilities WHERE roomCode = 'GYM-01');
+
+-- Mark it as bookable
+INSERT INTO BookableFacilities (facilityId, isBookable, slotDuration, bookingCapacity, openTime, closeTime, status)
+SELECT id, TRUE, 90, 50, '06:00:00', '22:00:00', 'available'
+FROM Facilities WHERE roomCode = 'GYM-01'
+AND NOT EXISTS (SELECT 1 FROM BookableFacilities bf JOIN Facilities f ON f.id = bf.facilityId WHERE f.roomCode = 'GYM-01');
+
+-- 1. Timetable & Courses
+INSERT INTO FAQs (universityId, createdBy, question, answer) VALUES 
+(1, 1, 'how do I view my timetable', 'You can view your weekly classes by going to Academics > Personal Timetable.'),
+(1, 1, 'show my enrolled courses', 'Go to the Academics tab and click on Enrolled Courses to see your registered modules.'),
+(1, 1, 'where can I see my exam schedule', 'Navigate to Academics > Exam Schedule to see your upcoming exams and venues.'),
+
+-- 2. Facility Booking
+(1, 1, 'how do I book a study room', 'Go to Facility Booking, click on the Study Room card, select your preferred room, and fill in the date, time, and purpose.'),
+(1, 1, 'can I cancel my booking', 'Yes! Go to View My Booking, find the confirmed booking, and click the red Cancel button next to it.'),
+(1, 1, 'how do I book the gym', 'Go to Facility Booking, click the Gym card, choose a slot, and click Confirm Booking.'),
+
+-- 3. Events & Navigation
+(1, 1, 'how do I register for an event', 'Go to University Campus Events, find an event you like, and click the Register button.'),
+(1, 1, 'how does the campus navigation work', 'Go to Facility Location Tracking, select a building, choose your starting point and destination, and the system will draw the shortest route for you.'),
+(1, 1, 'where is the library', 'You can find the library by using the Facility Location Tracking feature and selecting the Library Tower.'),
+
+-- 4. Student Interaction
+(1, 1, 'how do I create a study group', 'Go to Academics > Student Interaction and click the "+ Create Group" button at the top right.'),
+(1, 1, 'how do I join a study group', 'In the Student Interaction tab, scroll down to "Available to join", click View on a group, and click Join.'),
+
+-- 5. Account Management
+(1, 1, 'how do I change my password', 'Click on your profile picture in the top right, select Manage Profile, and you can update your details there.'),
+(1, 1, 'how do I submit feedback', 'Click your profile picture, select Submit Feedback, fill in your message and rating, and click Submit.'),
+
+-- 6. General
+(1, 1, 'what can you do', 'I can help you navigate the UniBee system! Ask me about your timetable, booking facilities, registering for events, or joining study groups.');
+
+
+INSERT INTO Notifications (userId, type, title, message, isRead)
+SELECT id, 'event', 'Event Registration Confirmed', 'You have successfully registered for the Tech Career Fair 2026.', 0
+FROM Users WHERE email = 'student@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM Notifications WHERE title = 'Event Registration Confirmed');
+
+INSERT INTO Notifications (userId, type, title, message, isRead)
+SELECT id, 'class', 'Lecture Cancelled', 'Tomorrow\'s CS201 Data Structures lecture has been moved online. Please check your email for the link.', 0
+FROM Users WHERE email = 'student@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM Notifications WHERE title = 'Lecture Cancelled');
+
+INSERT INTO Notifications (userId, type, title, message, isRead)
+SELECT id, 'system', 'Welcome to UniBee', 'Your account has been created successfully. Explore the dashboard to get started!', 1
+FROM Users WHERE email = 'student@unibee.com'
+AND NOT EXISTS (SELECT 1 FROM Notifications WHERE title = 'Welcome to UniBee');
