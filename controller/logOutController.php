@@ -1,6 +1,11 @@
 <?php
 session_start();
 
+require_once "../entity/systemLog.php";
+if (($_SESSION['user_role'] ?? '') === 'system_admin') {
+    SystemLog::record('authentication', 'info', 'Logout', 'System admin logged out.');
+}                                                        
+
 // 1. Unset all session variables
 $_SESSION = [];
 

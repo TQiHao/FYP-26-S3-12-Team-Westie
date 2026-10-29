@@ -1,6 +1,7 @@
 <?php
 
-require_once __DIR__ . "/../database/database.php";
+require_once "../database/database.php";
+require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -10,7 +11,7 @@ if (
     !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
     ($_SESSION['user_role'] ?? '') !== 'system_admin'
 ) {
-    header("Location: ../boundary/LoginPage.php");
+    header("Location: ../boundary/loginPage.php");
     exit();
 }
 
@@ -170,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_landing'])) {
 
     if ($result === true) {
         $_SESSION['landing_success'] = "Landing Page Updated Successfully.";
+        SystemLog::record('landing_page', 'info', 'Landing Page Updated', 'The landing page content was updated.');
         header("Location: ../boundary/manageLandingPage.php");
     } else {
         $_SESSION['landing_error'] = $result;

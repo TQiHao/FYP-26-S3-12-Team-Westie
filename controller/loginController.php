@@ -2,6 +2,7 @@
 
 require_once "../database/database.php";
 require_once "../entity/users.php";
+require_once "../entity/systemLog.php";
 
 session_start();
 
@@ -41,12 +42,16 @@ class LoginController
         if ($sysadmin) {
             if (!password_verify($password, $sysadmin['passwordHash'])) {
                 $_SESSION['login_error'] = "Invalid email or password. Please try again.";
+                SystemLog::record('authentication', 'warning', 'Login Failed',
+                    'Failed login attempt for the system admin account ' . $sysadmin['email'] . '.');
                 return false;
             }
 
             // Check if account is suspended
             if ($sysadmin['status'] === 'suspended') {
                 $_SESSION['login_error'] = "Your account has been suspended. Please contact support.";
+                SystemLog::record('authentication', 'warning', 'Login Blocked',
+                    'A suspended system admin account tried to log in: ' . $sysadmin['email'] . '.');
                 return false;
             }
 
@@ -128,6 +133,10 @@ class LoginController
             // Store token in database for persistent login (optional)
         }
 
+        if ($userData['role'] === 'system_admin') {
+            SystemLog::record('authentication', 'info', 'Login', 'System admin logged in successfully.');
+        }
+
         $_SESSION['login_success'] = "Welcome back, " . $userData['fullName'] . "!";
     }
 
@@ -189,7 +198,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['login'])) {
         $controller->redirectBasedOnRole($userData['role']);
     } else {
         // Redirect back to login page with error
-        header("Location: ../boundary/LoginPage.php");
+        header("Location: ../boundary/loginPage.php");
         exit();
     }
 }

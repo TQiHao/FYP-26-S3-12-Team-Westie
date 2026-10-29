@@ -58,10 +58,11 @@ if (isset($_SESSION['sysadmin_profile_error'])) {
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
                     <a href="systemAdminProfilePage.php">Profile</a>
-                    <a href="ManageUniversityPage.php">Manage Universities</a>
+                    <a href="manageUniversityPage.php">Universities</a>
                     <a href="manageLandingPage.php">Manage Landing Page</a>
-                    <a href="UpdateAIModelPage.php">Update AI Model</a>
-                    <a href="SystemOperationPage.php">System Operations</a>
+                    <a href="updateAIModelPage.php">Update AI Model</a>
+                    <a href="systemOperationPage.php">System Operations</a>
+                    <a href="reviewFeedbackPage.php">Review Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 

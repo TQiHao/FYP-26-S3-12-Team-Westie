@@ -1,5 +1,7 @@
 <?php
 
+require_once "../database/database.php";
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -8,7 +10,7 @@ if (
     !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
     ($_SESSION['user_role'] ?? '') !== 'system_admin'
 ) {
-    header("Location: LoginPage.php");
+    header("Location: ../boundary/loginPage.php");
     exit();
 }
 
@@ -63,10 +65,11 @@ if (isset($_SESSION['landing_error'])) {
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="systemAdminDashboardPage.php">Dashboard</a>
                     <a href="systemAdminProfilePage.php">Profile</a>
-                    <a href="ManageUniversityPage.php">Manage Universities</a>
+                    <a href="manageUniversityPage.php">Universities</a>
                     <a href="manageLandingPage.php">Manage Landing Page</a>
-                    <a href="UpdateAIModelPage.php">Update AI Model</a>
-                    <a href="SystemOperationPage.php">System Operations</a>
+                    <a href="updateAIModelPage.php">Update AI Model</a>
+                    <a href="systemOperationPage.php">System Operations</a>
+                    <a href="reviewFeedbackPage.php">Review Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
 
