@@ -1,0 +1,7 @@
+name,type,description,location,blockFloor,capacity
+Main Lecture Hall,lecture hall,Huge hall,Block A,Level 1,100
+Computer Lab 1,lab,PCs for coding,Block B,Level 2,30
+Computer Lab 2,lab,Macs for design,Block B,Level 2,25
+Study Room Alpha,study room,Quiet room,Block A,Level 2,10
+Study Room Beta,study room,Discussion room,Block A,Level 2,15
+Main Gym,gym,Fitness area,Block C,Level 1,50

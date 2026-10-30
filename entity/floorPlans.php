@@ -115,7 +115,7 @@ class FloorPlans
         $fileName,
         $filePath,
         $uploadedBy,
-        $imageWidth  = null,     // NEW
+        $imageWidth = null,     // NEW
         $imageHeight = null      // NEW
     ) {
         $database = new Database();

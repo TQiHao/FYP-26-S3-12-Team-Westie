@@ -32,19 +32,19 @@ class ManageUniversityInformationController
 
     public function __construct()
     {
-        $this->faculties        = new Faculties();
-        $this->programmes       = new Programmes();
-        $this->modules          = new Modules();
-        $this->facilities       = new Facilities();
-        $this->users            = new Users();
-        $this->students         = new Students();
-        $this->floorPlans       = new FloorPlans();
-        $this->campusBuildings  = new CampusBuildings();
-        $this->campusFloors     = new CampusFloors();
+        $this->faculties = new Faculties();
+        $this->programmes = new Programmes();
+        $this->modules = new Modules();
+        $this->facilities = new Facilities();
+        $this->users = new Users();
+        $this->students = new Students();
+        $this->floorPlans = new FloorPlans();
+        $this->campusBuildings = new CampusBuildings();
+        $this->campusFloors = new CampusFloors();
 
         $db = (new Database())->connect();
-        $this->navigationNodes  = new NavigationNode($db);
-        $this->navigationEdges  = new NavigationEdge($db);
+        $this->navigationNodes = new NavigationNode($db);
+        $this->navigationEdges = new NavigationEdge($db);
     }
 
     // Validate Faculty CSV
@@ -1055,10 +1055,10 @@ class ManageUniversityInformationController
             return "Invalid floor plan image.";
         }
 
-        $maxFileSize = 10 * 1024 * 1024;
+        $maxFileSize = 40 * 1024 * 1024;
 
         if ($file['size'] > $maxFileSize) {
-            return "Floor plan file size must not exceed 10 MB.";
+            return "Floor plan file size must not exceed 40 MB.";
         }
 
         return true;
@@ -1066,15 +1066,14 @@ class ManageUniversityInformationController
 
     public function uploadFloorPlan($floorId, $fileName, $filePath, $uploadedBy)
     {
-        // NEW: read natural image dimensions from the saved file
         $fullPath = __DIR__ . '/../' . $filePath;
-        $imageWidth  = null;
+        $imageWidth = null;
         $imageHeight = null;
 
         if (file_exists($fullPath)) {
             $dims = getimagesize($fullPath);
             if ($dims !== false) {
-                $imageWidth  = (int) $dims[0];
+                $imageWidth = (int) $dims[0];
                 $imageHeight = (int) $dims[1];
             }
         }
@@ -1088,7 +1087,6 @@ class ManageUniversityInformationController
             $imageHeight
         );
     }
-
     public function uploadStudentList($csvFile, $universityId)
     {
         $validated = $this->validateStudentCsv($csvFile, $universityId);
@@ -1291,14 +1289,14 @@ class ManageUniversityInformationController
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
 
     $ajaxActions = [
-    'listNavigationNodes',
-    'createNavigationNode',
-    'deleteNavigationNode',
-    'createNavigationEdge',
-    'deleteNavigationEdge',
-    'listFloorsForBuilding',      // NEW
-    'listNodesForOtherFloor',     // NEW
-    'createCrossFloorEdge'        // NEW
+        'listNavigationNodes',
+        'createNavigationNode',
+        'deleteNavigationNode',
+        'createNavigationEdge',
+        'deleteNavigationEdge',
+        'listFloorsForBuilding',      // NEW
+        'listNodesForOtherFloor',     // NEW
+        'createCrossFloorEdge'        // NEW
     ];
 
     if (in_array($_POST['action'], $ajaxActions, true)) {
@@ -1621,10 +1619,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
         exit();
     }
 
-    $uploadDirectory = "../uploads/campusMap/";
+    $universityId = $_SESSION['university_id'] ?? 0;
+    $uniFolder = "U" . str_pad((int) $universityId, 2, '0', STR_PAD_LEFT);
+
+    $uploadDirectory = "../uploads/campusMap/" . $uniFolder . "/";
 
     if (!is_dir($uploadDirectory)) {
         mkdir($uploadDirectory, 0777, true);
+    }
+
+    if (!is_writable($uploadDirectory)) {
+        $_SESSION['upload_error'] = "Permission denied. Folder is not writable.";
+        header("Location: ../boundary/uploadFloorPlanPage.php");
+        exit();
     }
 
     $fileName = uniqid('campus_map_', true) . '.' . $extension;
@@ -1635,13 +1642,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
         exit();
     }
 
-    $campusMapPath = 'uploads/campusMap/' . $fileName;
+    $campusMapPath = 'uploads/campusMap/' . $uniFolder . '/' . $fileName;
 
     $database = new Database();
     $db = $database->connect();
 
     $stmt = $db->prepare("UPDATE Universities SET campusMapPath = ? WHERE id = ?");
-    $stmt->execute([$campusMapPath, $_SESSION['university_id']]);
+    $stmt->execute([$campusMapPath, $universityId]);
 
     $_SESSION['upload_success'] = "Campus map uploaded successfully.";
     header("Location: ../boundary/uploadFloorPlanPage.php");
@@ -1655,6 +1662,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
     $file = $_FILES['uploadFile'] ?? null;
     $floorId = isset($_POST['floorId']) ? (int) $_POST['floorId'] : 0;
     $uploadedBy = $_SESSION['user_id'] ?? null;
+    $universityId = $_SESSION['university_id'] ?? 0;
 
     if ($floorId <= 0) {
         $_SESSION['upload_error'] = "Unable to identify the selected level.";
@@ -1676,15 +1684,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
         exit();
     }
 
-    $uploadDirectory = "../uploads/floorPlans/";
+    $uniFolder = "U" . str_pad((int) $universityId, 2, '0', STR_PAD_LEFT);
+    $uploadDirectory = "../uploads/floorPlans/" . $uniFolder . "/";
 
     if (!is_dir($uploadDirectory)) {
         mkdir($uploadDirectory, 0777, true);
     }
 
+    if (!is_writable($uploadDirectory)) {
+        $_SESSION['upload_error'] = "Permission denied. Folder is not writable.";
+        header("Location: ../boundary/uploadFloorPlanPage.php");
+        exit();
+    }
+
     $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     $fileName = uniqid('floorplan_', true) . '.' . $extension;
-    $filePath = "uploads/floorPlans/" . $fileName;
+    $filePath = "uploads/floorPlans/" . $uniFolder . "/" . $fileName;
 
     if (!move_uploaded_file($file['tmp_name'], $uploadDirectory . $fileName)) {
         $_SESSION['upload_error'] = "Unable to save the floor plan.";
@@ -1697,7 +1712,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
     if ($result === true) {
         $_SESSION['upload_success'] = "Floor plan uploaded successfully.";
     } else {
-        $_SESSION['upload_error'] = "Unable to save the floor plan.";
+        $_SESSION['upload_error'] = "Unable to save the floor plan record to the database.";
     }
 
     header("Location: ../boundary/uploadFloorPlanPage.php");
@@ -1864,10 +1879,10 @@ if (
 ) {
     $controller = new ManageUniversityInformationController();
 
-    $buildingId   = (int) ($_POST['id'] ?? 0);
+    $buildingId = (int) ($_POST['id'] ?? 0);
     $buildingName = trim($_POST['buildingName'] ?? '');
     $buildingCode = trim($_POST['buildingCode'] ?? '');
-    $description  = trim($_POST['description'] ?? '');
+    $description = trim($_POST['description'] ?? '');
 
     if ($buildingId > 0 && $buildingName !== '') {
         $controller->updateCampusBuilding($buildingId, $buildingName, $buildingCode, $description);

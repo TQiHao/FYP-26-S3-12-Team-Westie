@@ -13,10 +13,8 @@ $controller = new TeachingController();
 $eventController = new ViewEventsController();
 $staffId = $_SESSION['user_id'] ?? null;
 
-// Tab logic
 $activeTab = ($_GET['tab'] ?? 'timetable') === 'modules' ? 'modules' : 'timetable';
 
-// Week & Date Selection Logic
 $today = new DateTime();
 
 if (isset($_GET['date']) && !empty($_GET['date'])) {
@@ -33,14 +31,12 @@ if (isset($_GET['date']) && !empty($_GET['date'])) {
     }
 }
 
-// Calculate Monday and Sunday of the selected week
-$dayOfWeekNum = (int) $refDate->format('N'); // 1 (Mon) to 7 (Sun)
+$dayOfWeekNum = (int) $refDate->format('N');
 $monday = clone $refDate;
 $monday->modify('-' . ($dayOfWeekNum - 1) . ' days')->setTime(0, 0, 0);
 $sunday = clone $monday;
 $sunday->modify('+6 days')->setTime(23, 59, 59);
 
-// Adjacent week dates for navigation buttons
 $prevMonday = clone $monday;
 $prevMonday->modify('-1 week');
 $nextMonday = clone $monday;
@@ -51,20 +47,14 @@ $nextDateParam = $nextMonday->format('Y-m-d');
 $selectedDateValue = $monday->format('Y-m-d');
 $weekRangeText = $monday->format('M j, Y') . ' – ' . $sunday->format('M j, Y');
 
-// Semester Date Filter (Sept 1, 2026 to Nov 30, 2026)
-$semStart = new DateTime('2026-09-01');
-$semEnd = new DateTime('2026-11-30');
+$entries = $controller->getTimetable($staffId);
 
-// Active semester check
-$isWithinSemester = ($sunday >= $semStart && $monday <= $semEnd);
-
-// Fetch regular class timetable entries
-$entries = $isWithinSemester ? $controller->getTimetable($staffId) : [];
-
-// Fetch registered campus events for this user
 $registeredEvents = method_exists($eventController, 'getUserRegisteredEvents')
     ? $eventController->getUserRegisteredEvents($staffId)
     : [];
+if (!is_array($registeredEvents)) {
+    $registeredEvents = [];
+}
 
 $keys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 $weekDates = [];
@@ -88,7 +78,6 @@ $grid = [
     'sun' => []
 ];
 
-// 1. Load class timetable entries into grid
 if (is_array($entries)) {
     foreach ($entries as $e) {
         $day = strtolower($e->getDayOfWeek());
@@ -108,13 +97,11 @@ if (is_array($entries)) {
     }
 }
 
-// 2. Load registered campus events for the selected week into grid
 if (is_array($registeredEvents)) {
     foreach ($registeredEvents as $evt) {
         $startDt = new DateTime($evt['startDatetime'] ?? $evt['startTime'] ?? '');
         $endDt = new DateTime($evt['endDatetime'] ?? $evt['endTime'] ?? '');
 
-        // Verify event falls within currently displayed week
         if ($startDt >= $monday && $startDt <= $sunday) {
             $day = strtolower($startDt->format('D'));
             $startHour = (int) $startDt->format('G');
@@ -134,7 +121,7 @@ if (is_array($registeredEvents)) {
     }
 }
 
-$hours = range(8, 22); // 8:00 AM to 10:00 PM
+$hours = range(8, 22);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -145,7 +132,6 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
     <title>Teaching - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        /* Header Layout: Centered Title with Absolute Left Back Button */
         .profile-header {
             position: relative;
             display: flex;
@@ -247,7 +233,6 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
@@ -282,26 +267,19 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
 
     <main class="dashboard">
 
-        <!-- Top Header with Perfectly Centered Title -->
         <div class="profile-header">
             <a href="lecturerDashboardPage.php" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Teaching</h2>
         </div>
 
-        <!-- Tabs -->
         <div class="teaching-tabs">
             <a href="teachingPage.php?tab=timetable"
-                class="teaching-tab <?php echo $activeTab === 'timetable' ? 'active' : ''; ?>">
-                Personal Timetable
-            </a>
-            <a href="viewAssignedModules.php" class="teaching-tab">
-                Assigned Modules
-            </a>
+                class="teaching-tab <?php echo $activeTab === 'timetable' ? 'active' : ''; ?>">Personal Timetable</a>
+            <a href="viewAssignedModules.php" class="teaching-tab">Assigned Modules</a>
         </div>
 
         <?php if ($activeTab === 'timetable'): ?>
 
-            <!-- Calendar & Date Navigation Bar -->
             <div class="timetable-controls">
                 <a href="teachingPage.php?tab=timetable&date=<?php echo $prevDateParam; ?>" class="timetable-nav-btn">&larr;
                     Previous Week</a>
@@ -316,13 +294,11 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
                     Week &rarr;</a>
             </div>
 
-            <?php if (!$isWithinSemester && empty($registeredEvents)): ?>
-                <p class="no-notifications">No classes scheduled for this week.
-                </p>
-            <?php elseif ($entries === false): ?>
+            <?php if ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>
+            <?php elseif (empty($entries) && empty($registeredEvents)): ?>
+                <p class="no-notifications">No classes or events scheduled for this week.</p>
             <?php else: ?>
-                <!-- Interactive Timetable Grid -->
                 <table class="timetable-grid">
                     <thead>
                         <tr>
@@ -338,16 +314,7 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
                     </thead>
                     <tbody>
                         <?php
-                        $skipCell = [
-                            'mon' => [],
-                            'tue' => [],
-                            'wed' => [],
-                            'thu' => [],
-                            'fri' => [],
-                            'sat' => [],
-                            'sun' => []
-                        ];
-
+                        $skipCell = ['mon' => [], 'tue' => [], 'wed' => [], 'thu' => [], 'fri' => [], 'sat' => [], 'sun' => []];
                         foreach ($hours as $h): ?>
                             <tr>
                                 <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
@@ -366,7 +333,6 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
                                         }
 
                                         $rowspanAttr = $duration > 1 ? ' rowspan="' . $duration . '"' : '';
-                                        $slotClass = ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot';
                                         ?>
                                         <td<?php echo $rowspanAttr; ?>>
                                             <div
@@ -385,9 +351,7 @@ $hours = range(8, 22); // 8:00 AM to 10:00 PM
                     </tbody>
                 </table>
             <?php endif; ?>
-
         <?php endif; ?>
-
     </main>
 
     <footer>

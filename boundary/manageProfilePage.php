@@ -12,7 +12,6 @@ require_once "../controller/manageProfileController.php";
 $controller = new ManageProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
 
-// Sync active session name with the latest database name
 if ($user && !empty($user['fullName'])) {
     $_SESSION['user_name'] = $user['fullName'];
 }
@@ -21,12 +20,10 @@ if (!$user) {
     $_SESSION['profile_error'] = "Unable to load profile information. Please try again.";
 }
 
-// 1. Resolve role from database model first, then session, default to 'student'
 $rawRole = $user['role'] ?? $_SESSION['role'] ?? 'student';
 $userRole = strtolower(trim($rawRole));
 
-// 2. Set dynamic back link matching exact dashboard filename
-$backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'StudentDashboardPage.php';
+$backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 ?>
 
 <!DOCTYPE html>
@@ -42,7 +39,6 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
@@ -74,7 +70,11 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
                     <?php else: ?>
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                         <a href="academicsPage.php">Academics</a>
+<<<<<<< Updated upstream
                         <a href="facilitiesBookingPage.php">Facility Booking</a>
+=======
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
+>>>>>>> Stashed changes
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
@@ -84,7 +84,6 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
         </div>
     </header>
 
-    <!-- Manage Profile Section -->
     <main class="dashboard">
 
         <?php
@@ -101,17 +100,17 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
         <?php if ($user): ?>
 
             <div class="profile-header">
-                <!-- Dynamic Back Button -->
                 <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
-
                 <h2 class="section-label">My Profile</h2>
+<<<<<<< Updated upstream
 
                 <a href="updateProfilePage.php" class="btn-update">Update</a>
+=======
+                <a href="UpdateProfilePage.php" class="btn-update">Update</a>
+>>>>>>> Stashed changes
             </div>
 
             <div class="profile-view">
-
-                <!-- Profile Icon and Name -->
                 <div class="profile-identity">
                     <img src="../images/profilePic.png" alt="Profile" class="profile-large-icon">
                     <div>
@@ -122,9 +121,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
 
                 <hr class="profile-divider">
 
-                <!-- Profile Details -->
                 <div class="profile-details">
-
                     <div class="profile-field">
                         <label>Email</label>
                         <p><?php echo htmlspecialchars($user['email']); ?></p>
@@ -144,9 +141,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
                         <label>Role</label>
                         <p><?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $user['role']))); ?></p>
                     </div>
-
                 </div>
-
             </div>
 
         <?php else: ?>
@@ -155,7 +150,6 @@ $backDashboard = ($userRole === 'lecturer') ? 'LecturerDashboardPage.php' : 'Stu
 
     </main>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.

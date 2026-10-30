@@ -34,10 +34,26 @@ class LecturerDashboardController
     {
         try {
             $sql = "SELECT title, dayOfWeek, startTime, endTime, location 
-                    FROM TimetableEntries 
-                    WHERE userId = ?";
+                    FROM (
+                        SELECT title, dayOfWeek, startTime, endTime, location 
+                        FROM TimetableEntries 
+                        WHERE userId = :staffId
+
+                        UNION ALL
+
+                        SELECT m.code AS title, 
+                               c.dayOfWeek, 
+                               c.startTime, 
+                               c.endTime, 
+                               c.room AS location
+                        FROM Classes c
+                        INNER JOIN Modules m ON c.moduleId = m.id
+                        WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
+                          AND c.status = 'active'
+                    ) AS CombinedTimetable";
+
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$userId]);
+            $stmt->execute(['staffId' => $userId]);
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($classes)) {
@@ -124,3 +140,4 @@ class LecturerDashboardController
         }
     }
 }
+?>

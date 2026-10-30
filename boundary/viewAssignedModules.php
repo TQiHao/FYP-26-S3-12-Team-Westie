@@ -50,7 +50,6 @@ $staffId = $_SESSION['user_id'] ?? null;
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
@@ -75,6 +74,7 @@ $staffId = $_SESSION['user_id'] ?? null;
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="viewEventsPage.php">University Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
@@ -86,12 +86,11 @@ $staffId = $_SESSION['user_id'] ?? null;
     <main class="dashboard">
 
         <div class="profile-header">
-            <a href="teachingPage.php" class="btn-back">&#8592; Back</a>
+            <a href="lecturerDashboardPage.php" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Teaching</h2>
             <div></div>
         </div>
 
-        <!-- Tabs -->
         <div class="teaching-tabs">
             <a href="teachingPage.php?tab=timetable" class="teaching-tab">
                 Personal Timetable
@@ -101,7 +100,6 @@ $staffId = $_SESSION['user_id'] ?? null;
             </a>
         </div>
 
-        <!-- Assigned Modules Content -->
         <?php
         $modules = $controller->getAssignedModules($staffId);
 
@@ -147,7 +145,6 @@ $staffId = $_SESSION['user_id'] ?? null;
             &copy; 2026 UniBee. All rights reserved.
         </div>
     </footer>
-
 </body>
 
 </html>
