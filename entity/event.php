@@ -517,7 +517,17 @@ class Event
             INNER JOIN Facilities f
                  ON f.id = bf.facilityId
             WHERE f.universityId = ?
-                AND f.status = 'active'
+                AND (
+                    f.status = 'active'
+                    OR EXISTS (
+                        SELECT 1
+                        FROM Events currentEvent
+                        WHERE currentEvent.id = ?
+                          AND currentEvent.universityId = f.universityId
+                          AND currentEvent.facilityId = bf.id
+                          AND currentEvent.status = 'active'
+                    )
+                )
                 AND f.capacity >= ?
                 AND bf.isBookable = TRUE
                 AND bf.status = 'available'
@@ -560,6 +570,7 @@ class Event
 
             $stmt->execute([
                 $universityId,
+                $excludeEventId,
                 $capacity,
                 $startDatetime,
                 $endDatetime,
