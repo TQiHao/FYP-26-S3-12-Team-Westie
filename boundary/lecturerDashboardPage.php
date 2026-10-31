@@ -60,11 +60,11 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                     <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
                 </div>
 
+                <!-- FIXED DROPDOWN -->
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
-                    <a href="aiChatbotPage.php">AI Chatbot</a>
-                    <a href="viewEventsPage.php">University Campus Events</a>
+                    <a href="viewEventsPage.php">Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
                 </div>
@@ -127,9 +127,8 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
         <section class="dashboard-section">
             <h3 class="section-label">Quick actions</h3>
             <div class="quick-actions">
-                <!-- FIXED: Changed to viewEventsPage.php -->
-                <a href="viewEventsPage.php" class="quick-button">Event Reminders</a>
-                <a href="teachingPage.php?tab=timetable" class="quick-button">View Timetable</a>
+                <!-- FIXED QUICK ACTION -->
+                <a href="viewAssignedModules.php" class="quick-button">View Assigned Modules</a>
             </div>
         </section>
 

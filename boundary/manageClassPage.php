@@ -14,7 +14,7 @@ if ($userRole !== 'course_coordinator' && $userRole !== 'course coordinator') {
     exit();
 }
 
-require_once "../controller/manageClassController.php";
+require_once "../controller/ManageClassController.php";
 
 $controller = new ManageClassController();
 
@@ -73,33 +73,30 @@ if ($reopenMode !== null && $flashError !== null) {
     $flashError = null;
 }
 
+// FIXED: Group by Module ONLY. 
 $groupedModules = [];
 foreach ($classList as $cls) {
-    $modId = $cls['moduleId'];
-    if (!isset($groupedModules[$modId])) {
-        $ayRaw = $cls['academicYear'] ?? '2026/2027';
-        if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
-            $ayFormatted = 'AY' . $matches[1] . '/' . $matches[2];
-        } else {
-            $ayFormatted = 'AY ' . $ayRaw;
-        }
+    $groupKey = $cls['moduleId']; // No longer grouping by AY/Sem
 
-        $semRaw = $cls['semester'] ?? '1';
-        $semFormatted = is_numeric($semRaw) ? 'Semester ' . $semRaw : $semRaw;
-
-        $groupedModules[$modId] = [
+    if (!isset($groupedModules[$groupKey])) {
+        $groupedModules[$groupKey] = [
             'code' => $cls['moduleCode'],
             'name' => $cls['moduleName'],
-            'academicYear' => $ayFormatted,
-            'semester' => $semFormatted,
             'classes' => []
         ];
     }
-    $groupedModules[$modId]['classes'][] = $cls;
+    $groupedModules[$groupKey]['classes'][] = $cls;
 }
 
 foreach ($groupedModules as &$modGroup) {
     usort($modGroup['classes'], function ($a, $b) {
+        // Sort by Academic Year, then Semester, then Status
+        if ($a['academicYear'] !== $b['academicYear']) {
+            return strcmp($a['academicYear'], $b['academicYear']);
+        }
+        if ($a['semester'] !== $b['semester']) {
+            return strcmp($a['semester'], $b['semester']);
+        }
         $statusA = strtolower($a['status']) === 'active' ? 0 : 1;
         $statusB = strtolower($b['status']) === 'active' ? 0 : 1;
         return $statusA <=> $statusB;
@@ -298,24 +295,29 @@ foreach ($classList as $c) {
             box-sizing: border-box;
         }
 
+        /* UPDATED COLUMN WIDTHS TO FIT THE NEW COLUMN */
         .col-module {
-            width: 24%;
+            width: 20%;
         }
 
         .col-code {
+            width: 12%;
+        }
+
+        .col-period {
             width: 15%;
         }
 
         .col-schedule {
-            width: 23%;
+            width: 20%;
         }
 
         .col-status {
-            width: 11%;
+            width: 10%;
         }
 
         .col-actions {
-            width: 27%;
+            width: 23%;
         }
 
         .module-info-cell {
@@ -326,14 +328,6 @@ foreach ($classList as $c) {
             font-weight: 700;
             color: #1e293b;
             line-height: 1.4;
-        }
-
-        .module-info-sub {
-            display: block;
-            font-weight: 500;
-            color: #64748b;
-            font-size: 13px;
-            margin-top: 4px;
         }
 
         .admin-table tr:hover {
@@ -557,6 +551,12 @@ foreach ($classList as $c) {
 
         .info-group {
             margin-bottom: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        .info-group:last-child {
+            border-bottom: none;
         }
 
         .info-group label {
@@ -564,12 +564,15 @@ foreach ($classList as $c) {
             color: #64748b;
             text-transform: uppercase;
             font-weight: 700;
+            display: block;
+            margin-bottom: 4px;
         }
 
         .info-group p {
             font-size: 15px;
             color: #1e293b;
-            margin-top: 4px;
+            margin-top: 0;
+            margin-bottom: 0;
             font-weight: 500;
         }
 
@@ -788,9 +791,9 @@ foreach ($classList as $c) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageClassPage.php">Manage Classes</a>
-                    <a href="aiChatbotPage.php">AI Chatbot</a>
+                    <a href="AIChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
-                    <a href="../controller/logOutController.php">Log Out</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -846,8 +849,9 @@ foreach ($classList as $c) {
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th class="col-module">Module & Semester</th>
+                                    <th class="col-module">Module Name</th>
                                     <th class="col-code">Class Code</th>
+                                    <th class="col-period">Academic Period</th>
                                     <th class="col-schedule">Schedule & Venue</th>
                                     <th class="col-status">Status</th>
                                     <th class="col-actions">Actions</th>
@@ -857,24 +861,43 @@ foreach ($classList as $c) {
                                 <?php
                                 $classCount = count($mod['classes']);
                                 foreach ($mod['classes'] as $index => $cls):
+
+                                    // Format AY and Semester nicely
+                                    $ayRaw = $cls['academicYear'] ?? '2026/2027';
+                                    if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
+                                        $ayFormatted = 'AY ' . $matches[1] . '/' . $matches[2];
+                                    } else {
+                                        $ayFormatted = 'AY ' . $ayRaw;
+                                    }
+
+                                    $semRaw = $cls['semester'] ?? '1';
+                                    if (stripos($semRaw, 'semester') === false && stripos($semRaw, 'term') === false) {
+                                        $semFormatted = 'Semester ' . $semRaw;
+                                    } else {
+                                        $semFormatted = $semRaw;
+                                    }
                                     ?>
                                     <tr class="<?php echo strtolower($cls['status']) !== 'active' ? 'row-suspended' : ''; ?>">
                                         <?php if ($index === 0): ?>
                                             <td rowspan="<?php echo $classCount; ?>" class="module-info-cell col-module">
                                                 <div><?php echo htmlspecialchars($mod['code'] . " - " . $mod['name']); ?></div>
-                                                <span
-                                                    class="module-info-sub">(<?php echo htmlspecialchars($mod['academicYear'] . ", " . $mod['semester']); ?>)</span>
                                             </td>
                                         <?php endif; ?>
                                         <td class="col-code">
                                             <strong><?php echo htmlspecialchars($cls['classCode']); ?></strong>
                                         </td>
+                                        <td class="col-period">
+                                            <span
+                                                style="font-weight: 500; color: #475569;"><?php echo htmlspecialchars($ayFormatted); ?></span><br>
+                                            <span
+                                                style="font-size: 12px; color: #64748b;"><?php echo htmlspecialchars($semFormatted); ?></span>
+                                        </td>
                                         <td class="col-schedule">
                                             <?php echo ucfirst($cls['dayOfWeek'] ?? '-'); ?>
                                             (<?php echo htmlspecialchars(substr($cls['startTime'] ?? '', 0, 5)); ?> -
                                             <?php echo htmlspecialchars(substr($cls['endTime'] ?? '', 0, 5)); ?>)<br>
-                                            <span
-                                                style="color: #64748b; font-size: 13px;"><?php echo htmlspecialchars($cls['room'] ?? 'TBA'); ?></span>
+                                            <span style="color: #64748b; font-size: 13px;">Venue:
+                                                <?php echo htmlspecialchars($cls['room'] ?? 'TBA'); ?></span>
                                         </td>
                                         <td class="col-status">
                                             <?php if (strtolower($cls['status']) === 'active'): ?>
@@ -911,7 +934,7 @@ foreach ($classList as $c) {
     </main>
 
     <form id="statusForm"
-        action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+        action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
         method="POST" style="display:none;">
         <input type="hidden" name="action" value="toggle_status">
         <input type="hidden" name="class_id" id="statusClassId">
@@ -926,8 +949,20 @@ foreach ($classList as $c) {
             </div>
             <div id="viewModalBody">
                 <div class="info-group">
+                    <label>Module Name</label>
+                    <p id="viewModuleName"></p>
+                </div>
+                <div class="info-group">
+                    <label>Academic Period</label>
+                    <p id="viewSemester"></p>
+                </div>
+                <div class="info-group">
                     <label>Class Code</label>
                     <p id="viewClassCode"></p>
+                </div>
+                <div class="info-group">
+                    <label>Schedule & Venue</label>
+                    <p id="viewSchedule"></p>
                 </div>
                 <div class="info-group">
                     <label>Assigned Lecturer</label>
@@ -958,7 +993,7 @@ foreach ($classList as $c) {
             </div>
             <div id="modalErrorBanner" class="modal-error-banner" style="display:none;"></div>
             <form id="classForm"
-                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST">
                 <input type="hidden" name="action" id="classFormAction" value="update_class">
                 <input type="hidden" name="class_id" id="classId">
@@ -1033,10 +1068,10 @@ foreach ($classList as $c) {
 
                     <div class="form-group">
                         <label>Semester / Term</label>
-                        <input type="text" name="semester" id="modalSemester" placeholder="e.g. 1, 2, Special Term 1"
+                        <input type="text" name="semester" id="modalSemester" placeholder="e.g. 1, 2, 4 (Apr-Jun)"
                             required>
-                        <span class="field-hint">Follow your university's exact naming (e.g. Semester 1, Trimester
-                            2).</span>
+                        <span class="field-hint">You can include the months for clarity (e.g. Semester 1
+                            (Aug-Dec)).</span>
                     </div>
 
                     <div class="form-group form-group-full">
@@ -1085,9 +1120,8 @@ foreach ($classList as $c) {
 
                         <div id="tabCsvContent" style="display: none;">
                             <?php if (empty($studentFiles)): ?>
-                                <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-                                    Your university admin has not uploaded any student file yet.
-                                </p>
+                                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Your university admin has not
+                                    uploaded any student file yet.</p>
                             <?php else: ?>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <select id="csvFileSelectId"
@@ -1100,12 +1134,11 @@ foreach ($classList as $c) {
                                         <?php endforeach; ?>
                                     </select>
                                     <button type="button" class="btn-primary-small"
-                                        style="padding: 6px 14px; font-size: 13px;" onclick="submitFileEnrol()">Enrol
-                                        from File</button>
+                                        style="padding: 6px 14px; font-size: 13px;" onclick="submitFileEnrol()">Enrol from
+                                        File</button>
                                 </div>
-                                <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">
-                                    The file's first column should contain student email or student ID.
-                                </p>
+                                <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">The file's first column
+                                    should contain student email or student ID.</p>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1113,9 +1146,7 @@ foreach ($classList as $c) {
 
                 <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
                     <h4 style="margin-bottom: 10px; color: #1e293b;">Exam Schedule</h4>
-
                     <div id="examBlocksContainer"></div>
-
                     <button type="button" class="btn-add-exam" onclick="addExamBlock()">+ Add Exam</button>
 
                     <div id="applyExamWrap"
@@ -1137,7 +1168,7 @@ foreach ($classList as $c) {
             </form>
 
             <form id="enrolPostForm"
-                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST" style="display: none;">
                 <input type="hidden" name="action" id="enrolFormAction" value="enroll_student_single">
                 <input type="hidden" name="class_id" id="enrolClassId">
@@ -1400,7 +1431,21 @@ foreach ($classList as $c) {
 
         function openViewModal(data) {
             currentSelectedClassData = data;
-            document.getElementById('viewClassTitle').textContent = data.moduleCode + " - " + data.classCode;
+            document.getElementById('viewClassTitle').textContent = data.classCode;
+
+            document.getElementById('viewModuleName').textContent = data.moduleCode + ' - ' + data.moduleName;
+
+            let semText = data.semester;
+            if (semText.toLowerCase().indexOf('semester') === -1 && semText.toLowerCase().indexOf('term') === -1) {
+                semText = 'Semester ' + semText;
+            }
+            document.getElementById('viewSemester').textContent = 'AY ' + data.academicYear + ' • ' + semText;
+
+            let day = data.dayOfWeek ? data.dayOfWeek.toUpperCase() : '-';
+            let start = data.startTime ? data.startTime.substring(0, 5) : '';
+            let end = data.endTime ? data.endTime.substring(0, 5) : '';
+            document.getElementById('viewSchedule').textContent = day + ' (' + start + ' - ' + end + ') at Room ' + (data.room || 'TBA');
+
             document.getElementById('viewClassCode').textContent = data.classCode;
             document.getElementById('viewLecturerName').textContent = data.lecturerName || 'Unassigned';
 
@@ -1774,7 +1819,7 @@ foreach ($classList as $c) {
                 const lecSel = document.getElementById('modalStaffId');
                 const target = data.lecturerName.toLowerCase();
                 for (let i = 0; i < lecSel.options.length; i++) {
-                    if (lecSel.options[i].text.toLowerCase() === target) {
+                    if (lecSel.options[i].text.toLowerCase().includes(target)) {
                         lecSel.selectedIndex = i;
                         break;
                     }

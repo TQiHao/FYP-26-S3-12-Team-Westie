@@ -7,7 +7,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-require_once "../controller/manageProfileController.php";
+require_once "../controller/ManageProfileController.php";
 
 $controller = new ManageProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
@@ -70,15 +70,11 @@ $backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'stu
                     <?php else: ?>
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                         <a href="academicsPage.php">Academics</a>
-<<<<<<< Updated upstream
-                        <a href="facilitiesBookingPage.php">Facility Booking</a>
-=======
                         <a href="viewFacilitiesPage.php">Facility Booking</a>
->>>>>>> Stashed changes
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
-                    <a href="../controller/logOutController.php">Log Out</a>
+                    <a href="../controller/logoutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -102,12 +98,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'stu
             <div class="profile-header">
                 <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
                 <h2 class="section-label">My Profile</h2>
-<<<<<<< Updated upstream
-
-                <a href="updateProfilePage.php" class="btn-update">Update</a>
-=======
                 <a href="UpdateProfilePage.php" class="btn-update">Update</a>
->>>>>>> Stashed changes
             </div>
 
             <div class="profile-view">

@@ -44,6 +44,20 @@ $staffId = $_SESSION['user_id'] ?? null;
             text-align: center !important;
             white-space: nowrap;
         }
+
+        .semester-group {
+            margin-bottom: 30px;
+        }
+
+        .semester-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--bg-yellow);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
     </style>
 </head>
 
@@ -74,7 +88,6 @@ $staffId = $_SESSION['user_id'] ?? null;
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
-                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="viewEventsPage.php">University Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
@@ -108,18 +121,21 @@ $staffId = $_SESSION['user_id'] ?? null;
         } elseif ($modules === null || empty($modules)) {
             echo '<p class="no-notifications">You are not assigned in any modules for the current semester.</p>';
         } else {
-            $semesters = array_unique(array_column($modules, 'semester'));
-            $semesterLabel = implode(', ', $semesters);
-            $academicYear = $modules[0]['academicYear'] ?? '';
-            ?>
-            <p class="modules-meta">
-                Semester <?php echo htmlspecialchars($semesterLabel ?: '-'); ?>,
-                <?php echo htmlspecialchars($academicYear); ?>
-                &middot; <?php echo count($modules); ?> course<?php echo count($modules) === 1 ? '' : 's'; ?>
-            </p>
+            // Group modules by Semester and Academic Year
+            $groupedModules = [];
+            foreach ($modules as $m) {
+                $key = 'Semester ' . $m['semester'] . ' (' . $m['academicYear'] . ')';
+                $groupedModules[$key][] = $m;
+            }
 
-            <ul class="assigned-modules-list">
-                <?php foreach ($modules as $m): ?>
+            // Render each semester group
+            foreach ($groupedModules as $semesterLabel => $moduleList) {
+                echo '<div class="semester-group">';
+                echo '<div class="semester-title">' . htmlspecialchars($semesterLabel) . ' &middot; ' . count($moduleList) . ' course' . (count($moduleList) === 1 ? '' : 's') . '</div>';
+                echo '<ul class="assigned-modules-list">';
+
+                foreach ($moduleList as $m) {
+                    ?>
                     <li class="module-card">
                         <div>
                             <h3><?php echo htmlspecialchars($m['moduleCode'] . ' – ' . $m['moduleName']); ?></h3>
@@ -134,9 +150,14 @@ $staffId = $_SESSION['user_id'] ?? null;
                             Room <?php echo htmlspecialchars($m['room']); ?>
                         </span>
                     </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php } ?>
+                    <?php
+                }
+
+                echo '</ul>';
+                echo '</div>';
+            }
+        }
+        ?>
 
     </main>
 

@@ -101,7 +101,8 @@ class LecturerDashboardController
             $countStmt->execute([$userId]);
             $unreadCount = (int) $countStmt->fetchColumn();
 
-            $latestSql = "SELECT title, message FROM Notifications WHERE userId = ? ORDER BY id DESC LIMIT 1";
+            // FIXED: Added id ASC to match Notification Page sorting
+            $latestSql = "SELECT title, message FROM Notifications WHERE userId = ? ORDER BY createdAt DESC, id ASC LIMIT 1";
             $latestStmt = $this->db->prepare($latestSql);
             $latestStmt->execute([$userId]);
             $latestNoti = $latestStmt->fetch(PDO::FETCH_ASSOC);
@@ -121,7 +122,6 @@ class LecturerDashboardController
     public function getNextUpcomingEvent($userId, $universityId)
     {
         try {
-            // FIXED: Joined Facilities to get the actual location string
             $sql = "SELECT e.title, f.location, e.startDatetime 
                     FROM Events e
                     JOIN EventRegistrations er ON er.eventId = e.id
