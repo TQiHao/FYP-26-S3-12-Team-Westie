@@ -121,9 +121,12 @@ class LecturerDashboardController
     public function getNextUpcomingEvent($userId, $universityId)
     {
         try {
-            $sql = "SELECT e.title, e.location, e.startDatetime 
+            // FIXED: Joined Facilities to get the actual location string
+            $sql = "SELECT e.title, f.location, e.startDatetime 
                     FROM Events e
                     JOIN EventRegistrations er ON er.eventId = e.id
+                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
+                    INNER JOIN Facilities f ON bf.facilityId = f.id
                     WHERE e.universityId = ? 
                       AND e.status = 'active' 
                       AND e.startDatetime >= NOW() 

@@ -63,6 +63,7 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="viewEventsPage.php">University Campus Events</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logOutController.php">Log Out</a>
@@ -126,7 +127,8 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
         <section class="dashboard-section">
             <h3 class="section-label">Quick actions</h3>
             <div class="quick-actions">
-                <a href="notificationPage.php" class="quick-button">Event Reminders</a>
+                <!-- FIXED: Changed to viewEventsPage.php -->
+                <a href="viewEventsPage.php" class="quick-button">Event Reminders</a>
                 <a href="teachingPage.php?tab=timetable" class="quick-button">View Timetable</a>
             </div>
         </section>
