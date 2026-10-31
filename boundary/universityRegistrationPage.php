@@ -1,3 +1,10 @@
+<?php
+require_once "../controller/universityRegistrationController.php";
+
+$registrationController = new UniversityRegistrationController();
+$licensePlans = $registrationController->getLicensePlans();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -26,7 +33,9 @@
                 <p>Create your university account</p>
 
                 <?php
-                session_start();
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
 
                 if (isset($_SESSION['registration_error'])) {
                     echo '<div class="error-message">' . $_SESSION['registration_error'] . '</div>';
@@ -39,18 +48,24 @@
                 }
                 ?>
 
-                <form action="../controller/universityRegistrationController.php" method="POST">
+                <form action="../controller/universityRegistrationController.php" method="POST" enctype="multipart/form-data" id="registrationForm">
 
-                    <div class="form-group">
-                        <label for="email">Email address</label>
-                        <input type="email" id="email" name="email" placeholder="e.g. admin@hkust.edu.hk" required>
-                    </div>
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input type="email" id="email" name="email" placeholder="e.g. admin@hkust.edu.hk" required>
+                </div>
 
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" placeholder="Enter your password" required>
                     </div>
 
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+                        <small id="passwordMatchHint" class="form-hint"></small>
+                    </div>
+                
                     <div class="form-group">
                         <label for="representativeName">Representative Name</label>
                         <input type="text" id="representativeName" name="representativeName" placeholder="Enter your name" required>
@@ -66,7 +81,7 @@
                         <input type="text" id="universityName" name="universityName"
                             placeholder="e.g. Hong Kong University of Science and Technology" required>
                     </div>
-
+                    
                     <div class="form-group">
                         <label for="institutionType">Type of Institute</label>
                         <select id="institutionType" name="institutionType" required>
@@ -280,12 +295,40 @@
                             <option value="Zimbabwe">Zimbabwe</option>
                         </select>
                     </div>
-
+                    
                     <div class="form-group">
                         <label for="postalCode">Postal Code</label>
                         <input type="text" id="postalCode" name="postalCode" placeholder="e.g. 930700"
                             pattern="[A-Za-z0-9\s\-]{3,10}"
                             title="Postal code must be between 3 and 10 alphanumeric characters" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="licenseId">Subscription Plan</label>
+                        <select id="licenseId" name="licenseId" required>
+                            <?php if (empty($licensePlans)): ?>
+                                <option value="" disabled selected>No plans are available right now</option>
+                            <?php else: ?>
+                                <option value="" disabled selected>Select a plan</option>
+                                <?php foreach ($licensePlans as $plan): ?>
+                                    <option value="<?php echo (int) $plan['id']; ?>">
+                                        <?php echo htmlspecialchars($plan['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documents">Verification Documents</label>
+                        <input type="file" id="documents" name="documents[]" multiple required accept=".pdf,.jpg,.jpeg,.png">
+                        <small class="form-hint">
+                            Proof that your institution is real (e.g. accreditation or registration certificate).
+                            Upload 1 to <?php echo UniversityRegistrationController::MAX_DOCUMENTS; ?> files:
+                            PDF, JPG or PNG, up to <?php echo htmlspecialchars($registrationController->getDocumentLimitText()); ?> each.
+                        </small>
+                        <small id="documentHint" class="form-hint"></small>
+                        <ul id="documentList" class="document-list"></ul>
                     </div>
 
                     <button type="submit">Sign up</button>
@@ -312,6 +355,78 @@
     </footer>
 
     <script src="../script.js"></script>
+    
+<script>
+    // Quick checks in the browser. The server checks everything again.
+    (function () {
+        var pw = document.getElementById('password');
+        var cpw = document.getElementById('confirmPassword');
+        var hint = document.getElementById('passwordMatchHint');
+        var docs = document.getElementById('documents');
+        var docHint = document.getElementById('documentHint');
+        var maxFiles = <?php echo UniversityRegistrationController::MAX_DOCUMENTS; ?>;
+        var maxBytes = <?php echo (int) min(UniversityRegistrationController::MAX_DOCUMENT_BYTES, 1048576 * (int) $registrationController->getDocumentLimitText()); ?>;
+
+        function checkPasswords() {
+            var bad = cpw.value !== '' && pw.value !== cpw.value;
+            hint.textContent = bad ? 'Passwords do not match. Please try again.' : '';
+            cpw.setCustomValidity(bad ? 'Passwords do not match.' : '');
+        }
+        // A file input forgets its old files whenever you pick again, so we keep our own list.
+var selected = [];
+var list = document.getElementById('documentList');
+
+function sameFile(a, b) {
+    return a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+}
+
+function showSelected() {
+    // Put our list back into the real input so the form submits every file
+    var dt = new DataTransfer();
+    selected.forEach(function (f) { dt.items.add(f); });
+    docs.files = dt.files;
+
+    list.innerHTML = '';
+    selected.forEach(function (f, index) {
+        var item = document.createElement('li');
+        var name = document.createElement('span');
+        name.textContent = f.name + ' (' + Math.max(1, Math.round(f.size / 1024)) + ' KB)';
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', function () {
+            selected.splice(index, 1);
+            showSelected();
+        });
+        item.appendChild(name);
+        item.appendChild(remove);
+        list.appendChild(item);
+    });
+
+    var msg = '';
+    if (selected.length > maxFiles) {
+        msg = 'Please keep at most ' + maxFiles + ' files (remove ' + (selected.length - maxFiles) + ').';
+    }
+    selected.forEach(function (f) {
+        if (f.size > maxBytes) { msg = '"' + f.name + '" is too large. Please remove it.'; }
+    });
+    docHint.textContent = msg;
+    docs.setCustomValidity(msg);
+}
+
+docs.addEventListener('change', function () {
+    Array.prototype.forEach.call(docs.files, function (f) {
+        if (!selected.some(function (s) { return sameFile(s, f); })) {
+            selected.push(f);
+        }
+    });
+    showSelected();
+});
+
+pw.addEventListener('input', checkPasswords);
+cpw.addEventListener('input', checkPasswords);
+    })();
+</script>
 
 </body>
 

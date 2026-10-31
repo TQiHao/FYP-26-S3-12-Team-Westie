@@ -28,16 +28,62 @@ class ViewRegistrationController
     /** Get a single registration by id, for the review page */
     public function getRegistration($registrationId)
     {
-        $sql = "SELECT id, universityName, applicantName, applicantEmail, applicantContact,
-                       institutionType, country, postalCode, status, rejectionReason, createdAt
-                FROM UniversityRegistrations
-                WHERE id = ?";
- 
+         $sql = "SELECT r.id, r.universityName, r.applicantName, r.applicantEmail, r.applicantContact,
+                       r.institutionType, r.country, r.postalCode, r.status, r.rejectionReason, r.createdAt,
+                       r.licenseId, l.name AS licenseName, l.durationYears
+                FROM UniversityRegistrations r
+                LEFT JOIN Licenses l ON l.id = r.licenseId
+                WHERE r.id = ?";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$registrationId]);
         $registration = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $registration ?: null;
+    }
+
+    //The verification documents uploaded with a registration
+    public function getDocuments($registrationId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, documentType, fileName, uploadedAt
+            FROM RegistrationDocuments
+            WHERE registrationId = ?
+            ORDER BY id ASC"
+        );
+        $stmt->execute([$registrationId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function streamDocument($documentId)
+    {
+        $stmt = $this->db->prepare("SELECT registrationId, fileName, filePath FROM RegistrationDocuments WHERE id = ?");
+        $stmt->execute([$documentId]);
+        $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->closeCursor();
+
+        $folder = realpath(dirname(__DIR__) . '/uploads/registration_documents');
+        $file   = $doc ? realpath(dirname(__DIR__) . '/' . $doc['filePath']) : false;
+
+        // The resolved file must really be inside the documents folder (blocks ../ tricks)
+        if (!$doc || !$folder || !$file || strpos($file, $folder . DIRECTORY_SEPARATOR) !== 0 || !is_file($file)) {
+            http_response_code(404);
+            echo "Document not found.";
+            exit();
+        }
+
+        $types = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        $ext   = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+
+        SystemLog::record('university', 'info', 'Registration Document Viewed',
+            'Document "' . $doc['fileName'] . '" of registration REG-' . str_pad($doc['registrationId'], 4, '0', STR_PAD_LEFT) . ' was viewed.');
+
+        header('Content-Type: ' . ($types[$ext] ?? 'application/octet-stream'));
+        header('Content-Length: ' . filesize($file));
+        header('Content-Disposition: inline; filename="' . preg_replace('/[^\w.\-]/', '_', $doc['fileName']) . '"');
+        header('X-Content-Type-Options: nosniff');
+        readfile($file);
+        exit();
     }
 
     /** Approve a pending registration **/
@@ -88,6 +134,31 @@ class ViewRegistrationController
                 $full['applicantName']
             ]);
 
+            // Give the university the licence plan it chose when it registered
+            if (!empty($full['licenseId'])) {
+                $licenseStmt = $this->db->prepare("SELECT id, durationYears FROM Licenses WHERE id = ?");
+                $licenseStmt->execute([$full['licenseId']]);
+                $license = $licenseStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($license) {
+                    $startDate  = date('Y-m-d');
+                    $expiryDate = date('Y-m-d', strtotime('+' . (int) $license['durationYears'] . ' years'));
+
+                    $insertLicenseSql = "INSERT INTO UniversityLicenses
+                                            (universityId, licenseId, startDate, expiryDate, status)
+                                         VALUES (?, ?, ?, ?, 'active')";
+                    $this->db->prepare($insertLicenseSql)->execute([
+                        $newUniversityId,
+                        $license['id'],
+                        $startDate,
+                        $expiryDate
+                    ]);
+
+                    $this->db->prepare("UPDATE Universities SET subscriptionPlan = ? WHERE id = ?")
+                        ->execute([(int) $license['durationYears'], $newUniversityId]);
+                }
+            }
+
              // Mark the registration approved and link it to the new university
             $updateRegSql = "UPDATE UniversityRegistrations
                               SET status = 'approved',
@@ -136,6 +207,12 @@ class ViewRegistrationController
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$reason, $reviewerId, $registrationId]);
     }
+}
+
+// Handle GET: open a verification document
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET['document'])) {
+    $controller = new ViewRegistrationController();
+    $controller->streamDocument((int) $_GET['document']);
 }
 
 // Handle POST actions (Approve / Reject)

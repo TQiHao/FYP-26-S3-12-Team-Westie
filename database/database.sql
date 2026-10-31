@@ -108,6 +108,7 @@ CREATE TABLE UniversityRegistrations (
     institutionType VARCHAR(100) NOT NULL,
     country VARCHAR(100) NOT NULL,
     postalCode VARCHAR(20) NOT NULL,
+    licenseId INT NULL,
     status VARCHAR(50) DEFAULT 'pending',
     reviewedBy INT NULL,
     reviewedAt DATETIME NULL,

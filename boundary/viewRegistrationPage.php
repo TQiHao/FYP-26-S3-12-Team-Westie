@@ -4,7 +4,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+if (
+    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
+    ($_SESSION['user_role'] ?? '') !== 'system_admin'
+) {
     header("Location: loginPage.php");
     exit();
 }
@@ -15,6 +18,7 @@ $registrationId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 $controller = new ViewRegistrationController();
 $registration = $controller->getRegistration($registrationId);
+$documents = $controller->getDocuments($registrationId);
 
 if (!$registration) {
     header("Location: manageUniversityPage.php");
@@ -116,6 +120,48 @@ $isPending = $registration['status'] === 'pending';
                     <span class="detail-value"><?php echo htmlspecialchars($registration['applicantContact']); ?></span>
                 </div>
             </div>
+
+            <!-- License Information -->
+            <div class="detail-section">
+                <h3 class="detail-section-title">License Information</h3>
+
+                <div class="detail-row">
+                    <span class="detail-label">Selected Plan:</span>
+                    <span class="detail-value">
+                        <?php echo !empty($registration['licenseName']) ? htmlspecialchars($registration['licenseName']) : 'Not selected'; ?>
+                    </span>
+                </div>
+
+                <?php if (!empty($registration['durationYears'])): ?>
+                    <div class="detail-row">
+                        <span class="detail-label">Duration:</span>
+                        <span class="detail-value">
+                            <?php echo (int) $registration['durationYears']; ?> year<?php echo (int) $registration['durationYears'] > 1 ? 's' : ''; ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Verification Documents -->
+            <div class="detail-section">
+                <h3 class="detail-section-title">Verification Documents</h3>
+
+                <?php if (empty($documents)): ?>
+                    <div class="detail-row">
+                        <span class="detail-value">No documents were uploaded.</span>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($documents as $doc): ?>
+                        <div class="detail-row">
+                            <span class="detail-label"><?php echo htmlspecialchars($doc['documentType']); ?>:</span>
+                            <span class="detail-value">
+                                <a href="../controller/viewRegistrationController.php?document=<?php echo (int) $doc['id']; ?>"
+                                target="_blank" rel="noopener"><?php echo htmlspecialchars($doc['fileName']); ?></a>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
  
             <?php if (!$isPending): ?>
                 <p class="registration-status-note">
@@ -147,7 +193,7 @@ $isPending = $registration['status'] === 'pending';
             </div>
  
         </div>
- 
+
     </main>
  
     <?php if ($isPending): ?>
@@ -161,7 +207,7 @@ $isPending = $registration['status'] === 'pending';
                     Are you sure you want to approve <?php echo htmlspecialchars($registration['universityName']); ?>?
                 </p>
                 <p class="modal-message">
-                    Once approved, the university account will be activated and the University Admin will be notified.
+                    Once approved, the university account will be activated.
                 </p>
  
                 <div class="modal-actions">
