@@ -6604,3 +6604,88 @@ a.summary-card:hover {
     font-weight: 600;
     cursor: pointer;
 }
+
+/* ===== Update AI Model page ===== */
+.system-admin-dashboard .ai-model-form {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px 24px;
+  align-items: start;
+  max-width: 680px;
+}
+
+.system-admin-dashboard .ai-model-form label {
+  padding-top: 9px;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.system-admin-dashboard .ai-model-form input[type="text"],
+.system-admin-dashboard .ai-model-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #999;
+  border-radius: 8px;
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+}
+
+.system-admin-dashboard .ai-model-form textarea {
+  resize: vertical;
+}
+
+.system-admin-dashboard .ai-model-form input:focus,
+.system-admin-dashboard .ai-model-form textarea:focus {
+  outline: none;
+  border-color: #2E6DD6;
+}
+
+.system-admin-dashboard .ai-model-form input[type="file"] {
+  padding-top: 8px;
+  font-size: 0.9rem;
+}
+
+.system-admin-dashboard .ai-model-hint {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.system-admin-dashboard .ai-model-badge {
+  width: auto;
+  min-width: 70px;
+  text-align: center;
+}
+
+.system-admin-dashboard .btn-large:disabled {
+  background-color: #b5b5b5;
+  cursor: not-allowed;
+}
+
+.system-admin-dashboard .status-archived {
+  background-color: #8a8a8a;
+}
+
+.system-admin-dashboard .ai-model-history-title {
+  margin: 34px 0 12px;
+}
+
+.system-admin-dashboard .admin-table.ai-model-table {
+  min-width: 700px;
+}
+
+@media (max-width: 600px) {
+  .system-admin-dashboard .ai-model-form {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .system-admin-dashboard .ai-model-form label {
+    padding-top: 10px;
+  }
+
+  .system-admin-dashboard .detail-label {
+    width: 130px;
+  }
+}

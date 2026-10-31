@@ -204,7 +204,15 @@ WHERE email = 'systemadmin@unibee.com'
 AND NOT EXISTS (SELECT 1 FROM SystemAdminProfiles WHERE systemAdminId = (SELECT id FROM SystemAdmins WHERE email = 'systemadmin@unibee.com'));
 
 -- ============================================
--- 10. LICENSES
+-- 10. AI MODEL VERSIONS
+-- ============================================
+INSERT INTO AIModelVersions (modelName, version, releaseNotes, status, approvedAt, deployedAt, updatedBy)
+SELECT 'Phi-3 Mini', 'v1.0', 'Initial model', 'deployed', NOW(), NOW(),
+       (SELECT id FROM SystemAdmins WHERE email = 'systemadmin@unibee.com')
+WHERE NOT EXISTS (SELECT 1 FROM AIModelVersions WHERE status = 'deployed');
+
+-- ============================================
+-- 11. LICENSES
 -- ============================================
 INSERT INTO Licenses (id, name, durationYears, description, status)
 VALUES
@@ -218,7 +226,7 @@ SELECT 1, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'
 WHERE NOT EXISTS (SELECT 1 FROM UniversityLicenses WHERE universityId = 1);
 
 -- ============================================
--- 11. LANDING PAGE CONTENT
+-- 12. LANDING PAGE CONTENT
 -- ============================================
 INSERT INTO LandingPageContent (sectionKey, title, subtitle, content, imagePath)
 VALUES
@@ -253,7 +261,7 @@ VALUES
  NULL);
 
 -- ============================================================
--- Navigation test data (for Facility Location Tracking)
+-- 13a. Navigation test data (for Facility Location Tracking)
 -- ============================================================
 
 -- 0. Make sure @l1 and @n_j1 are defined in this session.
@@ -394,7 +402,7 @@ WHERE n.floorId = @l1
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
--- Navigation demo building: "Library Tower"
+-- 13b. Navigation demo building: "Library Tower"
 -- (Extra building for testing the navigation feature end-to-end.)
 -- ============================================================
 
