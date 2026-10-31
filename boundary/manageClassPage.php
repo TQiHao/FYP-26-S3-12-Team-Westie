@@ -73,10 +73,10 @@ if ($reopenMode !== null && $flashError !== null) {
     $flashError = null;
 }
 
-// FIXED: Group by Module ONLY. 
+// Group by Module ONLY. 
 $groupedModules = [];
 foreach ($classList as $cls) {
-    $groupKey = $cls['moduleId']; // No longer grouping by AY/Sem
+    $groupKey = $cls['moduleId'];
 
     if (!isset($groupedModules[$groupKey])) {
         $groupedModules[$groupKey] = [
@@ -90,7 +90,6 @@ foreach ($classList as $cls) {
 
 foreach ($groupedModules as &$modGroup) {
     usort($modGroup['classes'], function ($a, $b) {
-        // Sort by Academic Year, then Semester, then Status
         if ($a['academicYear'] !== $b['academicYear']) {
             return strcmp($a['academicYear'], $b['academicYear']);
         }
@@ -295,7 +294,6 @@ foreach ($classList as $c) {
             box-sizing: border-box;
         }
 
-        /* UPDATED COLUMN WIDTHS TO FIT THE NEW COLUMN */
         .col-module {
             width: 20%;
         }
@@ -656,6 +654,7 @@ foreach ($classList as $c) {
             max-height: 200px;
             overflow-y: auto;
             background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
         .modal-room-suggestions .room-sug-item {
@@ -862,7 +861,6 @@ foreach ($classList as $c) {
                                 $classCount = count($mod['classes']);
                                 foreach ($mod['classes'] as $index => $cls):
 
-                                    // Format AY and Semester nicely
                                     $ayRaw = $cls['academicYear'] ?? '2026/2027';
                                     if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
                                         $ayFormatted = 'AY ' . $matches[1] . '/' . $matches[2];
@@ -1560,6 +1558,12 @@ foreach ($classList as $c) {
             const box = block.querySelector('.exam-venue-suggestions');
             if (!box) return;
 
+            // FIXED: Toggle logic if already open
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                return;
+            }
+
             document.querySelectorAll('.exam-venue-suggestions').forEach(function (b) {
                 if (b !== box) {
                     b.style.display = 'none';
@@ -1582,7 +1586,9 @@ foreach ($classList as $c) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
-                        box.innerHTML = '';
+                        // FIXED: Added Header with Close button
+                        box.innerHTML = '<div style="display:flex; justify-content:space-between; padding:8px 12px; background:#e2e8f0; border-bottom:1px solid #cbd5e1; font-size:11px; font-weight:700; color:#475569;"><span>Suggested Venues</span><span style="cursor:pointer; color:#dc2626; font-size:16px; line-height:1; padding:0 4px;" onclick="this.parentElement.parentElement.style.display=\'none\'">&times;</span></div>';
+
                         data.rooms.forEach(function (r) {
                             const item = document.createElement('div');
                             item.className = 'room-sug-item';
@@ -1753,6 +1759,13 @@ foreach ($classList as $c) {
             }
 
             const box = document.getElementById('modalRoomSuggestions');
+
+            // FIXED: Toggle logic if already open
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                return;
+            }
+
             box.style.display = 'block';
             box.innerHTML = '<div class="room-sug-msg">Searching...</div>';
 
@@ -1767,7 +1780,9 @@ foreach ($classList as $c) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
-                        box.innerHTML = '';
+                        // FIXED: Added Header with Close button
+                        box.innerHTML = '<div style="display:flex; justify-content:space-between; padding:8px 12px; background:#e2e8f0; border-bottom:1px solid #cbd5e1; font-size:11px; font-weight:700; color:#475569;"><span>Suggested Rooms</span><span style="cursor:pointer; color:#dc2626; font-size:16px; line-height:1; padding:0 4px;" onclick="document.getElementById(\'modalRoomSuggestions\').style.display=\'none\'">&times;</span></div>';
+
                         data.rooms.forEach(function (r) {
                             const item = document.createElement('div');
                             item.className = 'room-sug-item';
