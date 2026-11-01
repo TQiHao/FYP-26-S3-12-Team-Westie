@@ -96,12 +96,18 @@ function getInitials($fullName)
         </div>
     </section>
 
-    <section class="video-section">
-        <div class="video-container">
-            <video controls poster="<?php echo htmlspecialchars($heroImage); ?>">
-                <source src="" type="video/mp4">
-                Your browser does not support video playback.
-            </video>
+    <!-- Marketing Video Section -->
+    <section class="marketing-video-section" style="padding: 50px 20px; text-align: center; background-color: #f8f9fa;">
+
+
+        <div
+            style="max-width: 800px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); aspect-ratio: 16/9;">
+            <iframe width="100%" height="100%"
+                src="https://www.youtube.com/embed/BqMPDqsBuW4?autoplay=1&mute=1&loop=1&playlist=BqMPDqsBuW4"
+                title="UniBee Marketing Video" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
         </div>
     </section>
 
