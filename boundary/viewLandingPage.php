@@ -96,10 +96,7 @@ function getInitials($fullName)
         </div>
     </section>
 
-    <!-- Marketing Video Section -->
     <section class="marketing-video-section" style="padding: 50px 20px; text-align: center; background-color: #f8f9fa;">
-
-
         <div
             style="max-width: 800px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); aspect-ratio: 16/9;">
             <iframe width="100%" height="100%"
@@ -163,28 +160,33 @@ function getInitials($fullName)
 
     <section class="testimonials-section">
         <h2>Testimonials</h2>
-        <div class="testimonials-grid">
-            <?php foreach ($testimonials as $row): ?>
-                <?php
-                $rating = isset($row['rating']) ? (int) $row['rating'] : 5;
-                $name = $row['fullName'] ?? 'UniBee User';
-                $dateStr = formatTestimonialDate($row['createdAt'] ?? null);
-                ?>
-                <div class="testimonial-card">
-                    <div class="testimonial-avatar"><?php echo getInitials($name); ?></div>
-                    <div class="stars">
-                        <?php echo str_repeat('★', $rating); ?>
+
+        <?php if (empty($testimonials)): ?>
+            <p style="text-align: center; color: #64748b; font-size: 16px;">No testimonials available at the moment.</p>
+        <?php else: ?>
+            <div class="testimonials-grid">
+                <?php foreach ($testimonials as $row): ?>
+                    <?php
+                    $rating = isset($row['rating']) ? (int) $row['rating'] : 5;
+                    $name = $row['fullName'] ?? 'UniBee User';
+                    $dateStr = formatTestimonialDate($row['createdAt'] ?? null);
+                    ?>
+                    <div class="testimonial-card">
+                        <div class="testimonial-avatar"><?php echo getInitials($name); ?></div>
+                        <div class="stars">
+                            <?php echo str_repeat('★', $rating); ?>
+                        </div>
+                        <p class="testimonial-text"><?php echo cleanInput($row['message'] ?? ''); ?></p>
+                        <div class="testimonial-meta">
+                            <span class="testimonial-name"><?php echo cleanInput(getDisplayName($name)); ?></span>
+                            <?php if ($dateStr !== ''): ?>
+                                <span class="testimonial-date">• <?php echo cleanInput($dateStr); ?></span>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <p class="testimonial-text"><?php echo cleanInput($row['message'] ?? ''); ?></p>
-                    <div class="testimonial-meta">
-                        <span class="testimonial-name"><?php echo cleanInput(getDisplayName($name)); ?></span>
-                        <?php if ($dateStr !== ''): ?>
-                            <span class="testimonial-date">• <?php echo cleanInput($dateStr); ?></span>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
 
     <footer>

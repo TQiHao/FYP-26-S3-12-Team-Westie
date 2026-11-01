@@ -163,7 +163,7 @@ class ViewLandingPageController
     ];
 
     private $MIN_LENGTH = 20;
-    private $MAX_LENGTH = 400;
+    private $MAX_LENGTH = 1000;
 
     public function __construct()
     {
