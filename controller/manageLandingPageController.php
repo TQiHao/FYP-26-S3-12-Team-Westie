@@ -1,6 +1,6 @@
 <?php
 
-require_once "../database/database.php";
+require_once "../entity/landingPageContent.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -12,8 +12,6 @@ requireRole(['system_admin']);
 
 class ManageLandingPageController
 {
-    private $db;
-
     public const FEATURE_SECTIONS = [
         'feature_admin'    => 'University Admin',
         'feature_cc'       => 'Course Coordinator',
@@ -21,22 +19,9 @@ class ManageLandingPageController
         'feature_lecturer' => 'Lecturers',
     ];
 
-    public function __construct()
-    {
-        $database = new Database();
-        $this->db = $database->connect();
-    }
-
-    private function getSection($sectionKey)
-    {
-        $stmt = $this->db->prepare("SELECT * FROM LandingPageContent WHERE sectionKey = ? LIMIT 1");
-        $stmt->execute([$sectionKey]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
     public function getEditableContent()
     {
-        $hero = $this->getSection('hero');
+        $hero = LandingPageContent::getSection('hero');
 
         $heroTitle = $hero['title'] ?? 'Connect Smarter,<br>Bee Smarter.';
         $heroTitle = preg_replace('/<br\s*\/?>/i', "\n", $heroTitle);
@@ -51,7 +36,7 @@ class ManageLandingPageController
         ];
 
         foreach (self::FEATURE_SECTIONS as $key => $label) {
-            $row = $this->getSection($key);
+            $row = LandingPageContent::getSection($key);
             $boxes = [];
 
             if ($row && !empty($row['content'])) {
@@ -63,7 +48,7 @@ class ManageLandingPageController
 
             $content['features'][$key] = [
                 'label'  => $label,
-                'exists' => (bool) $row,   // used by the edit page to match slides to sections
+                'exists' => (bool) $row,
                 'title'  => $row['title'] ?? ('Features for ' . $label),
                 'boxes'  => $boxes,
             ];
@@ -127,30 +112,11 @@ class ManageLandingPageController
             $rows[] = [$key, trim($section['title']), null, json_encode($boxes, JSON_UNESCAPED_UNICODE)];
         }
 
-        // sectionKey is UNIQUE, validate if the content already exist.
-        $sql = "INSERT INTO LandingPageContent (sectionKey, title, subtitle, content)
-                VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    title    = VALUES(title),
-                    subtitle = VALUES(subtitle),
-                    content  = VALUES(content)";
-
-        try {
-            $this->db->beginTransaction();
-            $stmt = $this->db->prepare($sql);
-
-            foreach ($rows as $row) {
-                $stmt->execute($row);
-            }
-
-            $this->db->commit();
-            return true;
-        } catch (PDOException $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
+        if (!LandingPageContent::saveSections($rows)) {
             return "Unable to update the landing page. Please try again.";
         }
+
+        return true;
     }
 }
 

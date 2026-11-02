@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../database/database.php";
+
 class Universities
 {
     private $id;
@@ -210,5 +212,109 @@ class Universities
         );
         $stmt->execute([$name, $durationYears, $name]);
         return (int) $this->db->lastInsertId();
+    }
+
+    
+    // ------------------------------------------------------------------
+    // System Admin: manage universities
+    // ------------------------------------------------------------------
+
+    private static function connect()
+    {
+        $database = new Database();
+        return $database->connect();
+    }
+
+    /** Active and suspended universities, with the date their licence ends */
+    public static function getExisting()
+    {
+        $sql = "SELECT
+                    u.id,
+                    u.name,
+                    u.status,
+                    (
+                        SELECT ul.expiryDate
+                        FROM UniversityLicenses ul
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licenseExpiryDate
+                FROM Universities u
+                WHERE u.status IN ('active', 'suspended')
+                ORDER BY u.id ASC";
+
+        return self::connect()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** One university with its administrator and current licence, or null */
+    public static function getDetails($universityId)
+    {
+        $sql = "SELECT
+                    u.id,
+                    u.name,
+                    u.registrationDate,
+                    u.status,
+                    (
+                        SELECT us.fullName
+                        FROM Users us
+                        WHERE us.universityId = u.id AND us.role = 'university_admin'
+                        LIMIT 1
+                    ) AS repName,
+                    (
+                        SELECT us.email
+                        FROM Users us
+                        WHERE us.universityId = u.id AND us.role = 'university_admin'
+                        LIMIT 1
+                    ) AS repEmail,
+                    (
+                        SELECT l.name
+                        FROM UniversityLicenses ul
+                        JOIN Licenses l ON l.id = ul.licenseId
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licensePlan,
+                    (
+                        SELECT ul.startDate
+                        FROM UniversityLicenses ul
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licenseStartDate,
+                    (
+                        SELECT ul.expiryDate
+                        FROM UniversityLicenses ul
+                        WHERE ul.universityId = u.id
+                        ORDER BY ul.expiryDate DESC
+                        LIMIT 1
+                    ) AS licenseExpiryDate
+                FROM Universities u
+                WHERE u.id = ?";
+
+        $stmt = self::connect()->prepare($sql);
+        $stmt->execute([$universityId]);
+        $details = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $details ?: null;
+    }
+
+    /** Block a university: its status becomes suspended and the reason is kept */
+    public static function suspend($universityId, $reason)
+    {
+        $stmt = self::connect()->prepare(
+            "UPDATE Universities SET status = 'suspended', suspensionReason = ?, updatedAt = NOW() WHERE id = ?"
+        );
+
+        return $stmt->execute([$reason, $universityId]);
+    }
+
+    /** Let a suspended university in again */
+    public static function reactivate($universityId)
+    {
+        $stmt = self::connect()->prepare(
+            "UPDATE Universities SET status = 'active', suspensionReason = NULL, updatedAt = NOW() WHERE id = ?"
+        );
+
+        return $stmt->execute([$universityId]);
     }
 }

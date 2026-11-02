@@ -1,6 +1,6 @@
 <?php
 
-require_once "../database/database.php";
+require_once "../entity/systemAdmins.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -12,36 +12,11 @@ requireRole(['system_admin']);
 
 class SystemAdminManageProfileController
 {
-    private $db;
-
-    public function __construct()
-    {
-        $database = new Database();
-        $this->db = $database->connect();
-    }
-
-    //Get a system admin's profile for display.
     public function getProfile($systemAdminId)
     {
-        $sql = "SELECT
-                    sa.id,
-                    sa.email,
-                    sa.fullName,
-                    sap.department,
-                    sap.position,
-                    sap.contactNumber
-                FROM SystemAdmins sa
-                LEFT JOIN SystemAdminProfiles sap ON sap.systemAdminId = sa.id
-                WHERE sa.id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$systemAdminId]);
-        $profile = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $profile ?: null;
+        return SystemAdmins::getProfile($systemAdminId);
     }
 
-    //Update a system admin's profile.
     public function updateProfile($systemAdminId, $fullName, $department, $position, $contactNumber)
     {
         $fullName = trim($fullName);
@@ -50,38 +25,9 @@ class SystemAdminManageProfileController
             return "missing_name";
         }
 
-        try {
-            $this->db->beginTransaction();
-
-            $sql = "UPDATE SystemAdmins SET fullName = ?, updatedAt = NOW() WHERE id = ?";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$fullName, $systemAdminId]);
-
-            $checkSql = "SELECT COUNT(*) FROM SystemAdminProfiles WHERE systemAdminId = ?";
-            $checkStmt = $this->db->prepare($checkSql);
-            $checkStmt->execute([$systemAdminId]);
-
-            if ($checkStmt->fetchColumn() > 0) {
-                $sql = "UPDATE SystemAdminProfiles
-                        SET department = ?, position = ?, contactNumber = ?, updatedAt = NOW()
-                        WHERE systemAdminId = ?";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute([$department, $position, $contactNumber, $systemAdminId]);
-            } else {
-                $sql = "INSERT INTO SystemAdminProfiles
-                            (systemAdminId, department, position, contactNumber, createdAt, updatedAt)
-                        VALUES (?, ?, ?, ?, NOW(), NOW())";
-                $stmt = $this->db->prepare($sql);
-                $stmt->execute([$systemAdminId, $department, $position, $contactNumber]);
-            }
-
-            $this->db->commit();
-            return true;
-
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            return "error";
-        }
+        return SystemAdmins::updateProfile($systemAdminId, $fullName, $department, $position, $contactNumber)
+            ? true
+            : "error";
     }
 }
 

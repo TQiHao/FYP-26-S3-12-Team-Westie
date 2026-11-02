@@ -1,6 +1,6 @@
 <?php
 
-require_once "../database/database.php";
+require_once "../entity/universities.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -12,63 +12,9 @@ requireRole(['system_admin']);
 
 class ViewUniversityController
 {
-    private $db;
-
-    public function __construct()
-    {
-        $database = new Database();
-        $this->db = $database->connect();
-    }
-
     public function getUniversityDetails($universityId)
     {
-        $sql = "SELECT
-                    u.id,
-                    u.name,
-                    u.registrationDate,
-                    u.status,
-                    (
-                        SELECT us.fullName
-                        FROM Users us
-                        WHERE us.universityId = u.id AND us.role = 'university_admin'
-                        LIMIT 1
-                    ) AS repName,
-                    (
-                        SELECT us.email
-                        FROM Users us
-                        WHERE us.universityId = u.id AND us.role = 'university_admin'
-                        LIMIT 1
-                    ) AS repEmail,
-                    (
-                        SELECT l.name
-                        FROM UniversityLicenses ul
-                        JOIN Licenses l ON l.id = ul.licenseId
-                        WHERE ul.universityId = u.id
-                        ORDER BY ul.expiryDate DESC
-                        LIMIT 1
-                    ) AS licensePlan,
-                    (
-                        SELECT ul.startDate
-                        FROM UniversityLicenses ul
-                        WHERE ul.universityId = u.id
-                        ORDER BY ul.expiryDate DESC
-                        LIMIT 1
-                    ) AS licenseStartDate,
-                    (
-                        SELECT ul.expiryDate
-                        FROM UniversityLicenses ul
-                        WHERE ul.universityId = u.id
-                        ORDER BY ul.expiryDate DESC
-                        LIMIT 1
-                    ) AS licenseExpiryDate
-                FROM Universities u
-                WHERE u.id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$universityId]);
-        $details = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $details ?: null;
+        return Universities::getDetails($universityId);
     }
 
     public function suspendUniversity($universityId, $reason)
@@ -79,16 +25,12 @@ class ViewUniversityController
             return "missing_reason";
         }
 
-        $sql = "UPDATE Universities SET status = 'suspended', suspensionReason = ?, updatedAt = NOW() WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$reason, $universityId]);
+        return Universities::suspend($universityId, $reason);
     }
 
     public function reactivateUniversity($universityId)
     {
-        $sql = "UPDATE Universities SET status = 'active', suspensionReason = NULL, updatedAt = NOW() WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([$universityId]);
+        return Universities::reactivate($universityId);
     }
 }
 

@@ -1,6 +1,6 @@
 <?php
 
-require_once "../database/database.php";
+require_once "../entity/feedback.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -12,8 +12,6 @@ requireRole(['system_admin']);
 
 class ReviewFeedbackController
 {
-    private $db;
-
     public const PER_PAGE = 10;
 
     public const STATUSES = ['new', 'in_review', 'resolved'];
@@ -24,109 +22,33 @@ class ReviewFeedbackController
         'resolved'  => ['in_review'],
     ];
 
-    public function __construct()
-    {
-        $database = new Database();
-        $this->db = $database->connect();
-    }
-
     public function getSummary()
     {
-        $sql = "SELECT
-                    COUNT(*)                                   AS total,
-                    COALESCE(SUM(status = 'new'), 0)           AS newCount,
-                    COALESCE(SUM(status = 'in_review'), 0)     AS inReviewCount,
-                    COALESCE(SUM(status = 'resolved'), 0)      AS resolvedCount,
-                    COALESCE(AVG(rating), 0)                   AS avgRating
-                FROM Feedback";
-
-        return $this->db->query($sql)->fetch(PDO::FETCH_ASSOC);
+        return Feedback::getSummary();
     }
 
     public function getUniversitiesForFilter()
     {
-        $sql = "SELECT DISTINCT un.id, un.name
-                FROM Feedback f
-                JOIN Universities un ON un.id = f.universityId
-                ORDER BY un.name ASC";
-
-        return $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        return Feedback::getUniversitiesForFilter();
     }
 
     public function getFeedbackList($filters, $page)
     {
-        $where  = [];
-        $params = [];
-
-        if (in_array($filters['status'], self::STATUSES, true)) {
-            $where[]  = "f.status = ?";
-            $params[] = $filters['status'];
-        }
-
         $rating = (int) $filters['rating'];
-        if ($rating >= 1 && $rating <= 5) {
-            $where[]  = "f.rating = ?";
-            $params[] = $rating;
-        }
 
-        $universityId = (int) $filters['university'];
-        if ($universityId > 0) {
-            $where[]  = "f.universityId = ?";
-            $params[] = $universityId;
-        }
-
-        $search = trim($filters['search']);
-        if ($search !== '') {
-            $where[]  = "(f.message LIKE ? OR u.fullName LIKE ?)";
-            $params[] = '%' . $search . '%';
-            $params[] = '%' . $search . '%';
-        }
-
-        $whereSql = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
-
-        $from = "FROM Feedback f
-                 JOIN Users u         ON u.id  = f.userId
-                 JOIN Universities un ON un.id = f.universityId
-                 $whereSql";
-
-        $countStmt = $this->db->prepare("SELECT COUNT(*) $from");
-        $countStmt->execute($params);
-        $total = (int) $countStmt->fetchColumn();
-
-        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page       = min(max(1, (int) $page), $totalPages);
-        $offset     = ($page - 1) * self::PER_PAGE;
-
-        $sql = "SELECT f.id, f.message, f.rating, f.category, f.status, f.createdAt,
-                       u.fullName, u.role, un.name AS universityName
-                $from
-                ORDER BY f.createdAt DESC, f.id DESC
-                LIMIT " . self::PER_PAGE . " OFFSET " . $offset;
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-
-        return [
-            'rows'       => $stmt->fetchAll(PDO::FETCH_ASSOC),
-            'total'      => $total,
-            'page'       => $page,
-            'totalPages' => $totalPages,
+        $clean = [
+            'status'     => in_array($filters['status'], self::STATUSES, true) ? $filters['status'] : '',
+            'rating'     => ($rating >= 1 && $rating <= 5) ? $rating : 0,
+            'university' => max(0, (int) $filters['university']),
+            'search'     => trim($filters['search']),
         ];
+
+        return Feedback::search($clean, $page, self::PER_PAGE);
     }
 
     public function getFeedbackDetails($feedbackId)
     {
-        $sql = "SELECT f.id, f.message, f.rating, f.category, f.status, f.createdAt, f.updatedAt,
-                       u.fullName, u.email, u.role,
-                       un.id AS universityId, un.name AS universityName
-                FROM Feedback f
-                JOIN Users u         ON u.id  = f.userId
-                JOIN Universities un ON un.id = f.universityId
-                WHERE f.id = ?";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$feedbackId]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return Feedback::getDetails($feedbackId);
     }
 
     public function updateStatus($feedbackId, $newStatus)
@@ -135,7 +57,7 @@ class ReviewFeedbackController
             return "invalid_status";
         }
 
-        $current = $this->getFeedbackDetails($feedbackId);
+        $current = Feedback::getDetails($feedbackId);
         if (!$current) {
             return "not_found";
         }
@@ -144,8 +66,7 @@ class ReviewFeedbackController
             return "invalid_transition";
         }
 
-        $stmt = $this->db->prepare("UPDATE Feedback SET status = ? WHERE id = ?");
-        return $stmt->execute([$newStatus, $feedbackId]);
+        return Feedback::updateStatus($feedbackId, $newStatus);
     }
 }
 

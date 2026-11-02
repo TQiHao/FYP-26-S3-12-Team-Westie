@@ -1,6 +1,7 @@
 <?php
 
 require_once "../database/database.php";
+require_once "../entity/backupRecords.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -14,7 +15,6 @@ class BackupRestoreController
 {
     public const PER_PAGE = 10;
 
-    private $db;
     private $dbConfig;
     private $backupDir;
     private $toolFolders = null;
@@ -22,45 +22,23 @@ class BackupRestoreController
     public function __construct()
     {
         $database = new Database();
-        $this->db = $database->connect();
         $this->dbConfig = $database->getConfig();
         $this->backupDir = dirname(__DIR__) . '/backups';
     }
 
     public function getBackups($page)
     {
-        $total = (int) $this->db->query("SELECT COUNT(*) FROM BackupRecords")->fetchColumn();
+        $result = BackupRecords::getPage($page, self::PER_PAGE);
 
-        $totalPages = max(1, (int) ceil($total / self::PER_PAGE));
-        $page       = min(max(1, (int) $page), $totalPages);
-        $offset     = ($page - 1) * self::PER_PAGE;
-
-        $sql = "SELECT b.id, b.fileName, b.backupType, b.status, b.createdAt, b.restoredAt,
-                       sa.fullName AS createdByName
-                FROM BackupRecords b
-                LEFT JOIN SystemAdmins sa ON sa.id = b.createdBy
-                ORDER BY b.createdAt DESC, b.id DESC
-                LIMIT " . self::PER_PAGE . " OFFSET " . $offset;
-
-        $rows = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($rows as &$row) {
+        foreach ($result['rows'] as &$row) {
             $row['fileExists'] = $this->resolveBackupFile($row['fileName']) !== null;
         }
         unset($row);
 
-        return [
-            'rows'       => $rows,
-            'total'      => $total,
-            'page'       => $page,
-            'totalPages' => $totalPages,
-        ];
+        return $result;
     }
 
-    // ------------------------------------------------------------------
     // Create a backup
-    // ------------------------------------------------------------------
-
     public function createBackup($adminId, $type = 'manual')
     {
         set_time_limit(300);
@@ -102,7 +80,7 @@ class BackupRestoreController
             return $this->failedBackup($adminId, $type, $fileName, $errorText ?: "mysqldump did not produce a file.");
         }
 
-        $id = $this->insertRecord($fileName, $type, 'completed', $adminId);
+        $id = BackupRecords::insert($fileName, $type, 'completed', $adminId);
 
         SystemLog::record(
             'backup',
@@ -118,7 +96,7 @@ class BackupRestoreController
     private function failedBackup($adminId, $type, $fileName, $reason)
     {
         if ($fileName !== null) {
-            $this->insertRecord($fileName, $type, 'failed', $adminId);
+            BackupRecords::insert($fileName, $type, 'failed', $adminId);
         }
 
         SystemLog::record('backup', 'error', 'Backup', "System backup failed: " . substr($reason, 0, 400));
@@ -126,19 +104,14 @@ class BackupRestoreController
         return ['ok' => false, 'message' => "Backup failed. Please check the system logs.", 'id' => null];
     }
 
-    // ------------------------------------------------------------------
-    // Restore a backup
-    // ------------------------------------------------------------------
 
+    // Restore a backup
     // Replace ALL current data with the data in one backup file.
     public function restoreBackup($backupId, $adminId)
     {
         set_time_limit(600);
 
-        $stmt = $this->db->prepare("SELECT id, fileName, status FROM BackupRecords WHERE id = ?");
-        $stmt->execute([$backupId]);
-        $record = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stmt->closeCursor();
+        $record = BackupRecords::getById($backupId);
 
         if (!$record || $record['status'] !== 'completed') {
             return ['ok' => false, 'message' => "This backup cannot be restored."];
@@ -159,8 +132,8 @@ class BackupRestoreController
             return ['ok' => false, 'message' => "Restore cancelled: the safety backup could not be created."];
         }
 
-        $savedBackups = $this->db->query("SELECT * FROM BackupRecords")->fetchAll(PDO::FETCH_ASSOC);
-        $savedLogs    = $this->db->query("SELECT * FROM SystemLogs")->fetchAll(PDO::FETCH_ASSOC);
+        // The restore overwrites every table, so keep the backup list and the log list to put back afterwards
+        $snapshot = BackupRecords::snapshot();
 
         $command = [
             $binary,
@@ -174,11 +147,8 @@ class BackupRestoreController
 
         [$exitCode, $errorText] = $this->runProcess($command, $file);
 
-        $database = new Database();
-        $this->db = $database->connect();
-
         if ($exitCode !== 0) {
-            $this->rebuildLists($savedBackups, $savedLogs);
+            BackupRecords::rebuild($snapshot);
 
             SystemLog::record('backup', 'error', 'Restore',
                 "Restore of {$record['fileName']} failed: " . substr($errorText, 0, 400));
@@ -186,77 +156,13 @@ class BackupRestoreController
             return ['ok' => false, 'message' => "Restore failed. Please check the system logs."];
         }
 
-        $this->rebuildLists($savedBackups, $savedLogs);
-
-        $adminId = $this->existingAdminId($adminId);
-        $stmt = $this->db->prepare("UPDATE BackupRecords SET restoredBy = ?, restoredAt = NOW() WHERE id = ?");
-        $stmt->execute([$adminId, $backupId]);
+        BackupRecords::rebuild($snapshot);
+        BackupRecords::markRestored($backupId, $adminId);
 
         SystemLog::record('backup', 'warning', 'Restore',
             "System data was restored from {$record['fileName']}. A safety backup was saved first.");
 
         return ['ok' => true, 'message' => "Backup restored successfully."];
-    }
-
-    private function insertRecord($fileName, $type, $status, $adminId)
-    {
-        $stmt = $this->db->prepare(
-            "INSERT INTO BackupRecords (fileName, filePath, backupType, status, createdBy)
-             VALUES (?, ?, ?, ?, ?)"
-        );
-        $stmt->execute([$fileName, 'backups/' . $fileName, $type, $status, $this->existingAdminId($adminId)]);
-
-        return (int) $this->db->lastInsertId();
-    }
-
-    // Foreign keys reject an admin id that does not exist (possible after restoring an old backup)
-    private function existingAdminId($adminId)
-    {
-        $stmt = $this->db->prepare("SELECT id FROM SystemAdmins WHERE id = ?");
-        $stmt->execute([$adminId]);
-        $found = $stmt->fetchColumn();
-        $stmt->closeCursor();
-        return $found ?: null;
-    }
-
-    private function rebuildLists($savedBackups, $savedLogs)
-    {
-        $adminIds = $this->db->query("SELECT id FROM SystemAdmins")->fetchAll(PDO::FETCH_COLUMN);
-
-        $this->db->beginTransaction();
-        try {
-            $this->db->exec("DELETE FROM BackupRecords");
-            $this->db->exec("DELETE FROM SystemLogs");
-
-            foreach ($savedBackups as $row) {
-                // Admin ids that no longer exist would break the foreign key, so blank them
-                foreach (['createdBy', 'restoredBy'] as $column) {
-                    if ($row[$column] !== null && !in_array($row[$column], $adminIds)) {
-                        $row[$column] = null;
-                    }
-                }
-                $this->insertRow('BackupRecords', $row);
-            }
-
-            foreach ($savedLogs as $row) {
-                $this->insertRow('SystemLogs', $row);
-            }
-
-            $this->db->commit();
-        } catch (Throwable $e) {
-            if ($this->db->inTransaction()) {
-                $this->db->rollBack();
-            }
-            error_log("rebuildLists failed: " . $e->getMessage());
-        }
-    }
-
-    private function insertRow($table, $row)
-    {
-        $columns      = array_keys($row);
-        $placeholders = implode(',', array_fill(0, count($columns), '?'));
-        $sql = "INSERT INTO $table (" . implode(',', $columns) . ") VALUES ($placeholders)";
-        $this->db->prepare($sql)->execute(array_values($row));
     }
 
     // Make backups/ (once) and lock it so nobody can download .sql files through the browser
@@ -277,11 +183,6 @@ class BackupRestoreController
         return true;
     }
 
-    /**
-     * Turn a file name from the database into a real path INSIDE backups/, or null.
-     * Only plain names like backup_20261022_143005.sql are accepted, so a tampered
-     * record such as ../../something cannot make us read or run a file elsewhere.
-     */
     private function resolveBackupFile($fileName)
     {
         if (!preg_match('/^[A-Za-z0-9_\-]+\.sql$/', (string) $fileName)) {
@@ -319,13 +220,9 @@ class BackupRestoreController
             $folders[] = $override;
         }
 
-        try {
-            $baseDir = $this->db->query("SELECT @@basedir")->fetchColumn();
-            if ($baseDir) {
-                $folders[] = rtrim(str_replace('\\', '/', $baseDir), '/') . '/bin';
-            }
-        } catch (Throwable $e) {
-
+        $baseDir = BackupRecords::getServerBaseDir();
+        if ($baseDir) {
+            $folders[] = rtrim(str_replace('\\', '/', $baseDir), '/') . '/bin';
         }
 
         array_push(

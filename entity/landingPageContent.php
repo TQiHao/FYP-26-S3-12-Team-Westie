@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . "/../database/database.php";
+
 class LandingPageContent
 {
     private $id;
@@ -70,5 +72,59 @@ class LandingPageContent
             'imagePath' => $this->imagePath,
             'updatedAt' => $this->updatedAt,
         ];
+    }
+
+    
+    // ------------------------------------------------------------------
+    // System Admin: edit the landing page
+    // ------------------------------------------------------------------
+
+    private static function connect()
+    {
+        $database = new Database();
+        return $database->connect();
+    }
+
+    /** One section of the landing page (hero, feature_student, ...) as a row, or false */
+    public static function getSection($sectionKey)
+    {
+        $stmt = self::connect()->prepare("SELECT * FROM LandingPageContent WHERE sectionKey = ? LIMIT 1");
+        $stmt->execute([$sectionKey]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Save several sections together (true), or none of them (false).
+     * Each row is [sectionKey, title, subtitle, content]; a section that does not exist yet is created.
+     */
+    public static function saveSections($rows)
+    {
+        $db = self::connect();
+
+        // sectionKey is UNIQUE, so an existing section is updated instead of added twice
+        $sql = "INSERT INTO LandingPageContent (sectionKey, title, subtitle, content)
+                VALUES (?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    title    = VALUES(title),
+                    subtitle = VALUES(subtitle),
+                    content  = VALUES(content)";
+
+        try {
+            $db->beginTransaction();
+            $stmt = $db->prepare($sql);
+
+            foreach ($rows as $row) {
+                $stmt->execute($row);
+            }
+
+            $db->commit();
+            return true;
+        } catch (PDOException $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            return false;
+        }
     }
 }
