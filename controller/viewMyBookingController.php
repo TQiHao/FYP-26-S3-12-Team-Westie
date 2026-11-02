@@ -3,6 +3,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['student']);
+
 require_once "../database/database.php";
 require_once "../entity/facilityBooking.php";
 require_once "../entity/bookableFacilities.php";

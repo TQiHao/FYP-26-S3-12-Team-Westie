@@ -7,6 +7,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 $type = $_GET['type'] ?? '';
 
 $facultyId = isset($_GET['facultyId']) ? (int) $_GET['facultyId'] : null;

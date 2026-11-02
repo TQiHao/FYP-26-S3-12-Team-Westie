@@ -7,6 +7,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['student', 'lecturer', 'course_coordinator', 'university_admin']);
+
 $user_role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
 $allowed_roles = ['student', 'lecturer', 'course_coordinator', 'course coordinator', 'university_admin', 'university admin'];
 

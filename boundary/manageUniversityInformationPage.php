@@ -6,6 +6,10 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
     exit();
 }
+
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 ?>
 
 <!DOCTYPE html>

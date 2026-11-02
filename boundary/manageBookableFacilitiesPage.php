@@ -10,6 +10,9 @@ if (
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 require_once "../controller/manageBookableFacilitiesController.php";
 
 $universityId =

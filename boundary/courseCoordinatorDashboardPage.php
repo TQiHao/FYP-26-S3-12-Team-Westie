@@ -6,6 +6,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['course_coordinator']);
+
 require_once "../controller/manageClassController.php";
 
 $controller = new ManageClassController();

@@ -7,13 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (
-    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
-    ($_SESSION['user_role'] ?? '') !== 'system_admin'
-) {
-    header("Location: ../boundary/loginPage.php");
-    exit();
-}
+require_once "../controller/authGuard.php";
+requireRole(['system_admin']);
 
 class BackupRestoreController
 {

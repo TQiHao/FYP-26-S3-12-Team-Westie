@@ -1,5 +1,8 @@
 <?php
 
+require_once "../controller/authGuard.php";
+requireRole(['course_coordinator']);
+
 require_once "../database/database.php";
 require_once "../entity/users.php";
 

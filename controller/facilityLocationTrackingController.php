@@ -3,9 +3,12 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../entity/navigationNode.php';
-require_once __DIR__ . '/../entity/navigationEdge.php';
+require_once "../controller/authGuard.php";
+requireRole(['student', 'lecturer']);
+
+require_once '../database/database.php';
+require_once '../entity/navigationNode.php';
+require_once '../entity/navigationEdge.php';
 
 class FacilityLocationTrackingController
 {

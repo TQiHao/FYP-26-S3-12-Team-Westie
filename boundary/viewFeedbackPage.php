@@ -4,13 +4,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (
-    !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true ||
-    ($_SESSION['user_role'] ?? '') !== 'system_admin'
-) {
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: loginPage.php");
     exit();
 }
+
+require_once "../controller/authGuard.php";
+requireRole(['system_admin']);
 
 require_once "../controller/reviewFeedbackController.php";
 

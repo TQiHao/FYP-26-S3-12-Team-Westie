@@ -9,6 +9,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['system_admin']);
+
 require_once "../controller/manageUniversityController.php";
 
 $controller=new ManageUniversityController();

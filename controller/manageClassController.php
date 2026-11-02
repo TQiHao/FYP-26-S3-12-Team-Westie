@@ -3,6 +3,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['course_coordinator']);
+
 require_once "../entity/class.php";
 
 class ManageClassController

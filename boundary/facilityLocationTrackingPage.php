@@ -7,12 +7,15 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['student', 'lecturer']);
+
 $userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
 $isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
 $dashboardPage = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 
-require_once __DIR__ . '/../controller/facilityLocationTrackingController.php';
-require_once __DIR__ . '/../database/database.php';
+require_once '../controller/facilityLocationTrackingController.php';
+require_once '../database/database.php';
 
 $controller   = new FacilityLocationTrackingController();
 $universityId = $_SESSION['university_id'] ?? 0;

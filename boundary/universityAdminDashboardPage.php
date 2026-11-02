@@ -6,6 +6,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 require_once "../database/database.php";
 $database = new Database();
 $db = $database->connect();

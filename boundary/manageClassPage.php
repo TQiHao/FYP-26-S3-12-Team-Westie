@@ -8,11 +8,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
-$userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
-if ($userRole !== 'course_coordinator' && $userRole !== 'course coordinator') {
-    header("Location: loginPage.php");
-    exit();
-}
+require_once "../controller/authGuard.php";
+requireRole(['course_coordinator']);
 
 require_once "../controller/ManageClassController.php";
 

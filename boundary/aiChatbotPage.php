@@ -7,6 +7,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 
+require_once "../controller/authGuard.php";
+requireRole(['student', 'lecturer', 'course_coordinator', 'university_admin', 'system_admin']);
+
 require_once "../controller/aiChatbotController.php";
 
 $controller = new AIChatbotController();

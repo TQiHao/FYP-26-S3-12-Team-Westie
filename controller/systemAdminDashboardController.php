@@ -1,4 +1,7 @@
 <?php
+require_once "../controller/authGuard.php";
+requireRole(['system_admin']);
+
 require_once "../entity/users.php";
 
 class SystemAdminDashboardController

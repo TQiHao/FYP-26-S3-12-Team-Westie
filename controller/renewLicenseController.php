@@ -3,8 +3,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../entity/universities.php';
-require_once __DIR__ . '/../database/database.php';
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
+require_once '../entity/universities.php';
+require_once '../database/database.php';
 
 class RenewLicenseController
 {

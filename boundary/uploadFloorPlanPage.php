@@ -2,6 +2,9 @@
 
 session_start();
 
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 $success = $_SESSION['upload_success'] ?? '';
 $error = $_SESSION['upload_error'] ?? '';
 

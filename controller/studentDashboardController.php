@@ -1,4 +1,6 @@
 <?php
+require_once "../controller/authGuard.php";
+requireRole(['student']);
 
 require_once "../database/database.php";
 require_once "../entity/users.php";

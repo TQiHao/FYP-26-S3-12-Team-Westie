@@ -1,5 +1,8 @@
 <?php
 
+require_once "../controller/authGuard.php";
+requireRole(['university_admin']);
+
 require_once "../entity/users.php";
 
 class UADashboardController

@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../database/database.php';
-require_once __DIR__ . '/../entity/landingPageContent.php';
+require_once '../database/database.php';
+require_once '../entity/landingPageContent.php';
 
 class ViewLandingPageController
 {
