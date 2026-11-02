@@ -84,17 +84,36 @@ $grid = [
 if (is_array($entries)) {
     foreach ($entries as $e) {
         $day = strtolower($e->getDayOfWeek());
-        $startHour = (int) date('G', strtotime($e->getStartTime()));
-        $endHour = (int) date('G', strtotime($e->getEndTime()));
-        $duration = max(1, $endHour - $startHour);
+
+        $startTimestamp = strtotime($e->getStartTime());
+        $endTimestamp = strtotime($e->getEndTime());
+
+        $startHour = (int) date('G', $startTimestamp);
+        $endHour = (int) date('G', $endTimestamp);
+        $startMinutes = (int) date('i', $startTimestamp);
+        $endMinutes = (int) date('i', $endTimestamp);
+
+        $endHourForSpan = $endHour;
+        if ($endMinutes > 0) {
+            $endHourForSpan++;
+        }
+        $duration = max(1, $endHourForSpan - $startHour);
+
+        $totalMinutes = $duration * 60;
+        $eventMinutes = (($endHour * 60) + $endMinutes) - (($startHour * 60) + $startMinutes);
+
+        $topPercent = round(($startMinutes / $totalMinutes) * 100, 2);
+        $heightPercent = round(($eventMinutes / $totalMinutes) * 100, 2);
 
         if (isset($grid[$day])) {
             $grid[$day][$startHour] = [
                 'title' => $e->getTitle(),
                 'location' => 'Room ' . $e->getLocation(),
-                'time' => date('g:ia', strtotime($e->getStartTime())) . ' - ' . date('g:ia', strtotime($e->getEndTime())),
+                'time' => date('g:ia', $startTimestamp) . ' - ' . date('g:ia', $endTimestamp),
                 'type' => 'class',
-                'duration' => $duration
+                'duration' => $duration,
+                'topPercent' => $topPercent,
+                'heightPercent' => $heightPercent
             ];
         }
     }
@@ -109,7 +128,20 @@ if (is_array($registeredEvents)) {
             $day = strtolower($startDt->format('D'));
             $startHour = (int) $startDt->format('G');
             $endHour = (int) $endDt->format('G');
-            $duration = max(1, $endHour - $startHour);
+            $startMinutes = (int) $startDt->format('i');
+            $endMinutes = (int) $endDt->format('i');
+
+            $endHourForSpan = $endHour;
+            if ($endMinutes > 0) {
+                $endHourForSpan++;
+            }
+            $duration = max(1, $endHourForSpan - $startHour);
+
+            $totalMinutes = $duration * 60;
+            $eventMinutes = (($endHour * 60) + $endMinutes) - (($startHour * 60) + $startMinutes);
+
+            $topPercent = round(($startMinutes / $totalMinutes) * 100, 2);
+            $heightPercent = round(($eventMinutes / $totalMinutes) * 100, 2);
 
             if (isset($grid[$day])) {
                 $grid[$day][$startHour] = [
@@ -117,7 +149,9 @@ if (is_array($registeredEvents)) {
                     'location' => $evt['location'] ?? 'Campus',
                     'time' => $startDt->format('g:ia') . ' - ' . $endDt->format('g:ia'),
                     'type' => 'event',
-                    'duration' => $duration
+                    'duration' => $duration,
+                    'topPercent' => $topPercent,
+                    'heightPercent' => $heightPercent
                 ];
             }
         }
@@ -214,11 +248,16 @@ $hours = range(8, 22);
             border-color: #ffd84d;
         }
 
-        .event-slot {
-            width: 100%;
-            height: 100%;
+        .timetable-grid td {
+            position: relative;
+            padding: 0;
+        }
+
+        .timetable-item {
+            position: absolute;
+            left: 4px;
+            right: 4px;
             box-sizing: border-box;
-            background-color: #BAE6FD;
             border-radius: 4px;
             padding: 6px 4px;
             font-size: 12px;
@@ -229,6 +268,12 @@ $hours = range(8, 22);
             justify-content: center;
             align-items: center;
             text-align: center;
+            overflow: hidden;
+            background-color: #FFDF5D;
+        }
+
+        .event-slot {
+            background-color: #BAE6FD;
         }
     </style>
 </head>
@@ -336,12 +381,14 @@ $hours = range(8, 22);
                                         }
 
                                         $rowspanAttr = $duration > 1 ? ' rowspan="' . $duration . '"' : '';
+                                        $slotClass = ($item['type'] === 'event') ? 'timetable-item event-slot' : 'timetable-item';
                                         ?>
                                         <td<?php echo $rowspanAttr; ?>>
-                                            <div
-                                                class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
-                                                <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
-                                                <span><?php echo htmlspecialchars($item['location']); ?></span><br>
+                                            <div class="<?php echo $slotClass; ?>"
+                                                style="top: <?php echo $item['topPercent']; ?>%; height: <?php echo $item['heightPercent']; ?>%;">
+                                                <strong><?php echo htmlspecialchars($item['title']); ?></strong>
+                                                <span
+                                                    style="font-size: 0.9em; margin: 2px 0;"><?php echo htmlspecialchars($item['location']); ?></span>
                                                 <small><?php echo htmlspecialchars($item['time']); ?></small>
                                             </div>
                                             </td>
