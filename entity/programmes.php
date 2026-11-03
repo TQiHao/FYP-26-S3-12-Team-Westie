@@ -109,6 +109,51 @@ class Programmes
         }
     }
 
+    public function updateProgramme(
+        $programmeId,
+        $facultyId,
+        $name,
+        $code,
+        $durationYears,
+        $description,
+        $courseCoordinatorId
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+
+            $sql = "UPDATE Programmes
+                SET
+                    name = ?,
+                    code = ?,
+                    durationYears = ?,
+                    description = ?,
+                    courseCoordinatorId = ?,
+                    updatedAt = NOW()
+                WHERE id = ?
+                AND facultyId = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $name,
+                $code,
+                $durationYears,
+                $description,
+                $courseCoordinatorId,
+                $programmeId,
+                $facultyId
+            ]);
+
+            return $stmt->rowCount() > 0;
+
+        } catch (PDOException $e) {
+
+            return false;
+        }
+    }
+
     public function getProgrammeById($programmeId, $facultyId, $universityId)
     {
         $database = new Database();

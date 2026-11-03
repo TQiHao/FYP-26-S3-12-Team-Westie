@@ -276,4 +276,105 @@ class Students
             return [];
         }
     }
+
+
+    // Find an existing student using their email and university.
+    public function getStudentByEmail($email, $universityId)
+    {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $sql = "SELECT
+                        s.id,
+                        s.userId,
+                        s.studentId,
+                        s.programmeId,
+                        s.academicYear,
+                        s.semester,
+                        s.semesterStart,
+                        s.semesterEnd,
+                        u.fullName,
+                        u.email
+                    FROM Students s
+                    JOIN Users u ON s.userId = u.id
+                    WHERE LOWER(TRIM(u.email)) = LOWER(TRIM(?))
+                      AND u.universityId = ?
+                      AND u.role = 'student'
+                    LIMIT 1";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$email, $universityId]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+
+        } catch (PDOException $e) {
+            error_log("Find student by email error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+
+    // Update an existing student's details without changing their password.
+    public function updateStudentRecord(
+        $userId,
+        $studentId,
+        $fullName,
+        $programmeId,
+        $academicYear,
+        $semester,
+        $semesterStart,
+        $semesterEnd
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $db->beginTransaction();
+
+            // Update the student's name only.
+            // The password is deliberately not included.
+            $sql = "UPDATE Users
+                    SET fullName = ?
+                    WHERE id = ?
+                      AND role = 'student'";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$fullName, $userId]);
+
+            // Preserve the existing student ID if the CSV does not provide one.
+            $sql = "UPDATE Students
+                    SET studentId = COALESCE(NULLIF(?, ''), studentId),
+                        programmeId = ?,
+                        academicYear = ?,
+                        semester = ?,
+                        semesterStart = ?,
+                        semesterEnd = ?,
+                        updatedAt = NOW()
+                    WHERE userId = ?";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([
+                $studentId,
+                $programmeId,
+                $academicYear,
+                $semester,
+                $semesterStart,
+                $semesterEnd,
+                $userId
+            ]);
+
+            $db->commit();
+            return true;
+
+        } catch (PDOException $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            error_log("Update student record error: " . $e->getMessage());
+            return false;
+        }
+    }
+
 }

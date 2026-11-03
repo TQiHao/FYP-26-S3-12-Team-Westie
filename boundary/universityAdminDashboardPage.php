@@ -176,13 +176,13 @@ $faqCount = (int) $faqStmt->fetchColumn();
                 </a>
 
                 <a href="manageFAQDatabasePage.php" class="dashboard-card">
-                    <img src="../images/aichatbot.png" alt="Manage FAQ Database" class="card-icon">
+                    <img src="../images/faq.png" alt="Manage FAQ Database" class="card-icon">
                     <h2>Manage FAQ Database</h2>
                     <p><?php echo $faqCount; ?> active FAQ<?php echo $faqCount === 1 ? '' : 's'; ?></p>
                 </a>
 
                 <a href="aiChatbotPage.php" class="dashboard-card">
-                    <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
+                    <img src="../images/aiChatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>
                 </a>

@@ -50,48 +50,65 @@ if ($universityId !== null) {
     <link rel="stylesheet" href="../style.css">
 
     <style>
-    .message-overlay {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.25);
-        z-index: 99999;
-    }
+        .message-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
 
-    .message-modal {
-        position: relative;
-        width: 425px;
-        height: 175px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f8fa;
-        border: 1px solid #555;
-        box-sizing: border-box;
-    }
+        .message-modal {
+            position: relative;
+            width: 425px;
+            height: 175px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
 
-    .message-modal h2 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #000;
-    }
+        .message-modal h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #000;
+        }
 
-    .message-close {
-        position: absolute;
-        top: 10px;
-        right: 14px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1;
-        color: #000;
-        cursor: pointer;
-    }
+        .message-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            cursor: pointer;
+        }
+
+        /* Mobile Back Button */
+        @media (max-width: 768px) {
+            .btn-back {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 16px;
+                min-width: 85px;
+                width: auto;
+                height: 36px;
+                font-size: 14px;
+                line-height: normal;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+        }
     </style>
 
 </head>

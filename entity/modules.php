@@ -237,4 +237,49 @@ class Modules
 
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
+
+    // Update module information
+    public function updateModule(
+        $moduleId,
+        $programmeId,
+        $name,
+        $code,
+        $credits,
+        $semester,
+        $description
+    ) {
+        $database = new Database();
+        $db = $database->connect();
+
+        try {
+            $sql = "UPDATE Modules
+                SET
+                    name = ?,
+                    code = ?,
+                    credits = ?,
+                    semester = ?,
+                    description = ?,
+                    updatedAt = NOW()
+                WHERE id = ?
+                AND programmeId = ?";
+
+            $stmt = $db->prepare($sql);
+
+            $stmt->execute([
+                $name,
+                $code,
+                $credits,
+                $semester,
+                $description,
+                $moduleId,
+                $programmeId
+            ]);
+
+            return true;
+
+        } catch (PDOException $e) {
+            error_log("Update module error: " . $e->getMessage());
+            return false;
+        }
+    }
 }

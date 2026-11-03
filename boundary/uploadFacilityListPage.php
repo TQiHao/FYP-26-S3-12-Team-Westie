@@ -113,6 +113,23 @@ if ($universityId !== null) {
             font-size: 0.75rem;
             font-weight: 700;
         }
+
+        /* Mobile Back Button */
+        @media (max-width: 768px) {
+            .btn-back {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 16px;
+                min-width: 85px;
+                width: auto;
+                height: 36px;
+                font-size: 14px;
+                line-height: normal;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+        }
     </style>
 
 </head>

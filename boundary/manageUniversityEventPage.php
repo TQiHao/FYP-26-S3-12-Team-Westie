@@ -543,7 +543,58 @@ if (
             }
 
             .event-view-card {
+                display: flex;
                 flex-direction: column;
+                align-items: stretch;
+                justify-content: flex-start;
+                gap: 12px;
+                width: 100%;
+                padding: 18px;
+                box-sizing: border-box;
+            }
+
+            .event-view-info {
+                width: 100%;
+                flex: none;
+                text-align: left;
+            }
+
+            .event-view-info h3 {
+                font-size: 1.05rem;
+                margin: 0 0 8px;
+                line-height: 1.4;
+            }
+
+            .event-view-info p {
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin: 0 0 12px;
+            }
+
+            .event-meta {
+                font-size: 0.82rem;
+                line-height: 1.7;
+                overflow-wrap: break-word;
+            }
+
+            .event-status {
+                align-self: flex-start;
+                display: inline-block;
+                margin-top: 4px;
+            }
+
+            .event-actions {
+                align-self: flex-start;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .event-actions button {
+                padding: 9px 16px;
+                font-size: 0.85rem;
             }
 
             .event-tabs {
@@ -554,7 +605,6 @@ if (
         }
 
         /* POSTER BUTTON */
-
         .btn-event-poster {
             background: #e5e7eb;
             color: #222;
@@ -565,7 +615,6 @@ if (
         }
 
         /* POSTER MODAL */
-
         .poster-event-modal {
             position: relative;
             width: 600px;
@@ -763,6 +812,34 @@ if (
             font-size: 0.95rem;
             font-weight: 700;
             color: #000;
+        }
+
+        /* Mobile page header */
+        @media (max-width: 768px) {
+            .profile-header {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: flex-start;
+                gap: 14px;
+                min-height: auto;
+                margin: 15px 0 25px;
+            }
+
+            .profile-header .btn-back {
+                position: static;
+                align-self: flex-start;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                transform: none;
+                width: 100%;
+                text-align: center !important;
+                white-space: normal;
+                font-size: 1.25rem;
+                margin: 0 !important;
+            }
         }
     </style>
 

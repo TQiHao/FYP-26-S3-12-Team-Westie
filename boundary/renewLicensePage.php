@@ -58,28 +58,31 @@ if ($currentLicense) {
     <title>Renew License - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .profile-header {
-            position: relative;
-            display: flex;
+        /* Renew License Header */
+        .renew-page-header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             width: 100%;
             min-height: 45px;
-            margin: 15px 0 25px 0;
+            margin: 30px 0 25px;
+            padding-left: max(10%, calc((100% - 1050px) / 2));
+            padding-right: max(10%, calc((100% - 1050px) / 2));
+            box-sizing: border-box;
         }
 
-        .btn-back {
-            position: absolute;
-            left: 0;
+        .renew-back-button {
+            grid-column: 1;
+            justify-self: start;
             margin: 0;
-            z-index: 10;
         }
 
-        .profile-header .section-label {
-            position: absolute;
-            left: 60%;
-            transform: translateX(-50%);
-            margin: 0 !important;
-            text-align: center !important;
+        .renew-page-title {
+            grid-column: 2;
+            justify-self: center;
+            margin: 0;
+            text-align: center;
+            font-size: 1.25rem;
             white-space: nowrap;
         }
 
@@ -89,6 +92,57 @@ if ($currentLicense) {
             margin: 0 auto;
             padding: 30px 0 60px;
             box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+
+            .renew-page-header {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 90%;
+                min-height: 46px;
+                margin: 20px auto 25px;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            .renew-back-button {
+                position: absolute;
+                left: 0;
+                margin: 0;
+            }
+
+            .renew-page-title {
+                position: relative;
+                width: 100%;
+                margin: 0;
+                text-align: center;
+                font-size: 1.15rem;
+                white-space: nowrap;
+            }
+
+            .renew-page {
+                width: 90%;
+                margin: 0 auto;
+                padding-top: 0;
+            }
+
+            .renew-card {
+                margin-top: 10px;
+                padding: 25px 24px 30px;
+            }
+
+            .license-info-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+
+            .duration-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
         }
 
         .renew-card {
@@ -268,12 +322,15 @@ if ($currentLicense) {
         </div>
     </header>
 
-    <main class="renew-page">
+    <div class="renew-page-header">
+        <a href="universityAdminDashboardPage.php" class="btn-back renew-back-button">
+            &#8592; Back
+        </a>
 
-        <div class="profile-header">
-            <a href="universityAdminDashboardPage.php" class="btn-back">&#8592; Back</a>
-            <h1 class="section-label">Renew License</h1>
-        </div>
+        <h1 class="renew-page-title">Renew License</h1>
+    </div>
+
+    <main class="renew-page">
 
         <?php if ($error): ?>
             <div class="renew-error">

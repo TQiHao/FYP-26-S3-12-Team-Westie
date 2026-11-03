@@ -312,9 +312,195 @@ class ManageUniversityInformationController
         return $this->programmes->getProgrammeById($programmeId, $facultyId, $universityId);
     }
 
+    public function updateProgramme(
+        $programmeId,
+        $facultyId,
+        $universityId,
+        $name,
+        $code,
+        $durationYears,
+        $description,
+        $courseCoordinatorId
+    ) {
+        // Check that all required IDs are valid
+        if (
+            $programmeId <= 0 ||
+            $facultyId <= 0 ||
+            $universityId <= 0 ||
+            $courseCoordinatorId <= 0
+        ) {
+            return "Invalid programme or coordinator information.";
+        }
+
+        // Check required fields
+        $name = trim($name);
+        $code = trim($code);
+        $description = trim($description);
+
+        if ($name === '') {
+            return "Programme name is required.";
+        }
+
+        if ($code === '') {
+            return "Programme code is required.";
+        }
+
+        if (
+            $durationYears === '' ||
+            !is_numeric($durationYears) ||
+            (int) $durationYears <= 0
+        ) {
+            return "Duration must be a positive number.";
+        }
+
+        // Check that the programme belongs to this faculty and university
+        $programme = $this->programmes->getProgrammeById(
+            $programmeId,
+            $facultyId,
+            $universityId
+        );
+
+        if ($programme === false) {
+            return "Programme not found.";
+        }
+
+        // Check that the selected coordinator belongs to this university
+        $coordinators = $this->users->getCourseCoordinatorsByUniversity(
+            $universityId
+        );
+
+        $validCoordinator = false;
+
+        foreach ($coordinators as $coordinator) {
+            if ((int) $coordinator['id'] === (int) $courseCoordinatorId) {
+                $validCoordinator = true;
+                break;
+            }
+        }
+
+        if (!$validCoordinator) {
+            return "Invalid course coordinator selected.";
+        }
+
+        // Check for duplicate programme name or code
+        $existingProgrammes = $this->programmes->getProgrammesByFaculty(
+            $facultyId
+        );
+
+        foreach ($existingProgrammes as $existing) {
+
+            // Ignore the programme currently being edited
+            if ((int) $existing['id'] === (int) $programmeId) {
+                continue;
+            }
+
+            if (
+                strcasecmp(trim($existing['name']), $name) === 0 ||
+                strcasecmp(trim($existing['code']), $code) === 0
+            ) {
+                return "Programme name or code already exists.";
+            }
+        }
+
+        // Update the programme
+        $result = $this->programmes->updateProgramme(
+            $programmeId,
+            $facultyId,
+            $name,
+            $code,
+            (int) $durationYears,
+            $description,
+            $courseCoordinatorId
+        );
+
+        if ($result === true) {
+            return true;
+        }
+
+        return "Unable to update programme information.";
+    }
+
     public function getModulesByProgramme($programmeId)
     {
         return $this->modules->getModulesByProgramme($programmeId);
+    }
+
+    // Update module information
+    public function updateModule(
+        $moduleId,
+        $programmeId,
+        $name,
+        $code,
+        $credits,
+        $semester,
+        $description
+    ) {
+        // Validate IDs
+        if ($moduleId <= 0 || $programmeId <= 0) {
+            return "Invalid module information.";
+        }
+
+        // Validate required fields
+        $name = trim($name);
+        $code = trim($code);
+        $description = trim($description);
+
+        if ($name === '') {
+            return "Module name is required.";
+        }
+
+        if ($code === '') {
+            return "Module code is required.";
+        }
+
+        if ($credits === '' || !is_numeric($credits) || (int) $credits <= 0) {
+            return "Credits must be a positive number.";
+        }
+
+        if ($semester === '' || !is_numeric($semester) || (int) $semester <= 0) {
+            return "Semester must be a positive number.";
+        }
+
+        // Check whether module belongs to this programme
+        $modules = $this->modules->getModulesByProgramme($programmeId);
+
+        $moduleExists = false;
+
+        foreach ($modules as $module) {
+            if ((int) $module['id'] === (int) $moduleId) {
+                $moduleExists = true;
+                continue;
+            }
+
+            // Prevent duplicate module names or codes
+            if (
+                strcasecmp(trim($module['name']), $name) === 0 ||
+                strcasecmp(trim($module['code']), $code) === 0
+            ) {
+                return "Module name or code already exists.";
+            }
+        }
+
+        if (!$moduleExists) {
+            return "Module not found.";
+        }
+
+        // Update module in database
+        $result = $this->modules->updateModule(
+            $moduleId,
+            $programmeId,
+            $name,
+            $code,
+            (int) $credits,
+            (int) $semester,
+            $description
+        );
+
+        if ($result === true) {
+            return true;
+        }
+
+        return "Unable to update module information.";
     }
 
     private function validateModuleCsv($csvFile, $programmeId)
@@ -844,15 +1030,14 @@ class ManageUniversityInformationController
         return $this->students->getStudentsByUniversity($universityId);
     }
 
+
     private function validateStudentCsv($csvFile, $universityId)
     {
         if (!isset($csvFile) || $csvFile['error'] !== UPLOAD_ERR_OK) {
             return "Please select a CSV file.";
         }
 
-        $extension = strtolower(pathinfo($csvFile['name'], PATHINFO_EXTENSION));
-
-        if ($extension !== 'csv') {
+        if (strtolower(pathinfo($csvFile['name'], PATHINFO_EXTENSION)) !== 'csv') {
             return "Only CSV files are supported.";
         }
 
@@ -867,7 +1052,9 @@ class ManageUniversityInformationController
         $universityCode = strtoupper($matches[1]);
         $programmeCode = strtoupper($matches[2]);
         $academicYear = $matches[3];
-        $semester = strtolower($matches[4]) === 'specialterm' ? 'SpecialTerm' : strtoupper($matches[4]);
+        $semester = strtolower($matches[4]) === 'specialterm'
+            ? 'SpecialTerm'
+            : strtoupper($matches[4]);
 
         $expectedUniversityCode = 'U' . str_pad((string) $universityId, 2, '0', STR_PAD_LEFT);
 
@@ -875,7 +1062,10 @@ class ManageUniversityInformationController
             return "The university code in the file name does not match your university.";
         }
 
-        $programme = $this->programmes->getProgrammeByCodeAndUniversity($programmeCode, $universityId);
+        $programme = $this->programmes->getProgrammeByCodeAndUniversity(
+            $programmeCode,
+            $universityId
+        );
 
         if ($programme === false) {
             return "Programme code '{$programmeCode}' does not exist for your university.";
@@ -895,7 +1085,6 @@ class ManageUniversityInformationController
         }
 
         $headers = array_map('trim', $headers);
-
         $identifierType = strtolower($headers[0] ?? '');
 
         if ($identifierType === 'email') {
@@ -915,6 +1104,14 @@ class ManageUniversityInformationController
         $rows = [];
         $emails = [];
         $studentIds = [];
+
+        $summary = [
+            'inserted' => 0,
+            'updated' => 0,
+            'duplicates' => 0,
+            'invalid' => 0
+        ];
+
         $rowNumber = 1;
 
         while (($row = fgetcsv($handle)) !== false) {
@@ -925,8 +1122,8 @@ class ManageUniversityInformationController
             }
 
             if (count($row) !== count($expectedHeaders)) {
-                fclose($handle);
-                return "Row {$rowNumber} must contain " . count($expectedHeaders) . " columns.";
+                $summary['invalid']++;
+                continue;
             }
 
             if ($identifierType === 'email') {
@@ -945,66 +1142,110 @@ class ManageUniversityInformationController
                 $semesterEnd = trim($row[5]);
             }
 
-            if ($fullName === '') {
-                fclose($handle);
-                return "Row {$rowNumber}: Full name is required.";
-            }
-
+            // Check email format.
             if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                fclose($handle);
-                return "Row {$rowNumber}: Invalid email address.";
-            }
-
-            if ($password === '') {
-                fclose($handle);
-                return "Row {$rowNumber}: Password is required.";
-            }
-
-            if ($semesterStart === '' || !DateTime::createFromFormat('Y-m-d', $semesterStart)) {
-                fclose($handle);
-                return "Row {$rowNumber}: Semester start must use YYYY-MM-DD format.";
-            }
-
-            if ($semesterEnd === '' || !DateTime::createFromFormat('Y-m-d', $semesterEnd)) {
-                fclose($handle);
-                return "Row {$rowNumber}: Semester end must use YYYY-MM-DD format.";
-            }
-
-            $startDate = DateTime::createFromFormat('Y-m-d', $semesterStart);
-            $endDate = DateTime::createFromFormat('Y-m-d', $semesterEnd);
-
-            if ($endDate <= $startDate) {
-                fclose($handle);
-                return "Row {$rowNumber}: Semester end must be after semester start.";
+                $summary['invalid']++;
+                continue;
             }
 
             $emailKey = strtolower($email);
 
-            if (in_array($emailKey, $emails)) {
-                fclose($handle);
-                return "Row {$rowNumber}: Duplicate email '{$email}'.";
+            // Skip repeated emails inside the CSV.
+            if (isset($emails[$emailKey])) {
+                $summary['duplicates']++;
+                continue;
             }
 
-            if ($this->users->studentEmailExists($email)) {
-                fclose($handle);
-                return "Row {$rowNumber}: Email '{$email}' already exists.";
+            $emails[$emailKey] = true;
+
+            // Validate required fields.
+            if ($fullName === '' || $password === '') {
+                $summary['invalid']++;
+                continue;
             }
 
+            // Validate semester dates strictly.
+            $startDate = DateTime::createFromFormat('!Y-m-d', $semesterStart);
+            $endDate = DateTime::createFromFormat('!Y-m-d', $semesterEnd);
+
+            $startErrors = DateTime::getLastErrors();
+            $endErrors = DateTime::getLastErrors();
+
+            if (
+                !$startDate ||
+                !$endDate ||
+                ($startErrors !== false && ($startErrors['warning_count'] > 0 || $startErrors['error_count'] > 0)) ||
+                ($endErrors !== false && ($endErrors['warning_count'] > 0 || $endErrors['error_count'] > 0)) ||
+                $startDate->format('Y-m-d') !== $semesterStart ||
+                $endDate->format('Y-m-d') !== $semesterEnd ||
+                $endDate <= $startDate
+            ) {
+                $summary['invalid']++;
+                continue;
+            }
+
+            // Find existing student using email.
+            $existingStudent = $this->students->getStudentByEmail(
+                $email,
+                $universityId
+            );
+
+            // Email exists but does not belong to a student in this university.
+            if ($existingStudent === false && $this->users->studentEmailExists($email)) {
+                $summary['invalid']++;
+                continue;
+            }
+
+            // Check student ID if provided.
             if ($studentId !== null && $studentId !== '') {
-                if (in_array(strtoupper($studentId), $studentIds)) {
-                    fclose($handle);
-                    return "Row {$rowNumber}: Duplicate student ID '{$studentId}'.";
+                $studentIdKey = strtoupper($studentId);
+
+                if (isset($studentIds[$studentIdKey])) {
+                    $summary['duplicates']++;
+                    continue;
                 }
 
-                if ($this->students->studentIdExists($studentId)) {
-                    fclose($handle);
-                    return "Row {$rowNumber}: Student ID '{$studentId}' already exists.";
-                }
+                $studentIds[$studentIdKey] = true;
 
-                $studentIds[] = strtoupper($studentId);
+                // If the ID already exists, allow it only when it belongs
+                // to the same existing student being updated.
+                if (
+                    $this->students->studentIdExists($studentId) &&
+                    (
+                        $existingStudent === false ||
+                        strtoupper((string) $existingStudent['studentId']) !== $studentIdKey
+                    )
+                ) {
+                    $summary['duplicates']++;
+                    continue;
+                }
             }
 
-            $emails[] = $emailKey;
+            // Check whether an existing student's details have changed.
+            if ($existingStudent !== false) {
+
+                // If the CSV does not provide a student ID,
+                // retain the existing student ID.
+                $uploadedStudentId = ($studentId === null || trim($studentId) === '')
+                    ? (string) ($existingStudent['studentId'] ?? '')
+                    : trim($studentId);
+
+                $hasChanges =
+                    trim($existingStudent['fullName']) !== $fullName ||
+                    strtoupper(trim((string) $existingStudent['studentId'])) !==
+                    strtoupper(trim($uploadedStudentId)) ||
+                    (int) $existingStudent['programmeId'] !== (int) $programme['id'] ||
+                    trim($existingStudent['academicYear']) !== $academicYear ||
+                    trim($existingStudent['semester']) !== $semester ||
+                    trim($existingStudent['semesterStart']) !== $semesterStart ||
+                    trim($existingStudent['semesterEnd']) !== $semesterEnd;
+
+                // If nothing changed, count it as a duplicate and skip it.
+                if (!$hasChanges) {
+                    $summary['duplicates']++;
+                    continue;
+                }
+            }
 
             $rows[] = [
                 'studentId' => $studentId,
@@ -1012,18 +1253,16 @@ class ManageUniversityInformationController
                 'email' => $email,
                 'password' => $password,
                 'semesterStart' => $semesterStart,
-                'semesterEnd' => $semesterEnd
+                'semesterEnd' => $semesterEnd,
+                'existingStudent' => $existingStudent
             ];
         }
 
         fclose($handle);
 
-        if (empty($rows)) {
-            return "The CSV file contains no student data.";
-        }
-
         return [
             'rows' => $rows,
+            'summary' => $summary,
             'programmeId' => $programme['id'],
             'programmeCode' => $programmeCode,
             'academicYear' => $academicYear,
@@ -1090,6 +1329,8 @@ class ManageUniversityInformationController
             $imageHeight
         );
     }
+
+
     public function uploadStudentList($csvFile, $universityId)
     {
         $validated = $this->validateStudentCsv($csvFile, $universityId);
@@ -1098,7 +1339,34 @@ class ManageUniversityInformationController
             return $validated;
         }
 
+        $summary = $validated['summary'];
+
         foreach ($validated['rows'] as $row) {
+
+            // Existing student: update their information.
+            if ($row['existingStudent'] !== false) {
+
+                $result = $this->students->updateStudentRecord(
+                    $row['existingStudent']['userId'],
+                    $row['studentId'],
+                    $row['fullName'],
+                    $validated['programmeId'],
+                    $validated['academicYear'],
+                    $validated['semester'],
+                    $row['semesterStart'],
+                    $row['semesterEnd']
+                );
+
+                if ($result) {
+                    $summary['updated']++;
+                } else {
+                    $summary['invalid']++;
+                }
+
+                continue;
+            }
+
+            // New student: create Users account first.
             $userId = $this->users->createStudentUser(
                 $universityId,
                 $row['email'],
@@ -1107,9 +1375,11 @@ class ManageUniversityInformationController
             );
 
             if ($userId === false) {
-                return "Unable to create student account for '{$row['email']}'.";
+                $summary['invalid']++;
+                continue;
             }
 
+            // Then create the Students record.
             $studentRecordId = $this->students->createStudentRecord(
                 $userId,
                 $row['studentId'],
@@ -1121,11 +1391,14 @@ class ManageUniversityInformationController
             );
 
             if ($studentRecordId === false) {
-                return "Unable to create student record for '{$row['email']}'.";
+                $summary['invalid']++;
+                continue;
             }
+
+            $summary['inserted']++;
         }
 
-        return true;
+        return $summary;
     }
 
     public function getFloorPlanByFloorId($floorId)
@@ -1380,6 +1653,166 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action'])) {
 }
 
 // ============================================================
+// HANDLE EDIT PROGRAMME
+// ============================================================
+
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "updateProgramme"
+) {
+
+    $controller = new ManageUniversityInformationController();
+
+    // Retrieve university ID from session
+    $universityId = $_SESSION['university_id'] ?? null;
+
+    // Retrieve form values
+    $programmeId = (int) ($_POST['programmeId'] ?? 0);
+    $facultyId = (int) ($_POST['facultyId'] ?? 0);
+    $name = trim($_POST['name'] ?? '');
+    $code = trim($_POST['code'] ?? '');
+    $durationYears = $_POST['durationYears'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+    $courseCoordinatorId = (int) ($_POST['courseCoordinatorId'] ?? 0);
+
+    // Check university session
+    if ($universityId === null) {
+
+        $_SESSION['upload_error'] = "Unable to identify your university.";
+
+        header("Location: ../boundary/uploadFacultyListPage.php");
+        exit();
+    }
+
+    // Check faculty
+    $faculty = $controller->getFacultyById(
+        $facultyId,
+        $universityId
+    );
+
+    if ($faculty === false) {
+
+        $_SESSION['upload_error'] = "Invalid faculty selected.";
+
+        header("Location: ../boundary/uploadFacultyListPage.php");
+        exit();
+    }
+
+    // Update programme
+    $result = $controller->updateProgramme(
+        $programmeId,
+        $facultyId,
+        $universityId,
+        $name,
+        $code,
+        $durationYears,
+        $description,
+        $courseCoordinatorId
+    );
+
+    // Redirect with result message
+    if ($result === true) {
+
+        $_SESSION['upload_success'] = "Programme updated successfully.";
+
+    } else {
+
+        $_SESSION['upload_error'] = $result;
+    }
+
+    header(
+        "Location: ../boundary/uploadProgrammeListPage.php?facultyId=" .
+        urlencode($facultyId)
+    );
+
+    exit();
+}
+
+// ============================================================
+// HANDLE EDIT MODULE
+// ============================================================
+
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    isset($_POST['action']) &&
+    $_POST['action'] === "updateModule"
+) {
+
+    $controller = new ManageUniversityInformationController();
+
+    $universityId = $_SESSION['university_id'] ?? null;
+
+    $moduleId = (int) ($_POST['moduleId'] ?? 0);
+    $programmeId = (int) ($_POST['programmeId'] ?? 0);
+    $facultyId = (int) ($_POST['facultyId'] ?? 0);
+
+    $name = trim($_POST['name'] ?? '');
+    $code = trim($_POST['code'] ?? '');
+    $credits = $_POST['credits'] ?? '';
+    $semester = $_POST['semester'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+
+    // Check university session
+    if ($universityId === null) {
+        $_SESSION['upload_error'] = "Unable to identify your university.";
+        header("Location: ../boundary/uploadFacultyListPage.php");
+        exit();
+    }
+
+    // Verify faculty belongs to this university
+    $faculty = $controller->getFacultyById(
+        $facultyId,
+        $universityId
+    );
+
+    if ($faculty === false) {
+        $_SESSION['upload_error'] = "Invalid faculty selected.";
+        header("Location: ../boundary/uploadFacultyListPage.php");
+        exit();
+    }
+
+    // Verify programme belongs to this faculty and university
+    $programme = $controller->getProgrammeById(
+        $programmeId,
+        $facultyId,
+        $universityId
+    );
+
+    if ($programme === false) {
+        $_SESSION['upload_error'] = "Invalid programme selected.";
+        header("Location: ../boundary/uploadProgrammeListPage.php?facultyId=" . urlencode($facultyId));
+        exit();
+    }
+
+    // Update module
+    $result = $controller->updateModule(
+        $moduleId,
+        $programmeId,
+        $name,
+        $code,
+        $credits,
+        $semester,
+        $description
+    );
+
+    if ($result === true) {
+        $_SESSION['upload_success'] = "Module updated successfully.";
+    } else {
+        $_SESSION['upload_error'] = $result;
+    }
+
+    header(
+        "Location: ../boundary/uploadModuleListPage.php?facultyId=" .
+        urlencode($facultyId) .
+        "&programmeId=" .
+        urlencode($programmeId)
+    );
+
+    exit();
+}
+
+// ============================================================
 // FILE UPLOAD HANDLERS (existing)
 // ============================================================
 
@@ -1591,15 +2024,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['uploadType']) && $_PO
 
     $result = $controller->uploadStudentList($csvFile, $universityId);
 
-    if ($result === true) {
-        $_SESSION['upload_success'] = "Student list uploaded successfully.";
+    if (is_array($result)) {
+
+        $_SESSION['upload_success_summary'] = $result;
+
         header("Location: ../boundary/uploadStudentListPage.php");
         exit();
-    }
 
-    $_SESSION['upload_error'] = $result;
-    header("Location: ../boundary/uploadListPage.php?type=student");
-    exit();
+    } else {
+
+        $_SESSION['upload_error'] = $result;
+
+        header("Location: ../boundary/uploadListPage.php?type=student");
+        exit();
+    }
 }
 
 // Handle Overall Campus Map upload

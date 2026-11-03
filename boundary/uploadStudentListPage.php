@@ -14,9 +14,11 @@ require_once "../controller/manageUniversityInformationController.php";
 
 $success = $_SESSION['upload_success'] ?? null;
 $error = $_SESSION['upload_error'] ?? null;
+$uploadSummary = $_SESSION['upload_success_summary'] ?? null;
 
 unset($_SESSION['upload_success']);
 unset($_SESSION['upload_error']);
+unset($_SESSION['upload_success_summary']);
 
 $universityId = $_SESSION['university_id'] ?? null;
 
@@ -50,48 +52,65 @@ if ($universityId !== null) {
     <link rel="stylesheet" href="../style.css">
 
     <style>
-    .message-overlay {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.25);
-        z-index: 99999;
-    }
+        .message-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+        }
 
-    .message-modal {
-        position: relative;
-        width: 425px;
-        height: 175px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f8fa;
-        border: 1px solid #555;
-        box-sizing: border-box;
-    }
+        .message-modal {
+            position: relative;
+            width: 425px;
+            height: 175px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f8fa;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
 
-    .message-modal h2 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #000;
-    }
+        .message-modal h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #000;
+        }
 
-    .message-close {
-        position: absolute;
-        top: 10px;
-        right: 14px;
-        padding: 0;
-        border: none;
-        background: transparent;
-        font-size: 28px;
-        font-weight: 700;
-        line-height: 1;
-        color: #000;
-        cursor: pointer;
-    }
+        .message-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+            color: #000;
+            cursor: pointer;
+        }
+
+        /* Mobile Back Button */
+        @media (max-width: 768px) {
+            .btn-back {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 16px;
+                min-width: 85px;
+                width: auto;
+                height: 36px;
+                font-size: 14px;
+                line-height: normal;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+        }
     </style>
 
 </head>
@@ -177,10 +196,16 @@ if ($universityId !== null) {
 
         </section>
 
-        <?php if ($success): ?>
+        <?php if ($uploadSummary): ?>
+
+            <?php
+
+            $newStudentsAdded = (int) ($uploadSummary['inserted'] ?? 0);
+            $rowsSkipped = (int) ($uploadSummary['duplicates'] ?? 0)
+                + (int) ($uploadSummary['invalid'] ?? 0);
+            ?>
 
             <div class="message-overlay" id="successPopup">
-
                 <div class="message-modal">
 
                     <button
@@ -191,10 +216,25 @@ if ($universityId !== null) {
                         &times;
                     </button>
 
-                    <h2>Upload Successfully</h2>
+                    <div style="text-align: center;">
+
+                        <h2 style="margin-bottom: 22px;">
+                            Uploaded Successfully
+                        </h2>
+
+                        <p style="font-size: 14px; margin: 8px 0;">
+                            New students added:
+                            <strong><?php echo $newStudentsAdded; ?></strong>
+                        </p>
+
+                        <p style="font-size: 14px; margin: 8px 0;">
+                            Rows skipped:
+                            <strong><?php echo $rowsSkipped; ?></strong>
+                        </p>
+
+                    </div>
 
                 </div>
-
             </div>
 
         <?php endif; ?>

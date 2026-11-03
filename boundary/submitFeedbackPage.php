@@ -129,6 +129,43 @@ $supportEmail = $supportRow['email'] ?? '';
         .notice-contacts a:hover {
             text-decoration: underline;
         }
+
+        /* Mobile Header Layout */
+        @media (max-width: 768px) {
+
+            .profile-header {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 90%;
+                margin: 20px auto 25px;
+                min-height: 45px;
+            }
+
+            .profile-header .btn-back {
+                position: absolute;
+                left: 0;
+                width: auto;
+                min-width: 80px;
+                height: 38px;
+                padding: 6px 12px;
+                font-size: 0.85rem;
+                margin: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                transform: none;
+                width: 100%;
+                text-align: center;
+                font-size: 1.1rem;
+                margin: 0;
+                white-space: normal;
+                pointer-events: none;
+                }
+        }
+
     </style>
 </head>
 

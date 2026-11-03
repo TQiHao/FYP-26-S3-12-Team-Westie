@@ -598,6 +598,148 @@ if ($universityId !== null) {
             padding: 70px 0 !important;
             color: #777;
         }
+
+
+        /* MOBILE LAYOUT */
+        @media (max-width: 768px) {
+
+            /* Page width */
+            .bookable-page {
+                width: 90%;
+                max-width: none;
+                padding: 20px 0 40px;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+
+            /* Back button and page title */
+            .profile-header {
+                position: static;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                width: 100%;
+                min-height: auto;
+                margin: 20px 0 25px;
+            }
+
+            .profile-header .btn-back {
+                align-self: flex-start;
+                margin: 0;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                transform: none;
+                width: 100%;
+                margin: 0 !important;
+                text-align: center !important;
+                white-space: normal;
+                font-size: 1.2rem;
+                line-height: 1.4;
+            }
+
+            /* Tabs */
+            .bookable-tabs {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+                margin-bottom: 22px;
+            }
+
+            .bookable-tab {
+                min-width: 0;
+                padding: 10px 3px;
+                font-size: 0.82rem;
+                line-height: 1.4;
+                text-align: center;
+                overflow-wrap: anywhere;
+            }
+
+            /* Report filters */
+            .report-filter-form {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 14px;
+                width: 100%;
+                margin-bottom: 22px;
+            }
+
+            .report-filter-group {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .report-filter-group select {
+                width: 100%;
+                max-width: 100%;
+                height: 42px;
+                font-size: 0.85rem;
+            }
+
+            .report-filter-button {
+                width: 100%;
+                height: 42px;
+            }
+
+            /* Summary cards: 2 columns */
+            .report-summary {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                width: 100%;
+                margin-bottom: 22px;
+            }
+
+            .summary-card {
+                min-width: 0;
+                min-height: 105px;
+                padding: 12px;
+                overflow-wrap: anywhere;
+            }
+
+            .summary-label {
+                font-size: 0.68rem;
+                line-height: 1.5;
+            }
+
+            .summary-value {
+                font-size: 1rem;
+                line-height: 1.4;
+                overflow-wrap: anywhere;
+            }
+
+            .summary-facility {
+                font-size: 0.9rem;
+            }
+
+            /* Report table: scroll inside its own area */
+            .utilisation-table-wrapper {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .utilisation-table {
+                min-width: 620px;
+                width: 620px;
+                font-size: 0.75rem;
+            }
+
+            /* Prevent page-level horizontal overflow */
+            .bookable-container {
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+        }
+
     </style>
 
 </head>

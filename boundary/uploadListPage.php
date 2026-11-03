@@ -105,6 +105,24 @@ unset($_SESSION['upload_error']);
     <title>Upload - UniBee</title>
 
     <link rel="stylesheet" href="../style.css">
+    <style>
+        /* Mobile Back Button */
+        @media (max-width: 768px) {
+            .btn-back {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 16px;
+                min-width: 85px;
+                width: auto;
+                height: 36px;
+                font-size: 14px;
+                line-height: normal;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+        }
+    </style>
 </head>
 
 <body>

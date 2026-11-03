@@ -22,6 +22,57 @@ requireRole(['university_admin']);
     <title>Manage University Information - UniBee</title>
 
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .university-management-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            column-gap: 35px;
+            row-gap: 18px;
+            width: 100%;
+        }
+
+        /* University Management - Mobile Only */
+        @media (max-width: 768px) {
+            main.manage-university-information
+            .university-management-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                column-gap: 18px;
+                row-gap: 20px;
+            }
+
+            .university-management-card {
+                min-width: 0;
+                min-height: 150px;
+                padding: 16px;
+            }
+
+            .university-management-card h2 {
+                font-size: 1rem;
+                line-height: 1.25;
+                overflow-wrap: normal;
+                word-break: normal;
+            }
+
+            .university-management-card p {
+                font-size: 0.8rem;
+                line-height: 1.5;
+            }
+
+            .manage-university-information .profile-header .btn-back {
+                display: inline-flex;
+                grid-column: 1;
+                justify-self: start;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 16px;
+                min-width: 85px;
+                height: 36px;
+                font-size: 14px;
+                white-space: nowrap;
+                box-sizing: border-box;
+            }
+        }
+    </style>
 </head>
 
 <body>

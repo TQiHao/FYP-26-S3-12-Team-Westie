@@ -579,6 +579,35 @@ unset($_SESSION['flash_message'], $_SESSION['flash_error'], $_SESSION['faq_skip_
         @media (max-width: 768px) {
             .faq-page {
                 width: 90%;
+                padding-top: 20px;
+            }
+
+            .profile-header {
+                position: static;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 18px;
+                width: 100%;
+                min-height: auto;
+                margin: 20px 0 25px;
+            }
+
+            .profile-header .btn-back {
+                align-self: flex-start;
+                margin: 0;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                transform: none;
+                width: 100%;
+                margin: 0 !important;
+                text-align: center !important;
+                white-space: normal;
+                font-size: 1.2rem;
+                line-height: 1.4;
             }
 
             .faq-card {
