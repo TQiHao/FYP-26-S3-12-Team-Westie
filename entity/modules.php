@@ -214,26 +214,32 @@ class Modules
         }
     }
 
-    public function moduleExists($programmeId, $name, $code)
+    public function moduleExists($universityId, $name, $code, $excludeModuleId = null)
     {
         $database = new Database();
         $db = $database->connect();
 
-        $sql = "SELECT id
-            FROM Modules
-            WHERE programmeId = ?
+        $sql = "SELECT m.id
+            FROM Modules m
+            INNER JOIN Programmes p ON m.programmeId = p.id
+            INNER JOIN Faculties f ON p.facultyId = f.id
+            WHERE f.universityId = ?
             AND (
-                name = ?
-                OR code = ?
-            )
-            LIMIT 1";
+                LOWER(TRIM(m.name)) = LOWER(TRIM(?))
+                OR UPPER(TRIM(m.code)) = UPPER(TRIM(?))
+            )";
+
+        $params = [$universityId, $name, $code];
+
+        if ($excludeModuleId !== null) {
+            $sql .= " AND m.id <> ?";
+            $params[] = $excludeModuleId;
+        }
+
+        $sql .= " LIMIT 1";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([
-            $programmeId,
-            $name,
-            $code
-        ]);
+        $stmt->execute($params);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }

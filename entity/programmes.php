@@ -186,27 +186,31 @@ class Programmes
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function programmeExists($facultyId, $name, $code)
+    public function programmeExists($universityId, $name, $code, $excludeProgrammeId = null)
     {
         $database = new Database();
         $db = $database->connect();
 
-        $sql = "SELECT id
-            FROM Programmes
-            WHERE facultyId = ?
+        $sql = "SELECT p.id
+            FROM Programmes p
+            INNER JOIN Faculties f ON p.facultyId = f.id
+            WHERE f.universityId = ?
             AND (
-                name = ?
-                OR code = ?
-            )
-            LIMIT 1";
+                LOWER(TRIM(p.name)) = LOWER(TRIM(?))
+                OR UPPER(TRIM(p.code)) = UPPER(TRIM(?))
+            )";
+
+        $params = [$universityId, $name, $code];
+
+        if ($excludeProgrammeId !== null) {
+            $sql .= " AND p.id <> ?";
+            $params[] = $excludeProgrammeId;
+        }
+
+        $sql .= " LIMIT 1";
 
         $stmt = $db->prepare($sql);
-
-        $stmt->execute([
-            $facultyId,
-            $name,
-            $code
-        ]);
+        $stmt->execute($params);
 
         return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }

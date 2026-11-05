@@ -257,7 +257,7 @@ class ManageUniversityInformationController
 
             $codes[] = $code;
 
-            if ($this->programmes->programmeExists($facultyId, $name, $code)) {
+            if ($this->programmes->programmeExists($universityId, $name, $code)) {
                 fclose($handle);
                 return "Row {$rowNumber}: Programme name or code already exists.";
             }
@@ -382,24 +382,16 @@ class ManageUniversityInformationController
             return "Invalid course coordinator selected.";
         }
 
-        // Check for duplicate programme name or code
-        $existingProgrammes = $this->programmes->getProgrammesByFaculty(
-            $facultyId
-        );
-
-        foreach ($existingProgrammes as $existing) {
-
-            // Ignore the programme currently being edited
-            if ((int) $existing['id'] === (int) $programmeId) {
-                continue;
-            }
-
-            if (
-                strcasecmp(trim($existing['name']), $name) === 0 ||
-                strcasecmp(trim($existing['code']), $code) === 0
-            ) {
-                return "Programme name or code already exists.";
-            }
+        // Check for duplicate programme name or code across the university
+        if (
+            $this->programmes->programmeExists(
+                $universityId,
+                $name,
+                $code,
+                $programmeId
+            )
+        ) {
+            return "Programme name or code already exists.";
         }
 
         // Update the programme
@@ -469,20 +461,31 @@ class ManageUniversityInformationController
         foreach ($modules as $module) {
             if ((int) $module['id'] === (int) $moduleId) {
                 $moduleExists = true;
-                continue;
-            }
-
-            // Prevent duplicate module names or codes
-            if (
-                strcasecmp(trim($module['name']), $name) === 0 ||
-                strcasecmp(trim($module['code']), $code) === 0
-            ) {
-                return "Module name or code already exists.";
+                break;
             }
         }
 
         if (!$moduleExists) {
             return "Module not found.";
+        }
+
+        // Get the current university ID
+        $universityId = $_SESSION['university_id'] ?? null;
+
+        if (!$universityId) {
+            return "Unable to identify the current university.";
+        }
+
+        // Check for duplicate module name or code across the university
+        if (
+            $this->modules->moduleExists(
+                $universityId,
+                $name,
+                $code,
+                $moduleId
+            )
+        ) {
+            return "Module name or code already exists.";
         }
 
         // Update module in database
@@ -503,8 +506,14 @@ class ManageUniversityInformationController
         return "Unable to update module information.";
     }
 
-    private function validateModuleCsv($csvFile, $programmeId)
+    private function validateModuleCsv($csvFile, $universityId)
     {
+        $universityId = $_SESSION['university_id'] ?? null;
+
+        if (!$universityId) {
+            return "Unable to identify the current university.";
+        }
+
         if (!isset($csvFile) || $csvFile['error'] !== UPLOAD_ERR_OK) {
             return "Please select a CSV file.";
         }
@@ -586,7 +595,7 @@ class ManageUniversityInformationController
 
             $codes[] = $code;
 
-            if ($this->modules->moduleExists($programmeId, $name, $code)) {
+            if ($this->modules->moduleExists($universityId, $name, $code)) {
                 fclose($handle);
                 return "Row {$rowNumber}: Module name or code already exists.";
             }
