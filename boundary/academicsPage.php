@@ -274,6 +274,134 @@ $hours = range(8, 22);
             max-width: 100%;       /* Let it span the full width of the container */
             width: 100%;
         }
+
+        /* ===== MOBILE FIXES (desktop untouched) ===== */
+        .timetable-scroll {
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden;
+            }
+
+            /* Back button + title: sit on one row, no overlap */
+            .profile-header {
+                justify-content: space-between;
+                margin: 15px 0 15px 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                transform: none;
+                flex: 1;
+                padding-right: 80px; /* balances the Back button so the title looks centred */
+                font-size: 1.1rem;
+            }
+
+            /* Tabs: one row, swipe sideways instead of overflowing the page */
+            .teaching-tabs {
+                gap: 22px;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                white-space: nowrap;
+                margin: 10px 0 20px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .teaching-tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .teaching-tab {
+                font-size: 0.95rem;
+                flex: 0 0 auto;
+            }
+
+            /* Week controls: tidy stacked layout */
+            .timetable-controls {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px;
+                gap: 10px;
+            }
+
+            .date-picker-wrapper {
+                flex-direction: column;
+                gap: 8px;
+                order: -1;
+                text-align: center;
+            }
+
+            .week-range-title {
+                font-size: 14px;
+            }
+
+            .date-input {
+                width: 100%;
+                box-sizing: border-box;
+                text-align: center;
+            }
+
+            .timetable-nav-btn {
+                text-align: center;
+                display: block;
+            }
+
+            /* Timetable: keep columns readable and scroll sideways */
+            .timetable-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                margin-top: 10px;
+            }
+
+            .timetable-scroll .timetable-grid {
+                min-width: 680px;
+                margin-top: 0;
+            }
+
+            .timetable-grid th {
+                font-size: 12px;
+                padding: 8px 2px;
+            }
+
+            .timetable-grid th:first-child,
+            .timetable-grid tbody th {
+                width: 64px;
+                font-size: 11px;
+                white-space: nowrap;
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                background-color: #f8f9fa;
+            }
+
+            .timetable-grid td {
+                height: 56px;
+                padding: 2px;
+            }
+
+            .timetable-cell-stack .timetable-slot,
+            .timetable-cell-stack .event-slot {
+                font-size: 10px;
+                padding: 4px 3px;
+                overflow: hidden;
+                word-break: break-word;
+                min-height: 0;
+            }
+
+            .timetable-slot strong {
+                font-size: 11px;
+            }
+
+            .timetable-slot span,
+            .timetable-slot small {
+                font-size: 10px;
+            }
+        }
     </style>
 </head>
 
@@ -369,6 +497,7 @@ $hours = range(8, 22);
             <?php elseif ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>
             <?php else: ?>
+                <div class="timetable-scroll">
                 <table class="timetable-grid">
                     <thead>
                         <tr>
@@ -441,6 +570,7 @@ $hours = range(8, 22);
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                </div>
             <?php endif; ?>
 
         <?php elseif ($activeTab === 'courses'): ?>
