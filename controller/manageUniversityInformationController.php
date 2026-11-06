@@ -179,6 +179,28 @@ class ManageUniversityInformationController
             return "Only CSV files are supported.";
         }
 
+        // Validate programme CSV filename
+        $filename = pathinfo($csvFile['name'], PATHINFO_FILENAME);
+
+        $pattern = '/^(U\d+)_([A-Za-z0-9]+)_ProgrammeList$/i';
+
+        if (!preg_match($pattern, $filename, $matches)) {
+            return "Invalid filename. Expected format: U01_FC_ProgrammeList.csv.";
+        }
+
+        $facultyCode = $matches[2];
+
+        // Check faculty code
+        $faculty = $this->faculties->getFacultyById($facultyId, $universityId);
+
+        if (!$faculty) {
+            return "Unable to identify the selected faculty.";
+        }
+
+        if (strtoupper($facultyCode) !== strtoupper($faculty['code'])) {
+            return "The faculty code in the filename does not match the selected faculty.";
+        }
+
         $handle = fopen($csvFile['tmp_name'], 'r');
 
         if ($handle === false) {
@@ -506,7 +528,7 @@ class ManageUniversityInformationController
         return "Unable to update module information.";
     }
 
-    private function validateModuleCsv($csvFile, $universityId)
+    private function validateModuleCsv($csvFile, $programmeId)
     {
         $universityId = $_SESSION['university_id'] ?? null;
 
@@ -522,6 +544,43 @@ class ManageUniversityInformationController
 
         if ($extension !== 'csv') {
             return "Only CSV files are supported.";
+        }
+
+        // Validate module CSV filename
+        $filename = pathinfo($csvFile['name'], PATHINFO_FILENAME);
+
+        $pattern = '/^(U\d+)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_ModuleList$/i';
+
+        if (!preg_match($pattern, $filename, $matches)) {
+            return "Invalid filename. Expected format: U01_FC_BSCS_ModuleList.csv.";
+        }
+
+        $facultyCode = $matches[2];
+        $programmeCode = $matches[3];
+
+        // Check selected programme
+        $programme = $this->programmes->getProgrammeByCodeAndUniversity(
+            $programmeCode,
+            $universityId
+        );
+
+        if (!$programme) {
+            return "The programme code in the filename does not exist in this university.";
+        }
+
+        // Check faculty code
+        $faculty = $this->faculties->getFacultyById(
+            $programme['facultyId'],
+            $universityId
+        );
+
+        if (!$faculty || strtoupper($facultyCode) !== strtoupper($faculty['code'])) {
+            return "The faculty code in the filename does not match the programme's faculty.";
+        }
+
+        // Check selected programme ID
+        if ((int) $programme['id'] !== (int) $programmeId) {
+            return "The programme code in the filename does not match the selected programme.";
         }
 
         $handle = fopen($csvFile['tmp_name'], 'r');
@@ -1052,18 +1111,20 @@ class ManageUniversityInformationController
 
         $fileName = pathinfo($csvFile['name'], PATHINFO_FILENAME);
 
-        $pattern = '/^(U\d+)_([A-Za-z0-9]+)_(\d{4}-\d{4})_(S\d+|SpecialTerm)_StudentList$/i';
+        $pattern = '/^(U\\d+)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(\\d{4}-\\d{4})_(S\\d+|SpecialTerm)_StudentList$/i';
 
         if (!preg_match($pattern, $fileName, $matches)) {
-            return "Invalid file name. Use U01_BSCS_2026-2027_S1_StudentList.csv";
+            return "Invalid file name. Use U01_FC_BSCS_2026-2027_S1_StudentList.csv";
         }
 
         $universityCode = strtoupper($matches[1]);
-        $programmeCode = strtoupper($matches[2]);
-        $academicYear = $matches[3];
-        $semester = strtolower($matches[4]) === 'specialterm'
+        $facultyCode = strtoupper($matches[2]);
+        $programmeCode = strtoupper($matches[3]);
+        $academicYear = $matches[4];
+
+        $semester = strtolower($matches[5]) === 'specialterm'
             ? 'SpecialTerm'
-            : strtoupper($matches[4]);
+            : strtoupper($matches[5]);
 
         $expectedUniversityCode = 'U' . str_pad((string) $universityId, 2, '0', STR_PAD_LEFT);
 
@@ -1078,6 +1139,16 @@ class ManageUniversityInformationController
 
         if ($programme === false) {
             return "Programme code '{$programmeCode}' does not exist for your university.";
+        }
+
+        // Confirm that the faculty code belongs to this programme.
+        $faculty = $this->faculties->getFacultyById(
+            $programme['facultyId'],
+            $universityId
+        );
+
+        if ($faculty === false || strtoupper(trim($faculty['code'])) !== $facultyCode) {
+            return "Faculty code '{$facultyCode}' does not match the selected programme.";
         }
 
         $handle = fopen($csvFile['tmp_name'], 'r');

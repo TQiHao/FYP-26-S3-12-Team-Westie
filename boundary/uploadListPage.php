@@ -275,19 +275,19 @@ unset($_SESSION['upload_error']);
                         <strong>File Name:</strong>
                     </p>
 
-                    <pre>U01_ProgrammeList_FC.csv</pre>
+                    <pre>U01_FC_ProgrammeList.csv</pre>
 
                     <p>
                         <strong>CSV Format:</strong>
                     </p>
 
-                    <pre>name,code,durationYears,description</pre>
+                    <pre>name,code,durationYears,description,courseCoordinatorEmail</pre>
 
                     <p>
                         <strong>Example:</strong>
                     </p>
 
-                    <pre>Bachelor of Computer Science,BSCS,4,Computing programme</pre>
+                    <pre>Bachelor of Computer Science,BSCS,4,Computing programme,alice.tan@unibee.edu.sg</pre>
 
                     <p>
                         <strong>Requirements:</strong>
@@ -313,7 +313,7 @@ unset($_SESSION['upload_error']);
                         <strong>File Name:</strong>
                     </p>
 
-                    <pre>U01_ModuleList_BSCS.csv</pre>
+                    <pre>U01_FC_BSCS_ModuleList.csv</pre>
 
                     <p>
                         <strong>CSV Format:</strong>
@@ -332,7 +332,7 @@ unset($_SESSION['upload_error']);
                     </p>
 
                     <ul>
-                        <li>File name must include the university code and programme code.</li>
+                        <li>File name must include the university code, faculty code and programme code.</li>
                         <li>Module name, code, credits and semester are required.</li>
                         <li>Only .csv files will be accepted.</li>
                     </ul>
@@ -461,13 +461,13 @@ unset($_SESSION['upload_error']);
                         <strong>File Name Format:</strong>
                     </p>
 
-                    <pre>{universityCode}_{programmeCode}_{academicYear}_{semester}_StudentList.csv</pre>
+                    <pre>{universityCode}_{facultyCode}_{programmeCode}_{academicYear}_{semester}_StudentList.csv</pre>
 
                     <p>
                         <strong>Example:</strong>
                     </p>
 
-                    <pre>U01_BSCS_2026-2027_S1_StudentList.csv</pre>
+                    <pre>U01_FC_BSCS_2026-2027_S1_StudentList.csv</pre>
 
                     <p>
                         <strong>The system will parse the file name to determine:</strong>
@@ -475,6 +475,7 @@ unset($_SESSION['upload_error']);
 
                     <ul>
                         <li>University Code: U01</li>
+                        <li>Faculty Code: FC</li>
                         <li>Programme: BSCS</li>
                         <li>Academic Year: 2026-2027</li>
                         <li>Semester: S1</li>
