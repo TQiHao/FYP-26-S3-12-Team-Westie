@@ -2,6 +2,7 @@
 
 require_once "../database/database.php";
 require_once "../entity/backupRecords.php";
+require_once "../entity/databaseDump.php";
 require_once "../entity/systemLog.php";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -51,38 +52,35 @@ class BackupRestoreController
         $fileName = $prefix . date('Ymd_His') . '.sql';
         $fullPath = $this->backupDir . '/' . $fileName;
 
-        if (!function_exists('proc_open')) {
-            return $this->failedBackup($adminId, $type, $fileName,
-                "This server does not allow programs to be run, so database backups cannot be made here.");
+        // Use mysqldump when the server has it and lets PHP run it (e.g. XAMPP),
+        // else PHP writes the backup file itself.
+        $binary = function_exists('proc_open') ? $this->findBinary('mysqldump') : null;
+
+        if ($binary !== null) {
+            $command = [
+                $binary,
+                '--protocol=TCP',
+                '--host=' . $this->dbConfig['host'],
+                '--port=' . $this->dbConfig['port'],
+                '--user=' . $this->dbConfig['username'],
+                '--single-transaction',
+                '--routines',
+                '--triggers',
+                '--default-character-set=utf8mb4',
+                '--result-file=' . $fullPath,
+                $this->dbConfig['database'],
+            ];
+
+            [$exitCode, $errorText] = $this->runProcess($command, null);
+        } else {
+            [$exitCode, $errorText] = DatabaseDump::dump($fullPath);
         }
-
-        $binary = $this->findBinary('mysqldump');
-        if ($binary === null) {
-            return $this->failedBackup($adminId, $type, $fileName,
-                "The MySQL backup tool (mysqldump) could not be found on this server.");
-        }
-
-        $command = [
-            $binary,
-            '--protocol=TCP',
-            '--host=' . $this->dbConfig['host'],
-            '--port=' . $this->dbConfig['port'],
-            '--user=' . $this->dbConfig['username'],
-            '--single-transaction',
-            '--routines',
-            '--triggers',
-            '--default-character-set=utf8mb4',
-            '--result-file=' . $fullPath,
-            $this->dbConfig['database'],
-        ];
-
-        [$exitCode, $errorText] = $this->runProcess($command, null);
 
         if ($exitCode !== 0 || !is_file($fullPath) || filesize($fullPath) === 0) {
             if (is_file($fullPath)) {
                 unlink($fullPath);
             }
-            return $this->failedBackup($adminId, $type, $fileName, $errorText ?: "mysqldump did not produce a file.");
+            return $this->failedBackup($adminId, $type, $fileName, $errorText ?: "The backup file was not created.");
         }
 
         $id = BackupRecords::insert($fileName, $type, 'completed', $adminId);
@@ -94,7 +92,7 @@ class BackupRestoreController
             "Backup file $fileName was created."
         );
 
-        return ['ok' => true, 'message' => "Backup created successfully.", 'id' => $id];
+        return ['ok' => true, 'message' => "Backup created successfully.", 'id' => $id, 'fileName' => $fileName];
     }
 
     // Save a 'failed' record + write an error log, then report back
@@ -127,14 +125,7 @@ class BackupRestoreController
             return ['ok' => false, 'message' => "The backup file could not be found on the server."];
         }
 
-        if (!function_exists('proc_open')) {
-            return ['ok' => false, 'message' => "Restore is not available on this server because it does not allow programs to be run."];
-        }
-
-        $binary = $this->findBinary('mysql');
-        if ($binary === null) {
-            return ['ok' => false, 'message' => "The MySQL restore tool (mysql) could not be found on this server."];
-        }
+        $binary = function_exists('proc_open') ? $this->findBinary('mysql') : null;
 
         $safety = $this->createBackup($adminId, 'pre_restore');
         if (!$safety['ok']) {
@@ -144,25 +135,34 @@ class BackupRestoreController
         // The restore overwrites every table, so keep the backup list and the log list to put back afterwards
         $snapshot = BackupRecords::snapshot();
 
-        $command = [
-            $binary,
-            '--protocol=TCP',
-            '--host=' . $this->dbConfig['host'],
-            '--port=' . $this->dbConfig['port'],
-            '--user=' . $this->dbConfig['username'],
-            '--default-character-set=utf8mb4',
-            $this->dbConfig['database'],
-        ];
+        if ($binary !== null) {
+            $command = [
+                $binary,
+                '--protocol=TCP',
+                '--host=' . $this->dbConfig['host'],
+                '--port=' . $this->dbConfig['port'],
+                '--user=' . $this->dbConfig['username'],
+                '--default-character-set=utf8mb4',
+                $this->dbConfig['database'],
+            ];
 
-        [$exitCode, $errorText] = $this->runProcess($command, $file);
+            [$exitCode, $errorText] = $this->runProcess($command, $file);
+        } else {
+            [$exitCode, $errorText] = DatabaseDump::restore($file);
+        }
 
         if ($exitCode !== 0) {
+            $putBack = $this->restoreSafetyBackup($safety['fileName']);
+
             BackupRecords::rebuild($snapshot);
 
             SystemLog::record('backup', 'error', 'Restore',
-                "Restore of {$record['fileName']} failed: " . substr($errorText, 0, 400));
+                "Restore of {$record['fileName']} failed: " . substr($errorText, 0, 400)
+                . ($putBack ? " The data from before the restore was put back." : ""));
 
-            return ['ok' => false, 'message' => "Restore failed. Please check the system logs."];
+            return ['ok' => false, 'message' => $putBack
+                ? "Restore failed, so your data was put back as it was. Please check the system logs."
+                : "Restore failed. Please check the system logs."];
         }
 
         BackupRecords::rebuild($snapshot);
@@ -172,6 +172,13 @@ class BackupRestoreController
             "System data was restored from {$record['fileName']}. A safety backup was saved first.");
 
         return ['ok' => true, 'message' => "Backup restored successfully."];
+    }
+
+    private function restoreSafetyBackup($fileName)
+    {
+        $file = $this->resolveBackupFile($fileName);
+
+        return $file !== null && DatabaseDump::restore($file)[0] === 0;
     }
 
     // Make backups/ (once) and lock it so nobody can download .sql files through the browser
@@ -255,7 +262,7 @@ class BackupRestoreController
         if (!function_exists('proc_open')) {
             return [-1, "This server does not allow programs to be run (proc_open is disabled)."];
         }
-        
+
         $descriptors = [
             0 => $stdinFile !== null ? ['file', $stdinFile, 'r'] : ['pipe', 'r'],
             1 => ['pipe', 'w'],
