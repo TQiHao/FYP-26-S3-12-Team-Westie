@@ -51,6 +51,11 @@ class BackupRestoreController
         $fileName = $prefix . date('Ymd_His') . '.sql';
         $fullPath = $this->backupDir . '/' . $fileName;
 
+        if (!function_exists('proc_open')) {
+            return $this->failedBackup($adminId, $type, $fileName,
+                "This server does not allow programs to be run, so database backups cannot be made here.");
+        }
+
         $binary = $this->findBinary('mysqldump');
         if ($binary === null) {
             return $this->failedBackup($adminId, $type, $fileName,
@@ -120,6 +125,10 @@ class BackupRestoreController
         $file = $this->resolveBackupFile($record['fileName']);
         if ($file === null) {
             return ['ok' => false, 'message' => "The backup file could not be found on the server."];
+        }
+
+        if (!function_exists('proc_open')) {
+            return ['ok' => false, 'message' => "Restore is not available on this server because it does not allow programs to be run."];
         }
 
         $binary = $this->findBinary('mysql');
@@ -198,7 +207,7 @@ class BackupRestoreController
         $exe = $name . (PHP_OS_FAMILY === 'Windows' ? '.exe' : '');
 
         foreach ($this->toolFolders() as $folder) {
-            if (is_file($folder . '/' . $exe)) {
+            if (@is_file($folder . '/' . $exe)) {
                 return $folder . '/' . $exe;
             }
         }
@@ -243,6 +252,10 @@ class BackupRestoreController
 
     private function runProcess($command, $stdinFile)
     {
+        if (!function_exists('proc_open')) {
+            return [-1, "This server does not allow programs to be run (proc_open is disabled)."];
+        }
+        
         $descriptors = [
             0 => $stdinFile !== null ? ['file', $stdinFile, 'r'] : ['pipe', 'r'],
             1 => ['pipe', 'w'],
