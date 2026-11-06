@@ -1163,6 +1163,16 @@ footer {
 }
 
 @media (max-width: 768px) {
+  .system-admin-dashboard .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .system-admin-dashboard .dashboard-card {
+    padding: 24px 20px;
+    min-height: 100px;
+  }
+
   .system-admin-dashboard .dashboard-grid .dashboard-card:last-child:nth-child(odd) {
     width: 100%;
   }
@@ -1751,7 +1761,7 @@ footer {
 
 /* ==== Manage University page ======*/
 .system-admin-dashboard .admin-table-page {
-  padding: 24px 32px;
+  Overflow-x: auto;   /* was: overflow: hidden; */
 }
 
 .system-admin-dashboard .table-section {
@@ -3388,6 +3398,7 @@ footer {
 /* Action buttons row at the bottom of the card */
 .system-admin-dashboard .registration-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   margin-top: 28px;
 }
@@ -6668,15 +6679,10 @@ a.summary-card:hover {
 
 @media (max-width: 600px) {
   .system-admin-dashboard .ai-model-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
 
-  .system-admin-dashboard .ai-model-form label {
-    padding-top: 10px;
+  .system-admin-dashboard .ai-model-form input[type="file"] {
+    max-width: 100%;
   }
-
-  .system-admin-dashboard .detail-label {
-    width: 130px;
-  }
-}
