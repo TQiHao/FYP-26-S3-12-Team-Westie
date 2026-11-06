@@ -285,17 +285,31 @@ $hours = range(8, 22);
                 overflow-x: hidden;
             }
 
-            /* Back button + title: sit on one row, no overlap */
+            /* Back button pinned left, title truly centred on the same row */
             .profile-header {
-                justify-content: space-between;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: 0;
+                min-height: 45px;
                 margin: 15px 0 15px 0;
+            }
+
+            .profile-header .btn-back {
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 6px 14px;
+                font-size: 0.85rem;
             }
 
             .profile-header .section-label {
                 position: static;
                 transform: none;
-                flex: 1;
-                padding-right: 80px; /* balances the Back button so the title looks centred */
+                width: 100%;
+                padding: 0;
+                text-align: center !important;
                 font-size: 1.1rem;
             }
 
