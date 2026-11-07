@@ -117,7 +117,9 @@ $faqCount = (int) $faqStmt->fetchColumn();
         <div class="welcome-message">
             <span>Welcome back,</span>
             <strong>
-                <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                <?php
+                    echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                        ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; ?>
             </strong>
         </div>
 
