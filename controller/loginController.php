@@ -32,7 +32,7 @@ class LoginController
 
         //Check if this is a system admin
         $sql = "SELECT id, email, passwordHash, fullName, status 
-                FROM systemadmins
+                FROM SystemAdmins
                 WHERE email = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$email]);
@@ -147,7 +147,7 @@ class LoginController
      */
     private function updateLastLogin($userId, $isSystemAdmin = false)
     {
-        $table = $isSystemAdmin ? "systemadmins" : "Users";
+        $table = $isSystemAdmin ? "SystemAdmins" : "Users";
         $sql = "UPDATE $table SET lastLogin = NOW() WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$userId]);
