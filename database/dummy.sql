@@ -226,6 +226,13 @@ SELECT 1, 1, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), 'active'
 WHERE NOT EXISTS (SELECT 1 FROM UniversityLicenses WHERE universityId = 1);
 
 -- ============================================
+-- 11B. PENDING UNIVERSITY REGISTRATION (for the approval demo)
+-- ============================================
+INSERT INTO UniversityRegistrations (universityName, applicantName, applicantEmail, passwordHash, applicantContact, institutionType, country, postalCode, licenseId, status)
+SELECT 'NTU', 'lentor lim', 'lentor@ntu.edu.sg','$2y$10$OXfk52nqPfa1PQ4rqxuJbehxc1s2auqI5G00RmBxXOxG58JcHtreC','123456', 'Public University', 'Singapore', '639798', 1, 'pending'
+WHERE NOT EXISTS (SELECT 1 FROM UniversityRegistrations WHERE universityName = 'NTU' AND status = 'pending');
+
+-- ============================================
 -- 12. LANDING PAGE CONTENT
 -- ============================================
 INSERT INTO LandingPageContent (sectionKey, title, subtitle, content, imagePath)
