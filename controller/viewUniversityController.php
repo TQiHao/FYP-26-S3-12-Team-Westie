@@ -28,8 +28,12 @@ class ViewUniversityController
         return Universities::suspend($universityId, $reason);
     }
 
-    public function reactivateUniversity($universityId)
+        public function reactivateUniversity($universityId)
     {
+        if (!Universities::hasValidLicense($universityId)) {
+            return "license_inactive";
+        }
+
         return Universities::reactivate($universityId);
     }
 }
@@ -61,8 +65,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
 
         if ($result === true) {
             $_SESSION['university_action_success'] = "University reactivated successfully.";
-            SystemLog::record('university', 'info', 'University Reactivated',
+                        SystemLog::record('university', 'info', 'University Reactivated',
                 'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was reactivated.');
+        } elseif ($result === "license_inactive") {
+            $_SESSION['university_action_error'] = "The university's license is inactive or expired. Please resolve the license status before reactivation.";
         } else {
             $_SESSION['university_action_error'] = "Unable to reactivate this university. Please try again.";
         }

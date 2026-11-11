@@ -36,8 +36,12 @@ class ManageUniversityController
         return Universities::suspend($universityId, $reason);
     }
 
-    public function reactivateUniversity($universityId)
+        public function reactivateUniversity($universityId)
     {
+        if (!Universities::hasValidLicense($universityId)) {
+            return "license_inactive";
+        }
+
         return Universities::reactivate($universityId);
     }
 }

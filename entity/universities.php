@@ -308,6 +308,22 @@ class Universities
         return $stmt->execute([$reason, $universityId]);
     }
 
+    /** True when the university's latest licence is active and has not passed its expiry date */
+    public static function hasValidLicense($universityId)
+    {
+        $stmt = self::connect()->prepare(
+            "SELECT status, (expiryDate >= CURDATE()) AS notExpired
+             FROM UniversityLicenses
+             WHERE universityId = ?
+             ORDER BY expiryDate DESC
+             LIMIT 1"
+        );
+        $stmt->execute([$universityId]);
+        $license = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $license && $license['status'] === 'active' && (int) $license['notExpired'] === 1;
+    }
+
     /** Let a suspended university in again */
     public static function reactivate($universityId)
     {
