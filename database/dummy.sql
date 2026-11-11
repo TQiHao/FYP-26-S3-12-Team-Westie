@@ -1,7 +1,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE DATABASE IF NOT EXISTS unibee;
-USE unibee;
+
 
 -- ============================================
 -- 1. UNIVERSITIES & FACULTIES
