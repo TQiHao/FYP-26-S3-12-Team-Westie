@@ -229,8 +229,22 @@ WHERE NOT EXISTS (SELECT 1 FROM UniversityLicenses WHERE universityId = 1);
 -- 11B. PENDING UNIVERSITY REGISTRATION (for the approval demo)
 -- ============================================
 INSERT INTO UniversityRegistrations (universityName, applicantName, applicantEmail, passwordHash, applicantContact, institutionType, country, postalCode, licenseId, status)
-SELECT 'NTU', 'lentor lim', 'lentor@ntu.edu.sg','$2y$10$OXfk52nqPfa1PQ4rqxuJbehxc1s2auqI5G00RmBxXOxG58JcHtreC','123456', 'Public University', 'Singapore', '639798', 1, 'pending'
+SELECT 'NTU', 'lentor lim', 'lentor@ntu.edu.sg', '$2y$10$OXfk52nqPfa1PQ4rqxuJbehxc1s2auqI5G00RmBxXOxG58JcHtreC', '123456', 'Public University', 'Singapore', '639798', 1, 'pending'
 WHERE NOT EXISTS (SELECT 1 FROM UniversityRegistrations WHERE universityName = 'NTU' AND status = 'pending');
+
+-- Supporting documents of that pending registration
+-- (these files already exist in uploads/registration_documents/)
+INSERT INTO RegistrationDocuments (registrationId, documentType, fileName, filePath)
+SELECT r.id, 'Institution Verification', 'Accreditation Certificate.pdf', 'uploads/registration_documents/96d89a998b3be569f353e66e9c60d4be.pdf'
+FROM UniversityRegistrations r
+WHERE r.universityName = 'NTU' AND r.status = 'pending'
+AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/96d89a998b3be569f353e66e9c60d4be.pdf');
+
+INSERT INTO RegistrationDocuments (registrationId, documentType, fileName, filePath)
+SELECT r.id, 'Institution Verification', 'Registration Certificate.pdf', 'uploads/registration_documents/db1cd95ac5db81febc18267d93829cf0.pdf'
+FROM UniversityRegistrations r
+WHERE r.universityName = 'NTU' AND r.status = 'pending'
+AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/db1cd95ac5db81febc18267d93829cf0.pdf');
 
 -- ============================================
 -- 12. LANDING PAGE CONTENT
