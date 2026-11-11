@@ -11,7 +11,7 @@ SELECT 1, 'UniBee Demo University', 'Private', 'info@unibee.com', 'Singapore', '
 WHERE NOT EXISTS (SELECT 1 FROM Universities WHERE id = 1);
 
 INSERT INTO Faculties (id, universityId, name, code)
-SELECT 1, 1, 'School of Computing', 'SOC'
+SELECT 1, 1, 'Faculty of Computing', 'SOC'
 WHERE NOT EXISTS (SELECT 1 FROM Faculties WHERE id = 1);
 
 INSERT INTO Programmes (id, facultyId, name, code, durationYears)
@@ -73,31 +73,31 @@ ON DUPLICATE KEY UPDATE name = VALUES(name), capacity = VALUES(capacity);
 -- ============================================
 INSERT INTO Modules (id, programmeId, name, code, credits, semester)
 VALUES 
-    (1, 1, 'Data Structures', 'CS201', 6, '1'),
-    (2, 1, 'Maths Algorithm', 'MATH255', 6, '1'),
-    (3, 1, 'System Security', 'CSIT111', 6, '1')
+    (1, 1, 'Data Structures', 'CS201', 6, '1(Oct-Dec)'),
+    (2, 1, 'Maths Algorithm', 'MATH255', 6, '1(Oct-Dec)'),
+    (3, 1, 'System Security', 'CSIT111', 6, '1(Oct-Dec)')
 ON DUPLICATE KEY UPDATE name=VALUES(name), code=VALUES(code);
 
 -- ============================================
 -- 5. CLASSES (INCLUDES ACTIVE & INACTIVE CLASSES)
 -- ============================================
 INSERT INTO Classes (id, moduleId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, academicYear, semester, status)
-SELECT 1, 1, id, 'CS201-L1', 'CS201-L1', 'mon', '09:00:00', '12:00:00', 'B201', '2026/2027', '1', 'active'
+SELECT 1, 1, id, 'CS201-L1', 'CS201-L1', 'mon', '09:00:00', '12:00:00', 'B201', '2026/2027', '1(Oct-Dec)', 'active'
 FROM Users WHERE email = 'lecturer@unibee.com'
 ON DUPLICATE KEY UPDATE className=VALUES(className), status='active';
 
 INSERT INTO Classes (id, moduleId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, academicYear, semester, status)
-SELECT 2, 1, id, 'CS201-L2', 'CS201-L2', 'fri', '14:00:00', '17:00:00', 'B202', '2026/2027', '1', 'suspended'
+SELECT 2, 1, id, 'CS201-L2', 'CS201-L2', 'fri', '14:00:00', '17:00:00', 'B202', '2026/2027', '1(Oct-Dec)', 'suspended'
 FROM Users WHERE email = 'lecturer@unibee.com'
 ON DUPLICATE KEY UPDATE className=VALUES(className), status='suspended';
 
 INSERT INTO Classes (id, moduleId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, academicYear, semester, status)
-SELECT 3, 2, id, 'MATH255-L1', 'MATH255-L1', 'tue', '10:00:00', '13:00:00', 'C101', '2026/2027', '1', 'active'
+SELECT 3, 2, id, 'MATH255-L1', 'MATH255-L1', 'tue', '10:00:00', '13:00:00', 'C101', '2026/2027', '1(Oct-Dec)', 'active'
 FROM Users WHERE email = 'lecturer@unibee.com'
 ON DUPLICATE KEY UPDATE className=VALUES(className), status='active';
 
 INSERT INTO Classes (id, moduleId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, academicYear, semester, status)
-SELECT 4, 3, id, 'CSIT111-L1', 'CSIT111-L1', 'thu', '10:00:00', '13:00:00', 'D3', '2026/2027', '1', 'active'
+SELECT 4, 3, id, 'CSIT111-L1', 'CSIT111-L1', 'thu', '10:00:00', '13:00:00', 'D3', '2026/2027', '1(Oct-Dec)', 'active'
 FROM Users WHERE email = 'lecturer@unibee.com'
 ON DUPLICATE KEY UPDATE className=VALUES(className), status='active';
 
