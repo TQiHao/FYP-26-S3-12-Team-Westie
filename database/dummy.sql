@@ -234,16 +234,16 @@ WHERE NOT EXISTS (SELECT 1 FROM UniversityRegistrations WHERE universityName = '
 -- Supporting documents of that pending registration
 -- (these files already exist in uploads/registration_documents/)
 INSERT INTO RegistrationDocuments (registrationId, documentType, fileName, filePath)
-SELECT r.id, 'Institution Verification', 'Accreditation Certificate.pdf', 'uploads/registration_documents/96d89a998b3be569f353e66e9c60d4be.pdf'
+SELECT r.id, 'Institution Verification', 'Accreditation Certificate.pdf', 'uploads/registration_documents/4bc34572f8411dfc52690d4c763ede75.pdf'
 FROM UniversityRegistrations r
 WHERE r.universityName = 'NTU' AND r.status = 'pending'
-AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/96d89a998b3be569f353e66e9c60d4be.pdf');
+AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/4bc34572f8411dfc52690d4c763ede75.pdf');
 
 INSERT INTO RegistrationDocuments (registrationId, documentType, fileName, filePath)
-SELECT r.id, 'Institution Verification', 'Registration Certificate.pdf', 'uploads/registration_documents/db1cd95ac5db81febc18267d93829cf0.pdf'
+SELECT r.id, 'Institution Verification', 'Registration Certificate.pdf', 'uploads/registration_documents/b6c344f76a12eb21f87ea111b3f359db.png'
 FROM UniversityRegistrations r
 WHERE r.universityName = 'NTU' AND r.status = 'pending'
-AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/db1cd95ac5db81febc18267d93829cf0.pdf');
+AND NOT EXISTS (SELECT 1 FROM RegistrationDocuments d WHERE d.registrationId = r.id AND d.filePath = 'uploads/registration_documents/b6c344f76a12eb21f87ea111b3f359db.png');
 
 -- ============================================
 -- 12. LANDING PAGE CONTENT
