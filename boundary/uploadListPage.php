@@ -20,7 +20,7 @@ switch ($type) {
     case 'faculty':
         $title = 'Faculty';
         $uploadType = 'faculty';
-        $backPage = 'UploadFacultyListPage.php';
+        $backPage = 'uploadFacultyListPage.php';
         $buttonText = 'Upload Faculty';
         $icon = 'faculty.png';
         break;
@@ -28,15 +28,15 @@ switch ($type) {
     case 'programme':
         $title = 'Programme';
         $uploadType = 'programme';
-        $backPage = 'UploadProgrammeListPage.php?facultyId=' . urlencode($facultyId);
-        $buttonText = 'Upload Programme';
+        $backPage = 'uploadProgrammeListPage.php?facultyId=' . urlencode($facultyId);
+        $buttonText = 'upload Programme';
         $icon = 'faculty.png';
         break;
 
     case 'module':
         $title = 'Module';
         $uploadType = 'module';
-        $backPage = 'UploadModuleListPage.php?facultyId='
+        $backPage = 'uploadModuleListPage.php?facultyId='
             . urlencode($facultyId)
             . '&programmeId='
             . urlencode($programmeId);
@@ -47,7 +47,7 @@ switch ($type) {
     case 'facility':
         $title = 'Facility';
         $uploadType = 'facility';
-        $backPage = 'UploadFacilityListPage.php';
+        $backPage = 'uploadFacilityListPage.php';
         $buttonText = 'Upload Facility';
         $icon = 'facilityBooking.png';
         break;
@@ -71,7 +71,7 @@ switch ($type) {
     case 'student':
         $title = 'Student';
         $uploadType = 'student';
-        $backPage = 'UploadStudentListPage.php';
+        $backPage = 'uploadStudentListPage.php';
         $buttonText = 'Upload Student';
         $icon = 'student.png';
         break;

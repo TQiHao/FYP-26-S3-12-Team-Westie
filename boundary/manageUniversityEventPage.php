@@ -1538,12 +1538,11 @@ if (
                         <select id="editFacilityId" name="facilityId" required
                             style="padding: 8px 10px; border: 1px solid #999; border-radius: 10px; font-size: 0.75rem; font-family: inherit; outline: none;">
                             <option value="">-- Select a Facility --</option>
-                            <?php foreach ($allFacilities as $fac): ?>
-                                <option value="<?php echo (int) $fac['id']; ?>">
-                                    <?php echo htmlspecialchars($fac['name'] . ' — ' . $fac['location']); ?>
-                                </option>
-                            <?php endforeach; ?>
                         </select>
+
+                        <p id="editFacilityMessage" style="font-size: 0.7rem; color: #777;">
+                            Select the event details to find available facilities.
+                        </p>
 
                         <label for="editCapacity">
                             Event Capacity
@@ -1698,8 +1697,7 @@ if (
             }
         );
 
-        /* EDIT EVENT MODAL */
-        function openEditEventModal(event) {
+        async function openEditEventModal(event) {
             document.getElementById(
                 'editEventPopup'
             ).style.display = 'flex';
@@ -1707,10 +1705,6 @@ if (
             document.getElementById(
                 'editEventId'
             ).value = event.id;
-
-            document.getElementById(
-                'editFacilityId'
-            ).value = event.facilityId;
 
             document.getElementById(
                 'editTitle'
@@ -1729,43 +1723,122 @@ if (
             ).value = event.eventInfo || '';
 
             if (event.startDatetime) {
-
                 document.getElementById(
                     'editStartDate'
-                ).value =
-                    event.startDatetime.substring(
-                        0,
-                        10
-                    );
+                ).value = event.startDatetime.substring(0, 10);
 
                 document.getElementById(
                     'editStartTime'
-                ).value =
-                    event.startDatetime.substring(
-                        11,
-                        16
-                    );
+                ).value = event.startDatetime.substring(11, 16);
             }
 
             if (event.endDatetime) {
-
                 document.getElementById(
                     'editEndDate'
-                ).value =
-                    event.endDatetime.substring(
-                        0,
-                        10
-                    );
+                ).value = event.endDatetime.substring(0, 10);
 
                 document.getElementById(
                     'editEndTime'
-                ).value =
-                    event.endDatetime.substring(
-                        11,
-                        16
-                    );
+                ).value = event.endDatetime.substring(11, 16);
+            }
+
+            // Load available facilities and retain the current one if eligible
+            await refreshEditFacilities(event.facilityId);
+        }
+
+        /* REFRESH AVAILABLE FACILITIES FOR EDIT EVENT */
+        async function refreshEditFacilities(preferredFacilityId = '') {
+
+            const facilitySelect = document.getElementById('editFacilityId');
+            const message = document.getElementById('editFacilityMessage');
+
+            const formData = new FormData();
+
+            formData.append('action', 'getAvailableFacilitiesForEvent');
+            formData.append('eventId', document.getElementById('editEventId').value);
+            formData.append('capacity', document.getElementById('editCapacity').value);
+            formData.append('startDate', document.getElementById('editStartDate').value);
+            formData.append('startTime', document.getElementById('editStartTime').value);
+            formData.append('endDate', document.getElementById('editEndDate').value);
+            formData.append('endTime', document.getElementById('editEndTime').value);
+
+            facilitySelect.innerHTML = '<option value="">Loading facilities...</option>';
+            message.textContent = 'Checking facility availability...';
+
+            try {
+                const response = await fetch(
+                    '../controller/manageUniversityEventController.php',
+                    {
+                        method: 'POST',
+                        body: formData
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Unable to retrieve facilities.');
+                }
+
+                const facilities = await response.json();
+
+                facilitySelect.innerHTML = '<option value="">-- Select a Facility --</option>';
+
+                facilities.forEach(facility => {
+                    const option = document.createElement('option');
+
+                    option.value = facility.bookableFacilityId;
+                    option.textContent =
+                        facility.name + ' — ' + facility.location +
+                        ' (Capacity: ' + facility.capacity + ')';
+
+                    facilitySelect.appendChild(option);
+                });
+
+                // Keep the current facility selected if it is still available
+                if (preferredFacilityId) {
+                    facilitySelect.value = preferredFacilityId;
+                }
+
+                if (facilities.length === 0) {
+                    message.textContent = 'No suitable facilities are available for these event details.';
+                } else if (
+                    preferredFacilityId &&
+                    facilitySelect.value === String(preferredFacilityId)
+                ) {
+                    message.textContent = 'Available facilities loaded. Your current facility is still available.';
+                } else {
+                    message.textContent = 'Available facilities loaded. Please select a facility.';
+                }
+
+            } catch (error) {
+                console.error('Facility loading error:', error);
+
+                facilitySelect.innerHTML = '<option value="">-- Unable to load facilities --</option>';
+                message.textContent = 'Unable to check facility availability. Please try again.';
             }
         }
+
+        /* AUTO-REFRESH FACILITIES WHEN EVENT DETAILS CHANGE */
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const fields = [
+                'editCapacity',
+                'editStartDate',
+                'editStartTime',
+                'editEndDate',
+                'editEndTime'
+            ];
+
+            fields.forEach(function (fieldId) {
+
+                document.getElementById(fieldId).addEventListener('change', function () {
+
+                    refreshEditFacilities();
+
+                });
+
+            });
+
+        });
 
         function closeEditEventModal() {
             document.getElementById(

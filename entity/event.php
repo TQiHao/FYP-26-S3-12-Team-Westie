@@ -141,19 +141,27 @@ class Event
         }
     }
 
-    public function eventExists($universityId, $title, $startDatetime, $endDatetime)
+    public function eventExists($universityId, $title, $excludeEventId = null)
     {
         try {
-
-            $sql = "SELECT id FROM Events
+            $sql = "SELECT id
+                FROM Events
                 WHERE universityId = ?
-                  AND title = ?
-                  AND startDatetime = ?
-                  AND endDatetime = ?
-                LIMIT 1";
+                  AND LOWER(TRIM(title)) = LOWER(TRIM(?))
+                  AND status != 'suspended'";
+
+            $params = [$universityId, $title];
+
+            if ($excludeEventId !== null) {
+                $sql .= " AND id != ?";
+                $params[] = $excludeEventId;
+            }
+
+            $sql .= " LIMIT 1";
 
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId, $title, $startDatetime, $endDatetime]);
+            $stmt->execute($params);
+
             return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
 
         } catch (Exception $e) {
@@ -530,7 +538,17 @@ class Event
                 )
                 AND f.capacity >= ?
                 AND bf.isBookable = TRUE
-                AND bf.status = 'available'
+                AND (
+                    bf.status = 'available'
+                    OR EXISTS (
+                        SELECT 1
+                        FROM Events currentEvent
+                        WHERE currentEvent.id = ?
+                            AND currentEvent.universityId = f.universityId
+                            AND currentEvent.facilityId = bf.id
+                            AND currentEvent.status = 'active'
+                    )
+                )
                 AND bf.openTime <= TIME(?)
                 AND bf.closeTime >= TIME(?)
                 AND bf.slotDuration > 0
@@ -572,6 +590,7 @@ class Event
                 $universityId,
                 $excludeEventId,
                 $capacity,
+                $excludeEventId,
                 $startDatetime,
                 $endDatetime,
                 $startDatetime,

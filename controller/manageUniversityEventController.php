@@ -36,14 +36,16 @@ class ManageUniversityEventController
         $universityId,
         $capacity,
         $startDatetime,
-        $endDatetime
+        $endDatetime,
+        $excludeEventId = null
     ) {
         return $this->event
             ->getRecommendedFacilities(
                 $universityId,
                 $capacity,
                 $startDatetime,
-                $endDatetime
+                $endDatetime,
+                $excludeEventId
             );
     }
 
@@ -216,8 +218,8 @@ class ManageUniversityEventController
             }
         }
 
-        if ($this->event->eventExists($universityId, $title, $startDatetime, $endDatetime)) {
-            return "An event with the same name already exists for the selected date and time.";
+        if ($this->event->eventExists($universityId, $title)) {
+            return "An event with this title already exists.";
         }
 
         if ($posterFile !== null && !empty($posterFile['name'])) {
@@ -329,6 +331,10 @@ class ManageUniversityEventController
 
         if ($title === '') {
             return "Event title is required.";
+        }
+
+        if ($this->event->eventExists($universityId, $title, $eventId)) {
+            return "An event with this title already exists.";
         }
 
         if ($description === '') {
@@ -616,6 +622,50 @@ class ManageUniversityEventController
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'getAvailableFacilitiesForEvent') 
+{
+    header('Content-Type: application/json');
+
+    $controller = new ManageUniversityEventController();
+
+    $universityId = (int) ($_SESSION['university_id'] ?? 0);
+    $eventId = (int) ($_POST['eventId'] ?? 0);
+    $capacity = (int) ($_POST['capacity'] ?? 0);
+
+    $startDate = trim($_POST['startDate'] ?? '');
+    $startTime = trim($_POST['startTime'] ?? '');
+    $endDate = trim($_POST['endDate'] ?? '');
+    $endTime = trim($_POST['endTime'] ?? '');
+
+    if (
+        $universityId <= 0 ||
+        $eventId <= 0 ||
+        $capacity <= 0 ||
+        $startDate === '' ||
+        $startTime === '' ||
+        $endDate === '' ||
+        $endTime === ''
+    ) {
+        echo json_encode([]);
+        exit();
+    }
+
+    $startDatetime = $startDate . ' ' . $startTime . ':00';
+    $endDatetime = $endDate . ' ' . $endTime . ':00';
+
+    $facilities = $controller->getRecommendedFacilities(
+        $universityId,
+        $capacity,
+        $startDatetime,
+        $endDatetime,
+        $eventId
+    );
+
+    echo json_encode($facilities);
+    exit();
+}
+
+// CREATE EVENT HANDLER
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'createUniversityEvent') {
 
     $controller = new ManageUniversityEventController();
@@ -640,14 +690,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     exit();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updateUniversityEvent') {
-
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'updateUniversityEvent'
+) {
     $controller = new ManageUniversityEventController();
 
     $universityId = $_SESSION['university_id'] ?? null;
     $posterFile = $_FILES['eventPoster'] ?? null;
 
-    $result = $controller->updateUniversityEvent($_POST, $universityId, $posterFile);
+    $result = $controller->updateUniversityEvent(
+        $_POST,
+        $universityId,
+        $posterFile
+    );
 
     if ($result === true) {
         $_SESSION['event_success'] = "University Event updated successfully.";
