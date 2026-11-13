@@ -74,7 +74,7 @@ $staffId = $_SESSION['user_id'] ?? null;
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -127,7 +127,9 @@ $staffId = $_SESSION['user_id'] ?? null;
             // Group modules by Semester and Academic Year
             $groupedModules = [];
             foreach ($modules as $m) {
-                $key = 'Semester ' . $m['semester'] . ' (' . $m['academicYear'] . ')';
+                // FIXED: Strip the word "Semester" if the coordinator already typed it
+                $semClean = preg_replace('/^Semester\s+/i', '', trim($m['semester']));
+                $key = 'Semester ' . $semClean . ' (' . $m['academicYear'] . ')';
                 $groupedModules[$key][] = $m;
             }
 

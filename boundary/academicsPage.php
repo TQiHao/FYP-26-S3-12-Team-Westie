@@ -12,17 +12,16 @@ requireRole(['student']);
 
 require_once "../controller/academicsController.php";
 require_once "../controller/viewEventsController.php";
+require_once "../controller/manageClassController.php";
 
 $controller = new AcademicsController();
 $eventController = new ViewEventsController();
 $studentId = $_SESSION['user_id'] ?? null;
 
-// Tab logic — allow 4 tabs
 $allowedTabs = ['timetable', 'courses', 'exams', 'interaction'];
 $requestedTab = $_GET['tab'] ?? 'timetable';
 $activeTab = in_array($requestedTab, $allowedTabs) ? $requestedTab : 'timetable';
 
-// Week & Date Selection Logic
 $today = new DateTime();
 
 if (isset($_GET['date']) && !empty($_GET['date'])) {
@@ -55,17 +54,11 @@ $nextDateParam = $nextMonday->format('Y-m-d');
 $selectedDateValue = $monday->format('Y-m-d');
 $weekRangeText = $monday->format('M j, Y') . ' – ' . $sunday->format('M j, Y');
 
-$semStart = new DateTime('2026-09-01');
-$semEnd = new DateTime('2026-11-30');
-$isWithinSemester = ($sunday >= $semStart && $monday <= $semEnd);
-
-// Fetch class timetable entries
 $entries = null;
-if ($activeTab === 'timetable' && $isWithinSemester) {
+if ($activeTab === 'timetable') {
     $entries = $controller->getTimetable($studentId);
 }
 
-// Fetch registered campus events for this student
 $registeredEvents = method_exists($eventController, 'getUserRegisteredEvents')
     ? $eventController->getUserRegisteredEvents($studentId)
     : [];
@@ -92,9 +85,16 @@ $grid = [
     'sun' => []
 ];
 
-// 1. Load class timetable entries into grid (each slot is an array)
+$weekDateStr = $monday->format('Y-m-d');
+
 if (is_array($entries)) {
     foreach ($entries as $e) {
+        if (isset($e->academicYear) && !empty($e->academicYear)) {
+            if (!ManageClassController::isSemesterActive($weekDateStr, $e->academicYear, $e->semester)) {
+                continue;
+            }
+        }
+
         $day = strtolower($e->getDayOfWeek());
 
         $startParts = explode(':', $e->getStartTime());
@@ -122,7 +122,6 @@ if (is_array($entries)) {
     }
 }
 
-// 2. Load registered campus events for the current week (each slot is an array)
 if (is_array($registeredEvents)) {
     foreach ($registeredEvents as $evt) {
         $startDt = new DateTime($evt['startDatetime'] ?? '');
@@ -212,7 +211,6 @@ $hours = range(8, 22);
             border-color: #ffd84d;
         }
 
-        /* ===== STACKED CELL FOR OVERLAPPING SLOTS ===== */
         .timetable-cell-stack {
             display: flex;
             flex-direction: column;
@@ -236,14 +234,12 @@ $hours = range(8, 22);
             text-align: center;
         }
 
-        /* Yellow class slot */
         .timetable-slot {
             background-color: #FFD84D;
             color: #111;
             font-weight: bold;
         }
 
-        /* Blue event slot */
         .timetable-slot.event-slot {
             background-color: #BAE6FD;
             color: #111;
@@ -268,24 +264,23 @@ $hours = range(8, 22);
             white-space: nowrap;
         }
 
-        /* Fix for the Student Interaction Search Bar Alignment */
         .student-interaction-bar {
-            margin: 15px 0 25px 0; /* Remove auto-centering and match left margin */
-            max-width: 100%;       /* Let it span the full width of the container */
+            margin: 15px 0 25px 0;
+            max-width: 100%;
             width: 100%;
         }
 
-        /* ===== MOBILE FIXES (desktop untouched) ===== */
         .timetable-scroll {
             width: 100%;
         }
 
         @media (max-width: 768px) {
-            html, body {
+
+            html,
+            body {
                 overflow-x: hidden;
             }
 
-            /* Back button pinned left, title truly centred on the same row */
             .profile-header {
                 flex-direction: row;
                 align-items: center;
@@ -313,7 +308,6 @@ $hours = range(8, 22);
                 font-size: 1.1rem;
             }
 
-            /* Tabs: one row, swipe sideways instead of overflowing the page */
             .teaching-tabs {
                 gap: 22px;
                 overflow-x: auto;
@@ -333,7 +327,6 @@ $hours = range(8, 22);
                 flex: 0 0 auto;
             }
 
-            /* Week controls: tidy stacked layout */
             .timetable-controls {
                 flex-direction: column;
                 align-items: stretch;
@@ -363,7 +356,6 @@ $hours = range(8, 22);
                 display: block;
             }
 
-            /* Timetable: keep columns readable and scroll sideways */
             .timetable-scroll {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
@@ -431,12 +423,12 @@ $hours = range(8, 22);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong>
+                <?php
+                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
+                ?>
+            </strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -470,23 +462,19 @@ $hours = range(8, 22);
             <div></div>
         </div>
 
-        <!-- Tabs -->
         <div class="teaching-tabs">
             <a href="academicsPage.php?tab=timetable"
                 class="teaching-tab <?php echo $activeTab === 'timetable' ? 'active' : ''; ?>">
                 Personal Timetable
             </a>
-
             <a href="academicsPage.php?tab=courses"
                 class="teaching-tab <?php echo $activeTab === 'courses' ? 'active' : ''; ?>">
                 Enrolled Courses
             </a>
-
             <a href="academicsPage.php?tab=exams"
                 class="teaching-tab <?php echo $activeTab === 'exams' ? 'active' : ''; ?>">
                 Exam Schedule
             </a>
-
             <a href="academicsPage.php?tab=interaction"
                 class="teaching-tab <?php echo $activeTab === 'interaction' ? 'active' : ''; ?>">
                 Student Interaction
@@ -495,11 +483,9 @@ $hours = range(8, 22);
 
         <?php if ($activeTab === 'timetable'): ?>
 
-            <!-- ===== PERSONAL TIMETABLE ===== -->
             <div class="timetable-controls">
                 <a href="academicsPage.php?tab=timetable&date=<?php echo $prevDateParam; ?>"
-                    class="timetable-nav-btn">&larr;
-                    Previous Week</a>
+                    class="timetable-nav-btn">&larr; Previous Week</a>
 
                 <div class="date-picker-wrapper">
                     <span class="week-range-title"><?php echo htmlspecialchars($weekRangeText); ?></span>
@@ -511,107 +497,100 @@ $hours = range(8, 22);
                     Week &rarr;</a>
             </div>
 
-            <?php if (!$isWithinSemester && empty($registeredEvents)): ?>
-                <p class="no-notifications">No classes scheduled for this week. </p>
-            <?php elseif ($entries === false): ?>
+            <?php if ($entries === false): ?>
                 <p class="error-message">Unable to retrieve timetable. Please try again later.</p>
+            <?php elseif (empty($entries) && empty($registeredEvents)): ?>
+                <p class="no-notifications">No classes scheduled for this week.</p>
             <?php else: ?>
                 <div class="timetable-scroll">
-                <table class="timetable-grid">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <?php foreach ($keys as $k): ?>
-                                <th>
-                                    <?php echo $weekDates[$k]['dayName']; ?><br>
-                                    <small
-                                        style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
-                                </th>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $skipCell = [
-                            'mon' => [],
-                            'tue' => [],
-                            'wed' => [],
-                            'thu' => [],
-                            'fri' => [],
-                            'sat' => [],
-                            'sun' => []
-                        ];
-
-                        foreach ($hours as $h): ?>
+                    <table class="timetable-grid">
+                        <thead>
                             <tr>
-                                <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
+                                <th>Time</th>
                                 <?php foreach ($keys as $k): ?>
-                                    <?php
-                                    if (!empty($skipCell[$k][$h])) {
-                                        continue;
-                                    }
-
-                                    if (isset($grid[$k][$h])):
-                                        $items = $grid[$k][$h];
-
-                                        // Determine the longest duration among stacked items
-                                        $maxDuration = 1;
-                                        foreach ($items as $it) {
-                                            if ($it['duration'] > $maxDuration) {
-                                                $maxDuration = $it['duration'];
-                                            }
-                                        }
-
-                                        for ($d = 1; $d < $maxDuration; $d++) {
-                                            $skipCell[$k][$h + $d] = true;
-                                        }
-
-                                        $rowspanAttr = $maxDuration > 1 ? ' rowspan="' . $maxDuration . '"' : '';
-                                        $hasClash = count($items) > 1;
-                                        ?>
-                                        <td<?php echo $rowspanAttr; ?>>
-                                            <div class="timetable-cell-stack<?php echo $hasClash ? ' has-clash' : ''; ?>">
-                                                <?php foreach ($items as $item): ?>
-                                                    <div
-                                                        class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
-                                                        <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
-                                                        <span><?php echo htmlspecialchars($item['location']); ?></span><br>
-                                                        <small><?php echo htmlspecialchars($item['time']); ?></small>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                            </td>
-                                        <?php else: ?>
-                                            <td></td>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
+                                    <th>
+                                        <?php echo $weekDates[$k]['dayName']; ?><br>
+                                        <small
+                                            style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
+                                    </th>
+                                <?php endforeach; ?>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $skipCell = [
+                                'mon' => [],
+                                'tue' => [],
+                                'wed' => [],
+                                'thu' => [],
+                                'fri' => [],
+                                'sat' => [],
+                                'sun' => []
+                            ];
+
+                            foreach ($hours as $h): ?>
+                                <tr>
+                                    <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
+                                    <?php foreach ($keys as $k): ?>
+                                        <?php
+                                        if (!empty($skipCell[$k][$h])) {
+                                            continue;
+                                        }
+
+                                        if (isset($grid[$k][$h])):
+                                            $items = $grid[$k][$h];
+                                            $maxDuration = 1;
+                                            foreach ($items as $it) {
+                                                if ($it['duration'] > $maxDuration) {
+                                                    $maxDuration = $it['duration'];
+                                                }
+                                            }
+
+                                            for ($d = 1; $d < $maxDuration; $d++) {
+                                                $skipCell[$k][$h + $d] = true;
+                                            }
+
+                                            $rowspanAttr = $maxDuration > 1 ? ' rowspan="' . $maxDuration . '"' : '';
+                                            $hasClash = count($items) > 1;
+                                            ?>
+                                            <td<?php echo $rowspanAttr; ?>>
+                                                <div class="timetable-cell-stack<?php echo $hasClash ? ' has-clash' : ''; ?>">
+                                                    <?php foreach ($items as $item): ?>
+                                                        <div
+                                                            class="<?php echo ($item['type'] === 'event') ? 'timetable-slot event-slot' : 'timetable-slot'; ?>">
+                                                            <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
+                                                            <span><?php echo htmlspecialchars($item['location']); ?></span><br>
+                                                            <small><?php echo htmlspecialchars($item['time']); ?></small>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                </td>
+                                            <?php else: ?>
+                                                <td></td>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             <?php endif; ?>
 
         <?php elseif ($activeTab === 'courses'): ?>
 
-            <!-- ===== ENROLLED COURSES ===== -->
             <?php
             $enrolledCourses = $controller->getEnrolledCourses($studentId);
             ?>
 
             <?php if ($enrolledCourses === false): ?>
                 <p class="error-message">Unable to retrieve enrolled courses. Please try again later.</p>
-
             <?php elseif (empty($enrolledCourses)): ?>
                 <p class="no-notifications">You are not enrolled in any courses for the current semester.</p>
-
             <?php else: ?>
-
                 <p class="semester-label">
                     Semester <?php echo htmlspecialchars($enrolledCourses[0]['moduleSemester'] ?? '-'); ?>,
                     <?php echo count($enrolledCourses); ?> courses
                 </p>
-
                 <div class="enrolled-courses-list">
                     <?php foreach ($enrolledCourses as $course): ?>
                         <div class="enrolled-course-card">
@@ -637,28 +616,22 @@ $hours = range(8, 22);
                         </div>
                     <?php endforeach; ?>
                 </div>
-
             <?php endif; ?>
 
         <?php elseif ($activeTab === 'exams'): ?>
 
-            <!-- ===== EXAM SCHEDULE ===== -->
             <?php
             $exams = $controller->getExamSchedule($studentId);
             ?>
 
             <?php if ($exams === false): ?>
                 <p class="error-message">Unable to retrieve exam schedule. Please try again later.</p>
-
             <?php elseif (empty($exams)): ?>
                 <p class="no-notifications">No upcoming exam scheduled.</p>
-
             <?php else: ?>
-
                 <p class="semester-label">
                     <?php echo count($exams); ?> upcoming exam<?php echo count($exams) > 1 ? 's' : ''; ?>
                 </p>
-
                 <div class="exam-list">
                     <?php foreach ($exams as $exam): ?>
                         <?php
@@ -683,13 +656,10 @@ $hours = range(8, 22);
                         </div>
                     <?php endforeach; ?>
                 </div>
-
             <?php endif; ?>
 
-            <!-- ===== STUDENT INTERACTION ===== -->
         <?php elseif ($activeTab === 'interaction'): ?>
 
-            <!-- ===== STUDENT INTERACTION ===== -->
             <?php
             require_once "../controller/studentInteractionController.php";
             $interactionController = new StudentInteractionController();
@@ -699,21 +669,18 @@ $hours = range(8, 22);
             $searchResults = null;
 
             if ($searchActive) {
-                // Server-side search — returns matching groups (with isMember flag)
                 $searchResults = $interactionController->searchStudyGroups(
                     $studentId,
                     $_SESSION['university_id'],
                     $searchKeyword
                 );
             } else {
-                // Normal view — my groups + available groups
                 $groupsData = $interactionController->getMyGroupsAndAvailableGroups($studentId);
                 $myGroups = $groupsData['myGroups'];
                 $availableGroups = $groupsData['availableGroups'];
             }
             ?>
 
-            <!-- Search + Create Bar -->
             <form action="academicsPage.php?tab=interaction" method="GET" class="student-interaction-bar">
                 <input type="hidden" name="tab" value="interaction">
                 <input type="text" name="keyword" placeholder="Search by group name, course, keyword..."
@@ -723,18 +690,14 @@ $hours = range(8, 22);
             </form>
 
             <?php if ($searchActive): ?>
-
-                <!-- SEARCH RESULTS -->
                 <h3 class="section-label" style="margin-top: 25px;">
                     Search Results for "<?php echo htmlspecialchars($searchKeyword); ?>"
                 </h3>
 
                 <?php if ($searchResults === false): ?>
                     <p class="error-message">Unable to search study groups. Please try again later.</p>
-
                 <?php elseif (empty($searchResults)): ?>
                     <p class="no-notifications">No study group found matching your search criteria.</p>
-
                 <?php else: ?>
                     <div class="group-grid">
                         <?php foreach ($searchResults as $row): ?>
@@ -770,8 +733,6 @@ $hours = range(8, 22);
                 <?php endif; ?>
 
             <?php else: ?>
-
-                <!-- MY GROUPS -->
                 <h3 class="section-label" style="margin-top: 25px;">My Groups</h3>
 
                 <?php if (empty($myGroups)): ?>
@@ -810,7 +771,6 @@ $hours = range(8, 22);
                     </div>
                 <?php endif; ?>
 
-                <!-- AVAILABLE TO JOIN -->
                 <h3 class="section-label" style="margin-top: 35px;">Available to join</h3>
 
                 <?php if (empty($availableGroups)): ?>
@@ -844,7 +804,6 @@ $hours = range(8, 22);
 
     </main>
 
-    <!-- Confirmation Modal -->
     <div class="modal-overlay" id="suspendConfirmModal" style="display:none;">
         <div class="modal-box">
             <span class="modal-close" onclick="closeSuspendModal()">&times;</span>
@@ -859,7 +818,6 @@ $hours = range(8, 22);
         </div>
     </div>
 
-    <!-- Group Success Modal -->
     <?php if (isset($_SESSION['group_success'])): ?>
         <div class="modal-overlay" id="groupSuccessModal">
             <div class="modal-box">
@@ -870,7 +828,6 @@ $hours = range(8, 22);
         <?php unset($_SESSION['group_success']); ?>
     <?php endif; ?>
 
-    <!-- Group Error Modal -->
     <?php if (isset($_SESSION['group_error'])): ?>
         <div class="modal-overlay" id="groupErrorModal">
             <div class="modal-box">

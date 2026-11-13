@@ -60,6 +60,205 @@ function getInitials($fullName)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UniBee Platform</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .landing-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .landing-nav a:not(.get-started-btn) {
+            color: #111;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .landing-nav a:not(.get-started-btn):hover {
+            color: #fff;
+            background-color: #e6c23a;
+        }
+
+        .landing-nav a[href="loginPage.php"] {
+            margin-left: 20px;
+        }
+
+        img {
+            max-width: 100%;
+        }
+
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: 0;
+            font-size: 30px;
+            line-height: 1;
+            padding: 4px 10px;
+            cursor: pointer;
+            color: #111;
+        }
+
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .testimonials-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: center;
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .nav-toggle {
+                display: block;
+            }
+
+            .landing-nav {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                padding: 10px 0;
+            }
+
+            .landing-nav.open {
+                display: flex;
+            }
+
+            .landing-nav a,
+            .landing-nav a[href="loginPage.php"] {
+                margin-left: 0;
+                text-align: center;
+                padding: 12px 15px;
+            }
+
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+                padding: 40px 20px;
+            }
+
+            .hero-left,
+            .hero-right {
+                width: 100%;
+            }
+
+            .hero-divider {
+                display: none;
+            }
+
+            .hero-content h1 {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .features-grid,
+            .pricing-grid,
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-card {
+                position: relative;
+                padding: 20px 52px;
+            }
+
+            .arrow-btn {
+                position: absolute !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
+                width: 38px;
+                height: 38px;
+                font-size: 14px;
+                z-index: 2;
+            }
+
+            .arrow-btn.prev-btn {
+                left: 8px !important;
+                right: auto !important;
+            }
+
+            .arrow-btn.next-btn {
+                right: 8px !important;
+                left: auto !important;
+            }
+
+            .features-title,
+            .licensing-section h2,
+            .testimonials-section h2 {
+                font-size: 26px;
+                text-align: center;
+            }
+
+            .marketing-video-section {
+                padding: 30px 12px !important;
+            }
+
+            .licensing-section {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .testimonials-section {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .testimonials-grid {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+
+            .testimonial-card {
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            .footer-main {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 0;
+            }
+
+            .hero-content h1 {
+                font-size: 30px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -69,7 +268,13 @@ function getInitials($fullName)
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
         </div>
 
-        <nav class="landing-nav">
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">&#9776;</button>
+
+        <nav class="landing-nav" id="landingNav">
+            <a href="#overview">Overview</a>
+            <a href="#video">Marketing Video</a>
+            <a href="#features">Features</a>
+            <a href="#testimonials">Testimonials</a>
             <a href="loginPage.php">Log In</a>
             <a href="universityRegistrationPage.php" class="get-started-btn">Get started</a>
         </nav>
@@ -81,7 +286,7 @@ function getInitials($fullName)
     $heroImage = $hero ? $hero->getImagePath() : '../images/landingpgCampus.avif';
     ?>
 
-    <section class="hero"
+    <section class="hero" id="overview"
         style="background: url('<?php echo htmlspecialchars($heroImage); ?>') center/cover no-repeat;">
         <div class="hero-overlay"></div>
         <div class="hero-content">
@@ -96,7 +301,8 @@ function getInitials($fullName)
         </div>
     </section>
 
-    <section class="marketing-video-section" style="padding: 50px 20px; text-align: center; background-color: #f8f9fa;">
+    <section class="marketing-video-section" id="video"
+        style="padding: 50px 20px; text-align: center; background-color: #f8f9fa;">
         <div
             style="max-width: 800px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); aspect-ratio: 16/9;">
             <iframe width="100%" height="100%"
@@ -108,7 +314,7 @@ function getInitials($fullName)
         </div>
     </section>
 
-    <section class="features-section">
+    <section class="features-section" id="features">
         <div class="features-wrapper">
 
             <?php foreach ($featureSlides as $i => $slide): ?>
@@ -140,25 +346,25 @@ function getInitials($fullName)
             <div class="price-card">
                 <p>Ideal for small institutions or trial implementations. Includes full access to all AI campus
                     features, complete setup, and standard annual support.</p>
-                <h3>1 year | SGD 20,000</h3>
+                <h3>1 year | SGD 15,000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
             <div class="price-card">
                 <p>Designed for mid-sized universities seeking operational continuity. Save 10-15% on annual costs with
                     guaranteed feature updates and system maintenance.</p>
-                <h3>2 years | SGD 36,000</h3>
+                <h3>2 years | SGD 27,000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
             <div class="price-card">
                 <p>Our best-value partnership plan for large institutions. Save 20-30% with multi-year budget stability,
                     priority onboarding, and custom feature development.</p>
-                <h3>5 years | SGD 80,000</h3>
+                <h3>5 years | SGD 60,000</h3>
                 <a href="universityRegistrationPage.php" class="btn-purchase">Purchase License</a>
             </div>
         </div>
     </section>
 
-    <section class="testimonials-section">
+    <section class="testimonials-section" id="testimonials">
         <h2>Testimonials</h2>
 
         <?php if (empty($testimonials)): ?>
@@ -205,6 +411,42 @@ function getInitials($fullName)
     </footer>
 
     <script src="../script.js"></script>
+    <script>
+        (function () {
+            var toggle = document.getElementById('navToggle');
+            var nav = document.getElementById('landingNav');
+            if (!toggle || !nav) return;
+
+            toggle.addEventListener('click', function () {
+                var open = nav.classList.toggle('open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
+            var slideTimer = null;
+
+            function startAutoSlide() {
+                clearInterval(slideTimer);
+                slideTimer = setInterval(function () {
+                    if (typeof changeSlide === 'function') {
+                        changeSlide(1);
+                    }
+                }, 5000);
+            }
+
+            document.querySelectorAll('.arrow-btn').forEach(function (btn) {
+                btn.addEventListener('click', startAutoSlide);
+            });
+
+            startAutoSlide();
+
+            nav.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    nav.classList.remove('open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                });
+            });
+        })();
+    </script>
 </body>
 
 </html>

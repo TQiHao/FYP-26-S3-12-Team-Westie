@@ -11,6 +11,7 @@ requireRole(['lecturer']);
 
 require_once "../controller/teachingController.php";
 require_once "../controller/viewEventsController.php";
+require_once "../controller/manageClassController.php";
 
 $controller = new TeachingController();
 $eventController = new ViewEventsController();
@@ -81,8 +82,17 @@ $grid = [
     'sun' => []
 ];
 
+$weekDateStr = $monday->format('Y-m-d');
+
 if (is_array($entries)) {
     foreach ($entries as $e) {
+        // Filter out classes that are not active for the week being viewed
+        if (isset($e->academicYear) && !empty($e->academicYear)) {
+            if (!ManageClassController::isSemesterActive($weekDateStr, $e->academicYear, $e->semester)) {
+                continue;
+            }
+        }
+
         $day = strtolower($e->getDayOfWeek());
 
         $startTimestamp = strtotime($e->getStartTime());
@@ -288,7 +298,7 @@ $hours = range(8, 22);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">

@@ -81,7 +81,7 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
 
             <div class="summary-item">
                 <div class="summary-title">
-                    <img src="../images/nextclass.png" alt="Next class" class="summary-icon">
+                    <img src="../images/nextClass.png" alt="Next class" class="summary-icon">
                     <span>Next class</span>
                 </div>
 
@@ -111,7 +111,7 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
 
             <div class="summary-item">
                 <div class="summary-title">
-                    <img src="../images/upcomingevent.png" alt="Upcoming event" class="summary-icon">
+                    <img src="../images/upcomingEvent.png" alt="Upcoming event" class="summary-icon">
                     <span>Upcoming event</span>
                 </div>
 
@@ -146,7 +146,7 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                 </a>
 
                 <a href="viewEventsPage.php" class="dashboard-card">
-                    <img src="../images/campusevent.png" alt="Campus Events" class="card-icon">
+                    <img src="../images/campusEvent.png" alt="Campus Events" class="card-icon">
                     <h2>Campus Events</h2>
                     <p><?php echo $upcomingEventsCount . ' Upcoming' . ($upcomingEventsCount === 1 ? '' : 's'); ?></p>
                 </a>

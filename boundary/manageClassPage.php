@@ -11,7 +11,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once "../controller/authGuard.php";
 requireRole(['course_coordinator']);
 
-require_once "../controller/ManageClassController.php";
+require_once "../controller/manageClassController.php";
 
 $controller = new ManageClassController();
 
@@ -70,7 +70,6 @@ if ($reopenMode !== null && $flashError !== null) {
     $flashError = null;
 }
 
-// Group by Module ONLY. 
 $groupedModules = [];
 foreach ($classList as $cls) {
     $groupKey = $cls['moduleId'];
@@ -155,6 +154,7 @@ foreach ($classList as $c) {
             gap: 10px;
             flex: 1;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .search-box input {
@@ -163,6 +163,8 @@ foreach ($classList as $c) {
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 14px;
+            box-sizing: border-box;
+            min-width: 0;
         }
 
         .search-box select {
@@ -170,6 +172,7 @@ foreach ($classList as $c) {
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 14px;
+            box-sizing: border-box;
         }
 
         .btn-primary-small {
@@ -182,6 +185,7 @@ foreach ($classList as $c) {
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
+            box-sizing: border-box;
         }
 
         .btn-primary-small:hover {
@@ -196,6 +200,7 @@ foreach ($classList as $c) {
             border: 1px solid #cbd5e1;
             cursor: pointer;
             font-weight: 500;
+            box-sizing: border-box;
         }
 
         .btn-secondary-small:hover {
@@ -209,6 +214,7 @@ foreach ($classList as $c) {
             width: 100%;
             min-height: 45px;
             margin: 15px 0 25px 0;
+            box-sizing: border-box;
         }
 
         .btn-back {
@@ -261,12 +267,14 @@ foreach ($classList as $c) {
         .table-responsive {
             width: 100%;
             overflow: hidden;
+            box-sizing: border-box;
         }
 
         .admin-table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
+            box-sizing: border-box;
         }
 
         .admin-table th {
@@ -323,6 +331,7 @@ foreach ($classList as $c) {
             font-weight: 700;
             color: #1e293b;
             line-height: 1.4;
+            box-sizing: border-box;
         }
 
         .admin-table tr:hover {
@@ -338,6 +347,7 @@ foreach ($classList as $c) {
             gap: 5px;
             align-items: center;
             width: 100%;
+            box-sizing: border-box;
         }
 
         .action-btn-sm {
@@ -399,6 +409,7 @@ foreach ($classList as $c) {
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
+            box-sizing: border-box;
         }
 
         .btn-remove-sm:hover {
@@ -415,6 +426,7 @@ foreach ($classList as $c) {
             text-align: center;
             width: 100%;
             max-width: 75px;
+            box-sizing: border-box;
         }
 
         .status-active {
@@ -438,6 +450,8 @@ foreach ($classList as $c) {
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 12px;
+            box-sizing: border-box;
         }
 
         .modal-overlay.active {
@@ -453,6 +467,7 @@ foreach ($classList as $c) {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             max-height: 90vh;
             overflow-y: auto;
+            box-sizing: border-box;
         }
 
         .modal-header {
@@ -462,16 +477,25 @@ foreach ($classList as $c) {
             margin-bottom: 16px;
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 10px;
+            box-sizing: border-box;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .form-group-full {
             grid-column: span 2;
+        }
+
+        .form-group {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
         }
 
         .form-group label {
@@ -480,30 +504,37 @@ foreach ($classList as $c) {
             font-weight: 600;
             margin-bottom: 4px;
             color: #334155;
+            box-sizing: border-box;
         }
 
         .form-group input,
         .form-group select {
             width: 100%;
+            max-width: 100%;
             padding: 8px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
+            min-width: 0;
         }
 
         .searchable-select {
             position: relative;
             width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
         }
 
         .searchable-select .ss-input {
             width: 100%;
+            max-width: 100%;
             padding: 8px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 14px;
             box-sizing: border-box;
+            min-width: 0;
         }
 
         .searchable-select .ss-dropdown {
@@ -520,6 +551,7 @@ foreach ($classList as $c) {
             z-index: 50;
             margin-top: 2px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+            box-sizing: border-box;
         }
 
         .searchable-select .ss-dropdown.open {
@@ -531,6 +563,7 @@ foreach ($classList as $c) {
             font-size: 13px;
             cursor: pointer;
             color: #1e293b;
+            box-sizing: border-box;
         }
 
         .searchable-select .ss-option:hover {
@@ -542,12 +575,14 @@ foreach ($classList as $c) {
             padding: 8px 12px;
             font-size: 13px;
             color: #94a3b8;
+            box-sizing: border-box;
         }
 
         .info-group {
             margin-bottom: 14px;
             border-bottom: 1px solid #f1f5f9;
             padding-bottom: 10px;
+            box-sizing: border-box;
         }
 
         .info-group:last-child {
@@ -561,6 +596,7 @@ foreach ($classList as $c) {
             font-weight: 700;
             display: block;
             margin-bottom: 4px;
+            box-sizing: border-box;
         }
 
         .info-group p {
@@ -569,6 +605,7 @@ foreach ($classList as $c) {
             margin-top: 0;
             margin-bottom: 0;
             font-weight: 500;
+            box-sizing: border-box;
         }
 
         .student-list-box {
@@ -579,6 +616,8 @@ foreach ($classList as $c) {
             border-radius: 6px;
             padding: 6px;
             background: #f8fafc;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .student-item {
@@ -589,6 +628,8 @@ foreach ($classList as $c) {
             border-bottom: 1px solid #e2e8f0;
             font-size: 13px;
             color: #1e293b;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .student-item:last-child {
@@ -601,12 +642,16 @@ foreach ($classList as $c) {
             padding: 12px;
             border-radius: 8px;
             border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .tab-buttons {
             display: flex;
             gap: 10px;
             margin-bottom: 10px;
+            box-sizing: border-box;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -616,6 +661,7 @@ foreach ($classList as $c) {
             border: 1px solid #cbd5e1;
             background: #fff;
             cursor: pointer;
+            box-sizing: border-box;
         }
 
         .tab-btn.active {
@@ -629,6 +675,8 @@ foreach ($classList as $c) {
             border-radius: 8px;
             margin-bottom: 20px;
             font-size: 14px;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .alert-success {
@@ -652,6 +700,8 @@ foreach ($classList as $c) {
             overflow-y: auto;
             background: #fff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .modal-room-suggestions .room-sug-item {
@@ -659,6 +709,7 @@ foreach ($classList as $c) {
             border-bottom: 1px solid #f1f5f9;
             cursor: pointer;
             font-size: 13px;
+            box-sizing: border-box;
         }
 
         .modal-room-suggestions .room-sug-item:last-child {
@@ -678,6 +729,7 @@ foreach ($classList as $c) {
             padding: 10px;
             color: #64748b;
             font-size: 13px;
+            box-sizing: border-box;
         }
 
         .create-hint {
@@ -686,6 +738,7 @@ foreach ($classList as $c) {
             color: #64748b;
             font-size: 13px;
             font-style: italic;
+            box-sizing: border-box;
         }
 
         .modal-error-banner {
@@ -697,6 +750,8 @@ foreach ($classList as $c) {
             border: 1px solid #fca5a5;
             color: #991b1b;
             line-height: 1.4;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .field-hint {
@@ -705,6 +760,7 @@ foreach ($classList as $c) {
             margin-top: 3px;
             display: block;
             font-weight: 400;
+            box-sizing: border-box;
         }
 
         .exam-block {
@@ -714,6 +770,9 @@ foreach ($classList as $c) {
             margin-bottom: 10px;
             background: #f8fafc;
             position: relative;
+            box-sizing: border-box;
+            width: 100%;
+            overflow: hidden;
         }
 
         .exam-block-header {
@@ -721,6 +780,8 @@ foreach ($classList as $c) {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .exam-block-title {
@@ -738,6 +799,7 @@ foreach ($classList as $c) {
             cursor: pointer;
             font-size: 11px;
             font-weight: 600;
+            box-sizing: border-box;
         }
 
         .btn-remove-exam:hover {
@@ -755,10 +817,319 @@ foreach ($classList as $c) {
             font-size: 12px;
             font-weight: 700;
             margin-top: 4px;
+            box-sizing: border-box;
         }
 
         .btn-add-exam:hover {
             background: #bfdbfe;
+        }
+
+        .enrol-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+        }
+
+        .enrol-row .searchable-select {
+            flex: 1;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .enrol-row select {
+            flex: 1;
+            min-width: 0;
+            max-width: 100%;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .enrol-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1024px) {
+            .page-container {
+                padding: 24px 20px;
+            }
+
+            .col-module {
+                width: 18%;
+            }
+
+            .col-actions {
+                width: 26%;
+            }
+
+            .action-cell-btns {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 20px 14px;
+            }
+
+            .profile-header {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                margin: 10px 0 20px 0;
+            }
+
+            .btn-back {
+                position: static;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                left: auto;
+                transform: none;
+                text-align: left !important;
+                white-space: normal;
+                min-width: 0;
+                font-size: 1.3rem;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                flex-wrap: wrap;
+            }
+
+            .search-box input {
+                flex: 1 1 100%;
+                min-width: 0;
+            }
+
+            .search-box select {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .filter-bar>.btn-primary-small {
+                width: 100%;
+                padding: 12px 18px;
+            }
+
+            .module-card {
+                padding: 12px;
+            }
+
+            .module-card:hover {
+                transform: none;
+            }
+
+            .table-responsive {
+                overflow: visible;
+            }
+
+            .admin-table,
+            .admin-table tbody,
+            .admin-table tr,
+            .admin-table td {
+                display: block;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .admin-table {
+                table-layout: auto;
+            }
+
+            .admin-table thead {
+                display: none;
+            }
+
+            .admin-table tr {
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 4px 12px;
+                margin-bottom: 12px;
+                background: #fff;
+            }
+
+            .admin-table tr:hover {
+                background-color: #fff;
+            }
+
+            .admin-table tr.row-suspended {
+                background-color: #fafafa;
+            }
+
+            .admin-table td {
+                border-bottom: 1px solid #f1f5f9;
+                padding: 10px 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 12px;
+                text-align: right;
+            }
+
+            .admin-table td:last-child {
+                border-bottom: none;
+            }
+
+            .admin-table td[data-label]::before {
+                content: attr(data-label);
+                flex: 0 0 38%;
+                text-align: left;
+                font-size: 12px;
+                font-weight: 700;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+
+            .admin-table td.module-info-cell {
+                display: block;
+                text-align: left;
+                border-right: none;
+                padding: 8px 0 10px 0;
+                margin-bottom: 4px;
+                font-size: 16px;
+                border-bottom: 2px solid #e2e8f0;
+            }
+
+            .admin-table td.col-actions {
+                display: block;
+            }
+
+            .action-cell-btns {
+                flex-wrap: wrap;
+            }
+
+            .action-btn-sm {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+
+            .status-badge {
+                width: auto;
+                min-width: 70px;
+            }
+
+            .modal-overlay {
+                padding: 16px 12px;
+                align-items: flex-start;
+                overflow-y: auto;
+            }
+
+            .modal-card {
+                padding: 16px;
+                max-height: none;
+                margin: 0 auto;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .form-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .form-group-full {
+                grid-column: span 1;
+            }
+
+            .exam-block {
+                overflow: visible;
+            }
+
+            .form-group input[type="date"],
+            .form-group input[type="time"] {
+                -webkit-appearance: none;
+                appearance: none;
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                min-height: 40px;
+                box-sizing: border-box;
+                text-align: left;
+            }
+
+            .form-group input[type="date"]::-webkit-date-and-time-value,
+            .form-group input[type="time"]::-webkit-date-and-time-value {
+                text-align: left;
+                min-height: 1.2em;
+            }
+
+            .form-group input,
+            .form-group select,
+            .searchable-select .ss-input {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .enrol-row {
+                flex-wrap: wrap;
+            }
+
+            .enrol-row .searchable-select,
+            .enrol-row select,
+            .enrol-btn,
+            .enrol-row .btn-primary-small {
+                width: 100%;
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .modal-card div[style*="display: flex"],
+            .modal-card div[style*="display:flex"] {
+                flex-wrap: wrap;
+            }
+
+            .modal-card div[style*="justify-content: flex-end"] {
+                flex-direction: column-reverse;
+            }
+
+            .modal-card div[style*="justify-content: flex-end"] button {
+                width: 100%;
+            }
+
+            .modal-card>div[style*="text-align: right"] {
+                display: flex;
+                flex-direction: column-reverse;
+                gap: 8px;
+            }
+
+            .modal-card>div[style*="text-align: right"] button {
+                width: 100%;
+            }
+
+            .student-item {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .tab-buttons {
+                flex-wrap: wrap;
+            }
+
+            .header .welcome-message {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -775,7 +1146,7 @@ foreach ($classList as $c) {
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Course Coordinator'); ?></strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'Course Coordinator') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'course_coordinator'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -787,7 +1158,7 @@ foreach ($classList as $c) {
 
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageClassPage.php">Manage Classes</a>
-                    <a href="AIChatbotPage.php">AI Chatbot</a>
+                    <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <a href="../controller/logoutController.php">Log Out</a>
                 </div>
@@ -866,11 +1237,8 @@ foreach ($classList as $c) {
                                     }
 
                                     $semRaw = $cls['semester'] ?? '1';
-                                    if (stripos($semRaw, 'semester') === false && stripos($semRaw, 'term') === false) {
-                                        $semFormatted = 'Semester ' . $semRaw;
-                                    } else {
-                                        $semFormatted = $semRaw;
-                                    }
+                                    $semClean = preg_replace('/^Semester\s+/i', '', trim($semRaw));
+                                    $semFormatted = 'Semester ' . $semClean;
                                     ?>
                                     <tr class="<?php echo strtolower($cls['status']) !== 'active' ? 'row-suspended' : ''; ?>">
                                         <?php if ($index === 0): ?>
@@ -878,23 +1246,23 @@ foreach ($classList as $c) {
                                                 <div><?php echo htmlspecialchars($mod['code'] . " - " . $mod['name']); ?></div>
                                             </td>
                                         <?php endif; ?>
-                                        <td class="col-code">
+                                        <td class="col-code" data-label="Class Code">
                                             <strong><?php echo htmlspecialchars($cls['classCode']); ?></strong>
                                         </td>
-                                        <td class="col-period">
+                                        <td class="col-period" data-label="Academic Period">
                                             <span
                                                 style="font-weight: 500; color: #475569;"><?php echo htmlspecialchars($ayFormatted); ?></span><br>
                                             <span
                                                 style="font-size: 12px; color: #64748b;"><?php echo htmlspecialchars($semFormatted); ?></span>
                                         </td>
-                                        <td class="col-schedule">
+                                        <td class="col-schedule" data-label="Schedule & Venue">
                                             <?php echo ucfirst($cls['dayOfWeek'] ?? '-'); ?>
                                             (<?php echo htmlspecialchars(substr($cls['startTime'] ?? '', 0, 5)); ?> -
                                             <?php echo htmlspecialchars(substr($cls['endTime'] ?? '', 0, 5)); ?>)<br>
                                             <span style="color: #64748b; font-size: 13px;">Venue:
                                                 <?php echo htmlspecialchars($cls['room'] ?? 'TBA'); ?></span>
                                         </td>
-                                        <td class="col-status">
+                                        <td class="col-status" data-label="Status">
                                             <?php if (strtolower($cls['status']) === 'active'): ?>
                                                 <span class="status-badge status-active">Active</span>
                                             <?php else: ?>
@@ -929,7 +1297,7 @@ foreach ($classList as $c) {
     </main>
 
     <form id="statusForm"
-        action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+        action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
         method="POST" style="display:none;">
         <input type="hidden" name="action" value="toggle_status">
         <input type="hidden" name="class_id" id="statusClassId">
@@ -988,7 +1356,7 @@ foreach ($classList as $c) {
             </div>
             <div id="modalErrorBanner" class="modal-error-banner" style="display:none;"></div>
             <form id="classForm"
-                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST">
                 <input type="hidden" name="action" id="classFormAction" value="update_class">
                 <input type="hidden" name="class_id" id="classId">
@@ -1031,8 +1399,8 @@ foreach ($classList as $c) {
 
                     <div class="form-group form-group-full">
                         <label>Venue</label>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" name="room" id="modalRoom" required style="flex: 1;">
+                        <div style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
+                            <input type="text" name="room" id="modalRoom" required style="flex: 1; min-width: 0;">
                             <button type="button" class="btn-secondary-small"
                                 onclick="suggestRoomsInline()">Suggest</button>
                         </div>
@@ -1083,7 +1451,7 @@ foreach ($classList as $c) {
                 </div>
 
                 <div id="modalStudentsSection"
-                    style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
+                    style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1; box-sizing: border-box; width: 100%;">
                     <h4 style="margin-bottom: 8px; color: #1e293b;">Enrolled Students (<span
                             id="modalEnrolledRatio">0/40</span>)</h4>
                     <div class="student-list-box" id="modalStudentList"></div>
@@ -1099,16 +1467,16 @@ foreach ($classList as $c) {
                         </div>
 
                         <div id="tabSingleContent">
-                            <div style="display: flex; gap: 8px; align-items: center;">
-                                <div class="searchable-select" id="studentSelectWrap" style="flex: 1;">
+                            <div class="enrol-row">
+                                <div class="searchable-select" id="studentSelectWrap">
                                     <input type="text" class="ss-input" id="studentSearch"
                                         placeholder="Type to search student by name, email, or ID..." autocomplete="off"
                                         style="padding: 6px 10px; font-size: 13px;">
                                     <input type="hidden" id="singleStudentId">
                                     <div class="ss-dropdown" id="studentDropdown"></div>
                                 </div>
-                                <button type="button" class="btn-primary-small"
-                                    style="padding: 6px 14px; font-size: 13px;" onclick="submitSingleEnrol()">+
+                                <button type="button" class="btn-primary-small enrol-btn"
+                                    onclick="submitSingleEnrol()">+
                                     Enroll</button>
                             </div>
                         </div>
@@ -1118,9 +1486,8 @@ foreach ($classList as $c) {
                                 <p style="font-size: 12px; color: #94a3b8; margin: 0;">Your university admin has not
                                     uploaded any student file yet.</p>
                             <?php else: ?>
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <select id="csvFileSelectId"
-                                        style="flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                                <div class="enrol-row">
+                                    <select id="csvFileSelectId">
                                         <option value="">-- Select file uploaded by admin --</option>
                                         <?php foreach ($studentFiles as $sf): ?>
                                             <option value="<?php echo htmlspecialchars($sf['fileName']); ?>">
@@ -1128,9 +1495,8 @@ foreach ($classList as $c) {
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <button type="button" class="btn-primary-small"
-                                        style="padding: 6px 14px; font-size: 13px;" onclick="submitFileEnrol()">Enrol from
-                                        File</button>
+                                    <button type="button" class="btn-primary-small enrol-btn"
+                                        onclick="submitFileEnrol()">Enrol from File</button>
                                 </div>
                                 <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">The file's first column
                                     should contain student email or student ID.</p>
@@ -1139,13 +1505,14 @@ foreach ($classList as $c) {
                     </div>
                 </div>
 
-                <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1;">
+                <div
+                    style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed #cbd5e1; box-sizing: border-box; width: 100%;">
                     <h4 style="margin-bottom: 10px; color: #1e293b;">Exam Schedule</h4>
                     <div id="examBlocksContainer"></div>
                     <button type="button" class="btn-add-exam" onclick="addExamBlock()">+ Add Exam</button>
 
                     <div id="applyExamWrap"
-                        style="display:none; margin-top: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;">
+                        style="display:none; margin-top: 12px; padding: 10px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; box-sizing: border-box; width: 100%;">
                         <label
                             style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #1e40af; cursor: pointer; margin: 0;">
                             <input type="checkbox" name="apply_to_module" id="applyToModule" value="1"
@@ -1156,14 +1523,15 @@ foreach ($classList as $c) {
                     </div>
                 </div>
 
-                <div style="margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                <div
+                    style="margin-top: 20px; text-align: right; display: flex; gap: 10px; justify-content: flex-end; box-sizing: border-box; width: 100%;">
                     <button type="button" class="btn-secondary-small" onclick="closeModal('classModal')">Cancel</button>
                     <button type="submit" class="btn-primary-small">Save Changes</button>
                 </div>
             </form>
 
             <form id="enrolPostForm"
-                action="../controller/ManageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
+                action="../controller/manageClassController.php<?php echo htmlspecialchars($formActionQs, ENT_QUOTES); ?>"
                 method="POST" style="display: none;">
                 <input type="hidden" name="action" id="enrolFormAction" value="enroll_student_single">
                 <input type="hidden" name="class_id" id="enrolClassId">
@@ -1372,11 +1740,79 @@ foreach ($classList as $c) {
             }
         });
 
+        function parseMonthStr(mStr) {
+            const months = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+            const key = mStr.substring(0, 3).toLowerCase();
+            return months[key] || 0;
+        }
+
         document.getElementById('classForm').addEventListener('submit', function (e) {
             if (!moduleHidden.value) {
                 e.preventDefault();
                 alert('Please select a module.');
                 moduleSearch.focus();
+                return;
+            }
+
+            const ay = document.getElementById('modalAcademicYear').value.trim();
+            const sem = document.getElementById('modalSemester').value.trim();
+            const examDates = document.querySelectorAll('input[name="examDate[]"]');
+
+            if (ay && examDates.length > 0) {
+                let startYear = 0, endYear = 0;
+                const ayMatch = ay.match(/(\d{4})\s*\/\s*(\d{4})/);
+                if (ayMatch) {
+                    startYear = parseInt(ayMatch[1]);
+                    endYear = parseInt(ayMatch[2]);
+
+                    let validMonths = [];
+                    const monthRangeMatch = sem.match(/([A-Za-z]{3,})\s*(?:-|to|until)\s*([A-Za-z]{3,})/i);
+
+                    if (monthRangeMatch) {
+                        const sM = parseMonthStr(monthRangeMatch[1]);
+                        const eM = parseMonthStr(monthRangeMatch[2]);
+                        if (sM && eM) {
+                            if (sM <= eM) {
+                                for (let i = sM; i <= eM; i++) validMonths.push(i);
+                            } else {
+                                for (let i = sM; i <= 12; i++) validMonths.push(i);
+                                for (let i = 1; i <= eM; i++) validMonths.push(i);
+                            }
+                        }
+                    }
+
+                    if (validMonths.length > 0) {
+                        for (const input of examDates) {
+                            if (!input.value) continue;
+                            const d = new Date(input.value);
+                            if (isNaN(d.getTime())) continue;
+
+                            const y = d.getFullYear();
+                            const m = d.getMonth() + 1;
+
+                            if (!validMonths.includes(m)) {
+                                e.preventDefault();
+                                alert(`Exam date (${input.value}) is outside the allowed months for ${sem}.`);
+                                return;
+                            }
+
+                            let allowedYears = [];
+                            if (validMonths[0] >= 8) {
+                                allowedYears = [startYear, endYear];
+                            } else if (validMonths[0] <= 5) {
+                                allowedYears = [endYear];
+                            } else {
+                                allowedYears = [startYear];
+                            }
+
+                            if (!allowedYears.includes(y)) {
+                                e.preventDefault();
+                                alert(`Exam date (${input.value}) must be in ${allowedYears.join(' or ')} for ${ay}.`);
+                                return;
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -1431,10 +1867,8 @@ foreach ($classList as $c) {
             document.getElementById('viewModuleName').textContent = data.moduleCode + ' - ' + data.moduleName;
 
             let semText = data.semester;
-            if (semText.toLowerCase().indexOf('semester') === -1 && semText.toLowerCase().indexOf('term') === -1) {
-                semText = 'Semester ' + semText;
-            }
-            document.getElementById('viewSemester').textContent = 'AY ' + data.academicYear + ' • ' + semText;
+            semText = semText.replace(/^Semester\s+/i, '');
+            document.getElementById('viewSemester').textContent = 'AY ' + data.academicYear + ' • Semester ' + semText;
 
             let day = data.dayOfWeek ? data.dayOfWeek.toUpperCase() : '-';
             let start = data.startTime ? data.startTime.substring(0, 5) : '';
@@ -1513,8 +1947,8 @@ foreach ($classList as $c) {
                 '</div>' +
                 '<div class="form-group form-group-full">' +
                 '<label>Exam Venue</label>' +
-                '<div style="display: flex; gap: 8px;">' +
-                '<input type="text" name="examVenue[]" value="' + (venue || '') + '" placeholder="e.g. Hall A" style="flex: 1;">' +
+                '<div style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">' +
+                '<input type="text" name="examVenue[]" value="' + (venue || '') + '" placeholder="e.g. Hall A" style="flex: 1; min-width: 0;">' +
                 '<button type="button" class="btn-secondary-small" onclick="suggestExamVenueForBlock(this)">Suggest</button>' +
                 '</div>' +
                 '<div class="modal-room-suggestions exam-venue-suggestions"></div>' +
@@ -1555,7 +1989,6 @@ foreach ($classList as $c) {
             const box = block.querySelector('.exam-venue-suggestions');
             if (!box) return;
 
-            // FIXED: Toggle logic if already open
             if (box.style.display === 'block') {
                 box.style.display = 'none';
                 return;
@@ -1583,7 +2016,6 @@ foreach ($classList as $c) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
-                        // FIXED: Added Header with Close button
                         box.innerHTML = '<div style="display:flex; justify-content:space-between; padding:8px 12px; background:#e2e8f0; border-bottom:1px solid #cbd5e1; font-size:11px; font-weight:700; color:#475569;"><span>Suggested Venues</span><span style="cursor:pointer; color:#dc2626; font-size:16px; line-height:1; padding:0 4px;" onclick="this.parentElement.parentElement.style.display=\'none\'">&times;</span></div>';
 
                         data.rooms.forEach(function (r) {
@@ -1757,7 +2189,6 @@ foreach ($classList as $c) {
 
             const box = document.getElementById('modalRoomSuggestions');
 
-            // FIXED: Toggle logic if already open
             if (box.style.display === 'block') {
                 box.style.display = 'none';
                 return;
@@ -1777,7 +2208,6 @@ foreach ($classList as $c) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === 'ok' && Array.isArray(data.rooms) && data.rooms.length) {
-                        // FIXED: Added Header with Close button
                         box.innerHTML = '<div style="display:flex; justify-content:space-between; padding:8px 12px; background:#e2e8f0; border-bottom:1px solid #cbd5e1; font-size:11px; font-weight:700; color:#475569;"><span>Suggested Rooms</span><span style="cursor:pointer; color:#dc2626; font-size:16px; line-height:1; padding:0 4px;" onclick="document.getElementById(\'modalRoomSuggestions\').style.display=\'none\'">&times;</span></div>';
 
                         data.rooms.forEach(function (r) {

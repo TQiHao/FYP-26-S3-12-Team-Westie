@@ -73,6 +73,11 @@ if (!$shouldStartFresh && !empty($sessions)) {
     <title>AI Chatbot - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
+        .chatbot-layout {
+            display: flex;
+            flex-direction: row;
+        }
+
         .chat-history-header {
             display: flex;
             align-items: center;
@@ -310,7 +315,6 @@ if (!$shouldStartFresh && !empty($sessions)) {
             font-size: 0.92rem;
             line-height: 1.55;
             white-space: normal;
-            /* Forces normal alignment */
             text-align: left;
             word-wrap: break-word;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -336,6 +340,59 @@ if (!$shouldStartFresh && !empty($sessions)) {
             border-bottom-left-radius: 4px;
             border: none;
         }
+
+        @media (max-width: 992px) {
+            .chatbot-layout {
+                flex-direction: column;
+            }
+
+            .chat-history-panel {
+                width: 100% !important;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #ccc;
+                padding: 10px;
+            }
+
+            .chat-main {
+                width: 100% !important;
+            }
+
+            .welcome-message {
+                display: none;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .header {
+                padding: 10px 15px;
+                flex-wrap: nowrap;
+            }
+
+            .logo-container img {
+                max-height: 40px;
+            }
+
+            .chat-history-panel {
+                max-height: 150px;
+            }
+
+            .chat-bubble {
+                max-width: 95%;
+                font-size: 0.85rem;
+                padding: 10px 14px;
+            }
+
+            .chat-input-bar textarea {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .chat-input-bar .btn-send {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -351,12 +408,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -435,11 +487,13 @@ if (!$shouldStartFresh && !empty($sessions)) {
             <h2>Ask a Question</h2>
 
             <div class="chat-messages" id="chatMessages">
-                <?php if (!empty($initialMessages)): ?>    <?php foreach ($initialMessages as $m): ?>
+                <?php if (!empty($initialMessages)): ?>     <?php foreach ($initialMessages as $m): ?>
                         <div class="chat-bubble user-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
-                            <?php echo nl2br(htmlspecialchars(trim($m['question']))); ?></div>
+                            <?php echo nl2br(htmlspecialchars(trim($m['question']))); ?>
+                        </div>
                         <div class="chat-bubble bot-bubble" data-chat-id="<?php echo (int) $m['id']; ?>">
-                            <?php echo nl2br(htmlspecialchars(trim($m['answer']))); ?></div><?php endforeach; ?><?php endif; ?>
+                            <?php echo nl2br(htmlspecialchars(trim($m['answer']))); ?>
+                        </div><?php endforeach; ?><?php endif; ?>
             </div>
 
             <div class="chat-input-bar">
@@ -509,17 +563,20 @@ if (!$shouldStartFresh && !empty($sessions)) {
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ action: "ask", question: question })
             })
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error("Server error");
+                    return res.json();
+                })
                 .then(json => {
-                    if (json.ok) {
+                    if (json.ok && json.data) {
                         renderRichResponse(json.data);
                         refreshSessions();
                     } else {
-                        appendBubble("Unable to process your question. Please try again later.", "bot");
+                        appendBubble("Unable to reach the AI service. Please try again later.", "bot");
                     }
                 })
                 .catch(() => {
-                    appendBubble("Unable to process your question. Please try again later.", "bot");
+                    appendBubble("Unable to reach the AI service. Please try again later.", "bot");
                 });
         }
 

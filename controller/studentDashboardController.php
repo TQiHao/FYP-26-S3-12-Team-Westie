@@ -4,6 +4,7 @@ requireRole(['student']);
 
 require_once "../database/database.php";
 require_once "../entity/users.php";
+require_once __DIR__ . '/manageClassController.php';
 
 class StudentDashboardController
 {
@@ -35,18 +36,34 @@ class StudentDashboardController
         try {
             $today = strtolower(date('D'));
             $now = date('H:i:s');
+            $todayDate = date('Y-m-d');
 
             $dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             $todayIndex = array_search($today, $dayOrder);
 
-            $sql = "SELECT title, dayOfWeek, startTime, endTime, location
-                    FROM TimetableEntries
-                    WHERE userId = ?
-                    ORDER BY FIELD(dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'),
-                             startTime ASC";
+            $sql = "SELECT CONCAT(m.code, ' - ', m.name) AS title,
+                           c.dayOfWeek, c.startTime, c.endTime, c.room AS location,
+                           c.academicYear, c.semester
+                    FROM StudentEnrolments se
+                    INNER JOIN Classes c ON c.id = se.classId
+                    INNER JOIN Modules m ON m.id = c.moduleId
+                    WHERE se.studentId = ?
+                      AND se.status = 'enrolled'
+                      AND c.status = 'active'
+                    ORDER BY FIELD(c.dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'),
+                             c.startTime ASC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$studentId]);
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($classes)) {
+                return null;
+            }
+
+            // Filter out classes that are not currently active in their semester
+            $classes = array_filter($classes, function ($c) use ($todayDate) {
+                return ManageClassController::isSemesterActive($todayDate, $c['academicYear'], $c['semester']);
+            });
 
             if (empty($classes)) {
                 return null;
@@ -72,7 +89,6 @@ class StudentDashboardController
             }
 
             return null;
-
         } catch (PDOException $e) {
             error_log("getNextClass error: " . $e->getMessage());
             return false;
@@ -105,7 +121,6 @@ class StudentDashboardController
                 'unreadCount' => $unreadCount,
                 'latest' => $latest ?: null
             ];
-
         } catch (PDOException $e) {
             error_log("getNotificationSummary error: " . $e->getMessage());
             return false;
@@ -122,8 +137,7 @@ class StudentDashboardController
         }
 
         try {
-            $sql = "SELECT e.title, e.startDatetime,
-                        f.location AS location
+            $sql = "SELECT e.title, e.startDatetime, f.location AS location
                     FROM Events e
                     JOIN EventRegistrations er ON er.eventId = e.id
                     INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
@@ -139,7 +153,6 @@ class StudentDashboardController
             $stmt->execute([$universityId, $studentId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ?: null;
-
         } catch (PDOException $e) {
             error_log("getNextEvent error: " . $e->getMessage());
             return false;
@@ -159,7 +172,6 @@ class StudentDashboardController
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$studentId]);
             return (int) $stmt->fetchColumn();
-
         } catch (PDOException $e) {
             error_log("getEnrolledCoursesCount error: " . $e->getMessage());
             return 0;
@@ -179,7 +191,6 @@ class StudentDashboardController
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
             return (int) $stmt->fetchColumn();
-
         } catch (PDOException $e) {
             error_log("getActiveBookingsCount error: " . $e->getMessage());
             return 0;
@@ -199,7 +210,6 @@ class StudentDashboardController
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$studentId]);
             return (int) $stmt->fetchColumn();
-
         } catch (PDOException $e) {
             error_log("getGroupsJoinedCount error: " . $e->getMessage());
             return 0;
@@ -221,7 +231,6 @@ class StudentDashboardController
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId]);
             return (int) $stmt->fetchColumn();
-
         } catch (PDOException $e) {
             error_log("getUpcomingEventsCount error: " . $e->getMessage());
             return 0;

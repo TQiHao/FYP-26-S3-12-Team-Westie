@@ -25,11 +25,6 @@ class AcademicsController
         $this->examEntity = new Exam(null, null, null, null, null, null, null, null, null, $this->db);
     }
 
-    /**
-     * Get timetable entries for a student.
-     * Reads enrolled classes joined with their module — each class appears once.
-     * Returns List<TimetableEntry> | null | false
-     */
     public function getTimetable($studentId)
     {
         if (!$this->isValidId($studentId)) {
@@ -44,6 +39,8 @@ class AcademicsController
                     c.startTime,
                     c.endTime,
                     c.room              AS location,
+                    c.academicYear,
+                    c.semester,
                     c.createdAt,
                     c.updatedAt
                 FROM StudentEnrolments se
@@ -68,7 +65,7 @@ class AcademicsController
 
             $entries = [];
             foreach ($rows as $row) {
-                $entries[] = new TimetableEntry(
+                $entry = new TimetableEntry(
                     $row['id'],
                     $row['userId'],
                     $row['title'],
@@ -79,6 +76,10 @@ class AcademicsController
                     $row['createdAt'],
                     $row['updatedAt']
                 );
+                // Attach academicYear and semester to the object
+                $entry->academicYear = $row['academicYear'];
+                $entry->semester = $row['semester'];
+                $entries[] = $entry;
             }
             return $entries;
 
@@ -88,10 +89,6 @@ class AcademicsController
         }
     }
 
-    /**
-     * Get enrolled courses (with module, class, and lecturer details)
-     * Returns array | null | false
-     */
     public function getEnrolledCourses($studentId)
     {
         if (!$this->isValidId($studentId)) {
@@ -148,30 +145,21 @@ class AcademicsController
         }
     }
 
-    /**
-     * Get exam schedule for a student
-     * Follows the sequence diagram:
-     *  1. getEnrolmentsByStudentId(studentId): List<StudentEnrolment>
-     *  2. For each enrolment → getUpcomingExamByClassId(classId): List<Exam>
-     * Returns List<Exam> | null | false
-     */
     public function getExamSchedule($studentId)
     {
         if (!$this->isValidId($studentId)) {
             return null;
         }
 
-        // Step 1: get enrolments via StudentEnrolment entity
         $enrolments = $this->enrolmentEntity->getEnrolmentsByStudentId($studentId);
 
         if ($enrolments === false) {
-            return false; // DB error
+            return false;
         }
         if (empty($enrolments)) {
-            return null; // no enrolments
+            return null;
         }
 
-        // Step 2: gather exams for each class
         $allExams = [];
         foreach ($enrolments as $enrolment) {
             $classId = $enrolment->getClassId();
@@ -179,7 +167,7 @@ class AcademicsController
             $exams = $this->examEntity->getUpcomingExamByClassId($classId);
 
             if ($exams === false) {
-                return false; // DB error
+                return false;
             }
             if (!empty($exams)) {
                 foreach ($exams as $exam) {
@@ -192,7 +180,6 @@ class AcademicsController
             return null;
         }
 
-        // Sort by exam date + time
         usort($allExams, function ($a, $b) {
             $aKey = $a['examDate'] . ' ' . $a['startTime'];
             $bKey = $b['examDate'] . ' ' . $b['startTime'];

@@ -181,6 +181,100 @@ class ManageClassController
         ];
     }
 
+    public static function isSemesterActive($checkDateStr, $academicYear, $semesterText)
+    {
+        $time = strtotime($checkDateStr);
+        if (!$time)
+            return true;
+        $checkMonth = (int) date('n', $time);
+        $checkYear = (int) date('Y', $time);
+
+        $startYear = 0;
+        $endYear = 0;
+        if (preg_match('/(\d{4})\s*\/\s*(\d{4})/', $academicYear, $m)) {
+            $startYear = (int) $m[1];
+            $endYear = (int) $m[2];
+        } else {
+            return true;
+        }
+
+        $validMonths = [];
+        if (preg_match('/([a-zA-Z]{3,})\s*(?:-|to|until)\s*([a-zA-Z]{3,})/i', $semesterText, $m)) {
+            $months = [
+                'jan' => 1,
+                'feb' => 2,
+                'mar' => 3,
+                'apr' => 4,
+                'may' => 5,
+                'jun' => 6,
+                'jul' => 7,
+                'aug' => 8,
+                'sep' => 9,
+                'oct' => 10,
+                'nov' => 11,
+                'dec' => 12
+            ];
+            $sM = $months[strtolower(substr($m[1], 0, 3))] ?? 0;
+            $eM = $months[strtolower(substr($m[2], 0, 3))] ?? 0;
+
+            if ($sM && $eM) {
+                if ($sM <= $eM) {
+                    for ($i = $sM; $i <= $eM; $i++)
+                        $validMonths[] = $i;
+                } else {
+                    for ($i = $sM; $i <= 12; $i++)
+                        $validMonths[] = $i;
+                    for ($i = 1; $i <= $eM; $i++)
+                        $validMonths[] = $i;
+                }
+            }
+        }
+
+        if (empty($validMonths))
+            return true;
+
+        if (!in_array($checkMonth, $validMonths))
+            return false;
+
+        if ($validMonths[0] >= 8) {
+            if ($checkYear !== $startYear && $checkYear !== $endYear)
+                return false;
+            if ($validMonths[0] >= 8 && end($validMonths) <= 5) {
+                if ($checkMonth >= 8 && $checkYear !== $startYear)
+                    return false;
+                if ($checkMonth <= 5 && $checkYear !== $endYear)
+                    return false;
+            } else {
+                if ($checkYear !== $startYear)
+                    return false;
+            }
+        } else {
+            if ($checkYear !== $endYear)
+                return false;
+        }
+
+        return true;
+    }
+
+    public function validateExamDatesAgainstSemester($data)
+    {
+        $ay = trim($data['academicYear'] ?? '');
+        $sem = trim($data['semester'] ?? '');
+        $examDates = $data['examDate'] ?? [];
+
+        if (empty($ay) || empty($examDates))
+            return null;
+
+        foreach ($examDates as $dateStr) {
+            if (empty($dateStr))
+                continue;
+            if (!self::isSemesterActive($dateStr, $ay, $sem)) {
+                return "Exam date ({$dateStr}) is outside the allowed period for {$sem}.";
+            }
+        }
+        return null;
+    }
+
     private function hasExamData($data)
     {
         if (empty($data['examDate']) || !is_array($data['examDate'])) {
@@ -217,7 +311,7 @@ class ManageClassController
     private function buildTermLabel($info)
     {
         $ay = trim($info['academicYear'] ?? '');
-        $sem = trim($info['semester'] ?? '');
+        $sem = preg_replace('/^Semester\s+/i', '', trim($info['semester'] ?? ''));
         $parts = [];
         if ($ay !== '') {
             $parts[] = 'AY' . $ay;
@@ -359,12 +453,32 @@ class ManageClassController
     }
 }
 
-// ===== POST HANDLERS =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $controller = new ManageClassController();
     $currentUserId = $_SESSION['user_id'] ?? 1;
     $universityId = $_SESSION['university_id'] ?? 0;
     $action = $_POST['action'];
+
+    if ($action === 'create_class' || $action === 'update_class') {
+        $validationError = $controller->validateExamDatesAgainstSemester($_POST);
+        if ($validationError) {
+            $_SESSION['flash_error'] = "Cannot " . ($action === 'create_class' ? 'create' : 'update') . ": " . $validationError;
+            $_SESSION['reopen_class_form'] = ($action === 'create_class') ? 'create' : 'edit';
+            $_SESSION['class_form_data'] = $_POST;
+
+            $returnParams = [];
+            if (isset($_GET['search']) && $_GET['search'] !== '') {
+                $returnParams['search'] = $_GET['search'];
+            }
+            if (isset($_GET['status']) && in_array($_GET['status'], ['', 'active', 'suspended'], true)) {
+                $returnParams['status'] = $_GET['status'];
+            }
+            $redirectQs = $returnParams ? '?' . http_build_query($returnParams) : '';
+
+            header("Location: ../boundary/manageClassPage.php" . $redirectQs);
+            exit();
+        }
+    }
 
     if ($action === 'create_class') {
         $res = $controller->createClass($_POST, $currentUserId);

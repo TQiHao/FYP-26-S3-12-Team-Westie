@@ -19,12 +19,6 @@ class TeachingController
         $this->db = $database->connect();
     }
 
-    /**
-     * Entry point when lecturer clicks "Teaching".
-     * Returns number of assigned courses for the dashboard card.
-     * Returns null if staffId is invalid.
-     * Returns false on DB error.
-     */
     public function loadTeachingView($staffId)
     {
         if (!$this->isValidId($staffId)) {
@@ -51,23 +45,15 @@ class TeachingController
         }
     }
 
-    /**
-     * Get timetable entries for a staff member.
-     * Pulls from TimetableEntries table (personal schedule).
-     * Returns List<TimetableEntry>.
-     * Returns null if no entries found.
-     * Returns false on DB error.
-     */
     public function getTimetable($staffId)
     {
         if (!$this->isValidId($staffId)) {
             return null;
         }
 
-        // Combines custom TimetableEntries with assigned Classes
-        $sql = "SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt
+        $sql = "SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, academicYear, semester
             FROM (
-                SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt
+                SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, NULL AS academicYear, NULL AS semester
                 FROM TimetableEntries
                 WHERE userId = :staffId
 
@@ -81,7 +67,9 @@ class TeachingController
                        c.endTime, 
                        c.room AS location, 
                        c.createdAt, 
-                       c.updatedAt
+                       c.updatedAt,
+                       c.academicYear,
+                       c.semester
                 FROM Classes c
                 INNER JOIN Modules m ON c.moduleId = m.id
                 WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
@@ -98,12 +86,12 @@ class TeachingController
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($rows)) {
-                return null; // No timetable entries found
+                return null;
             }
 
             $entries = [];
             foreach ($rows as $row) {
-                $entries[] = new TimetableEntry(
+                $entry = new TimetableEntry(
                     $row['id'],
                     $row['userId'],
                     $row['title'],
@@ -114,6 +102,12 @@ class TeachingController
                     $row['createdAt'],
                     $row['updatedAt']
                 );
+                // Attach academicYear and semester to the object
+                if (!empty($row['academicYear'])) {
+                    $entry->academicYear = $row['academicYear'];
+                    $entry->semester = $row['semester'];
+                }
+                $entries[] = $entry;
             }
             return $entries;
 
@@ -123,12 +117,6 @@ class TeachingController
         }
     }
 
-    /**
-     * Get modules assigned to this staff member (via Classes table).
-     * Returns List<array> (simple rows).
-     * Returns null if no modules assigned.
-     * Returns false on DB error.
-     */
     public function getAssignedModules($staffId)
     {
         if (!$this->isValidId($staffId)) {
@@ -154,17 +142,16 @@ class TeachingController
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if (empty($rows)) {
-                return null; // "You are not assigned in any modules" flow
+                return null;
             }
             return $rows;
 
         } catch (PDOException $e) {
             error_log("getAssignedModules error: " . $e->getMessage());
-            return false; // "Unable to retrieve assigned modules" flow
+            return false;
         }
     }
 
-    // helper 
     private function isValidId($id)
     {
         return isset($id) && is_numeric($id) && (int) $id > 0;

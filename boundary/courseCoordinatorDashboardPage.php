@@ -39,9 +39,8 @@ $activeClassCount = is_array($activeClasses) ? count($activeClasses) : 0;
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong>
-                <?php echo htmlspecialchars($_SESSION['user_name']); ?>
-            </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') .
+                ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <!-- Profile + Dropdown -->

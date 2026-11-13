@@ -130,42 +130,77 @@ $supportEmail = $supportRow['email'] ?? '';
             text-decoration: underline;
         }
 
-        /* Mobile Header Layout */
-        @media (max-width: 768px) {
+        .notice-contacts a {
+            overflow-wrap: anywhere;
+        }
 
+        .feedback-form textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
             .profile-header {
-                position: relative;
-                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
                 align-items: center;
-                justify-content: center;
-                width: 90%;
-                margin: 20px auto 25px;
-                min-height: 45px;
+                justify-content: flex-start;
+                gap: 12px;
+                max-width: 100%;
+                margin: 10px 0 20px 0;
             }
 
-            .profile-header .btn-back {
-                position: absolute;
-                left: 0;
-                width: auto;
-                min-width: 80px;
-                height: 38px;
-                padding: 6px 12px;
-                font-size: 0.85rem;
-                margin: 0;
+            .btn-back {
+                position: static;
+                flex-shrink: 0;
             }
 
             .profile-header .section-label {
                 position: static;
+                left: auto;
                 transform: none;
-                width: 100%;
-                text-align: center;
-                font-size: 1.1rem;
-                margin: 0;
+                text-align: left !important;
                 white-space: normal;
-                pointer-events: none;
-                }
+                min-width: 0;
+                font-size: 1.3rem;
+            }
         }
 
+        @media (max-width: 600px) {
+            .feedback-form {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
+            .feedback-notice-box {
+                padding: 14px;
+                font-size: 13px;
+            }
+
+            .notice-contacts {
+                padding: 10px;
+            }
+
+            .feedback-form textarea {
+                font-size: 16px;
+            }
+
+            .feedback-form .btn-primary {
+                width: 100%;
+            }
+
+            .modal-box {
+                width: 90%;
+                max-width: 420px;
+                box-sizing: border-box;
+            }
+
+            .error-message {
+                margin-left: 14px !important;
+                margin-right: 14px !important;
+            }
+        }
     </style>
 </head>
 
@@ -181,12 +216,7 @@ $supportEmail = $supportRow['email'] ?? '';
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', $user_role)) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">

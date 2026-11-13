@@ -5,6 +5,7 @@ requireRole(['lecturer']);
 
 require_once "../entity/users.php";
 require_once "../database/database.php";
+require_once __DIR__ . '/manageClassController.php';
 
 date_default_timezone_set('Asia/Singapore');
 
@@ -37,9 +38,9 @@ class LecturerDashboardController
     public function getNextClass($userId)
     {
         try {
-            $sql = "SELECT title, dayOfWeek, startTime, endTime, location 
+            $sql = "SELECT title, dayOfWeek, startTime, endTime, location, academicYear, semester 
                     FROM (
-                        SELECT title, dayOfWeek, startTime, endTime, location 
+                        SELECT title, dayOfWeek, startTime, endTime, location, NULL AS academicYear, NULL AS semester 
                         FROM TimetableEntries 
                         WHERE userId = :staffId
 
@@ -49,7 +50,9 @@ class LecturerDashboardController
                                c.dayOfWeek, 
                                c.startTime, 
                                c.endTime, 
-                               c.room AS location
+                               c.room AS location,
+                               c.academicYear,
+                               c.semester
                         FROM Classes c
                         INNER JOIN Modules m ON c.moduleId = m.id
                         WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
@@ -59,6 +62,21 @@ class LecturerDashboardController
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['staffId' => $userId]);
             $classes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($classes)) {
+                return null;
+            }
+
+            $todayDate = date('Y-m-d');
+
+            // Filter out classes that are not currently active in their semester
+            $classes = array_filter($classes, function ($c) use ($todayDate) {
+                // If academicYear is null, it's a personal TimetableEntry, assume always active
+                if (empty($c['academicYear']) || empty($c['semester'])) {
+                    return true;
+                }
+                return ManageClassController::isSemesterActive($todayDate, $c['academicYear'], $c['semester']);
+            });
 
             if (empty($classes)) {
                 return null;
@@ -105,7 +123,6 @@ class LecturerDashboardController
             $countStmt->execute([$userId]);
             $unreadCount = (int) $countStmt->fetchColumn();
 
-            // FIXED: Added id ASC to match Notification Page sorting
             $latestSql = "SELECT title, message FROM Notifications WHERE userId = ? ORDER BY createdAt DESC, id ASC LIMIT 1";
             $latestStmt = $this->db->prepare($latestSql);
             $latestStmt->execute([$userId]);
