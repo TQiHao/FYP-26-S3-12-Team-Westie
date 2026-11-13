@@ -1,5 +1,4 @@
-DROP DATABASE IF EXISTS unibee;
-CREATE DATABASE unibee;
+
 USE unibee;
 
 -- Universities Table
