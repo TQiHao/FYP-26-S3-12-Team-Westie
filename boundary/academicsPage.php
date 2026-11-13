@@ -89,10 +89,19 @@ $weekDateStr = $monday->format('Y-m-d');
 
 if (is_array($entries)) {
     foreach ($entries as $e) {
+        // 1. Check Semester
         if (isset($e->academicYear) && !empty($e->academicYear)) {
             if (!ManageClassController::isSemesterActive($weekDateStr, $e->academicYear, $e->semester)) {
                 continue;
             }
+        }
+
+        // 2. Check Start Date and End Date (Flexible scheduling)
+        if (!empty($e->startDate) && $weekDateStr < $e->startDate) {
+            continue;
+        }
+        if (!empty($e->endDate) && $weekDateStr > $e->endDate) {
+            continue;
         }
 
         $day = strtolower($e->getDayOfWeek());
@@ -282,29 +291,15 @@ $hours = range(8, 22);
             }
 
             .profile-header {
-                flex-direction: row;
-                align-items: center;
-                justify-content: center;
-                gap: 0;
-                min-height: 45px;
+                justify-content: space-between;
                 margin: 15px 0 15px 0;
-            }
-
-            .profile-header .btn-back {
-                position: absolute;
-                left: 0;
-                top: 50%;
-                transform: translateY(-50%);
-                padding: 6px 14px;
-                font-size: 0.85rem;
             }
 
             .profile-header .section-label {
                 position: static;
                 transform: none;
-                width: 100%;
-                padding: 0;
-                text-align: center !important;
+                flex: 1;
+                padding-right: 80px;
                 font-size: 1.1rem;
             }
 
@@ -423,12 +418,7 @@ $hours = range(8, 22);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong>
-                <?php
-                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
-                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
-                ?>
-            </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">

@@ -10,7 +10,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 require_once "../controller/authGuard.php";
 requireRole(['student', 'lecturer']);
 
-require_once "../controller/ManageProfileController.php";
+require_once "../controller/manageProfileController.php";
 
 $controller = new ManageProfileController();
 $user = $controller->getUserById($_SESSION['user_id']);
@@ -49,12 +49,12 @@ $backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'stu
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong>
+                <?php
+                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
+                ?>
+            </strong>
         </div>
 
         <div class="dashboard-header-right">

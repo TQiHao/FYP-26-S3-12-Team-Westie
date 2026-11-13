@@ -73,11 +73,6 @@ if (!$shouldStartFresh && !empty($sessions)) {
     <title>AI Chatbot - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .chatbot-layout {
-            display: flex;
-            flex-direction: row;
-        }
-
         .chat-history-header {
             display: flex;
             align-items: center;
@@ -134,6 +129,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
             justify-content: space-between;
             align-items: center;
             gap: 8px;
+            cursor: pointer;
         }
 
         .chat-session-item .session-title {
@@ -224,6 +220,8 @@ if (!$shouldStartFresh && !empty($sessions)) {
             min-height: 0;
             overflow: hidden;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
 
         .chat-history-list {
@@ -242,6 +240,8 @@ if (!$shouldStartFresh && !empty($sessions)) {
             flex-direction: column;
             min-height: 0;
             overflow: hidden;
+            position: relative;
+            z-index: 5;
         }
 
         .chat-main h2 {
@@ -341,56 +341,185 @@ if (!$shouldStartFresh && !empty($sessions)) {
             border: none;
         }
 
-        @media (max-width: 992px) {
-            .chatbot-layout {
-                flex-direction: column;
-            }
+        .chat-main {
+            min-width: 0;
+        }
 
+        .chat-main-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            margin-bottom: 25px;
+        }
+
+        .chat-main-top h2 {
+            margin: 0 !important;
+        }
+
+        .btn-history-toggle {
+            display: none;
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            line-height: 1;
+            color: #222222;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .btn-history-toggle:hover {
+            background-color: #f8ea9b;
+            border-color: #e6c23a;
+        }
+
+        .history-backdrop {
+            display: none;
+            pointer-events: none;
+        }
+
+        .chat-action-btn {
+            display: block;
+            width: fit-content;
+            margin-top: 12px;
+            padding: 10px 20px;
+            background-color: var(--bg-yellow);
+            color: #222 !important;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-action-btn:hover {
+            background-color: #e6c23a;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 1024px) {
             .chat-history-panel {
-                width: 100% !important;
-                max-height: 200px;
-                border-right: none;
-                border-bottom: 1px solid #ccc;
-                padding: 10px;
+                width: 230px;
+                padding: 16px;
             }
 
             .chat-main {
-                width: 100% !important;
-            }
-
-            .welcome-message {
-                display: none;
+                padding: 20px 24px;
             }
         }
 
-        @media (max-width: 576px) {
-            .header {
-                padding: 10px 15px;
-                flex-wrap: nowrap;
+        @media (max-width: 768px) {
+
+            html,
+            body {
+                height: 100dvh;
             }
 
-            .logo-container img {
-                max-height: 40px;
+            .chatbot-layout.chatbot-full-width {
+                position: relative;
+                flex-direction: row;
             }
 
             .chat-history-panel {
-                max-height: 150px;
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 50;
+                width: min(82vw, 300px);
+                max-height: none;
+                padding: 16px;
+                border-right: 1px solid #e0e0e0;
+                border-bottom: none;
+                transform: translateX(-100%);
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+            }
+
+            .chatbot-layout.history-open .chat-history-panel {
+                transform: translateX(0);
+                box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .history-backdrop {
+                display: block;
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 40;
+                background: rgba(0, 0, 0, 0.35);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+            }
+
+            .chatbot-layout.history-open .history-backdrop {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .btn-history-toggle {
+                display: inline-flex;
+            }
+
+            .chat-main {
+                flex: 1;
+                width: 100%;
+                padding: 14px 12px;
+            }
+
+            .chat-main-top {
+                margin-bottom: 8px;
+            }
+
+            .chat-main h2 {
+                font-size: 1.2rem;
+            }
+
+            .chat-messages {
+                gap: 10px;
+                padding: 6px 0;
             }
 
             .chat-bubble {
-                max-width: 95%;
-                font-size: 0.85rem;
-                padding: 10px 14px;
+                max-width: 92%;
+                padding: 10px 12px;
+                font-size: 0.88rem;
+                overflow-wrap: anywhere;
+            }
+
+            .chat-room-card {
+                overflow-wrap: anywhere;
+            }
+
+            .chat-input-bar {
+                gap: 8px;
+                margin-top: 8px;
+                padding-top: 10px;
             }
 
             .chat-input-bar textarea {
-                padding: 10px 15px;
-                font-size: 0.9rem;
+                padding: 10px 14px;
+                font-size: 16px;
+                min-width: 0;
             }
 
             .chat-input-bar .btn-send {
-                padding: 10px 20px;
-                font-size: 0.9rem;
+                padding: 0 18px;
+            }
+
+            .footer-bottom-bar {
+                padding: 10px 12px;
+                font-size: 12px;
             }
         }
     </style>
@@ -408,7 +537,12 @@ if (!$shouldStartFresh && !empty($sessions)) {
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
+            <strong>
+                <?php
+                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
+                ?>
+            </strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -484,7 +618,11 @@ if (!$shouldStartFresh && !empty($sessions)) {
         </aside>
 
         <section class="chat-main">
-            <h2>Ask a Question</h2>
+            <div class="chat-main-top">
+                <button type="button" class="btn-history-toggle" id="historyToggle" aria-label="Show chat history"
+                    aria-expanded="false">&#9776;</button>
+                <h2>Ask a Question</h2>
+            </div>
 
             <div class="chat-messages" id="chatMessages">
                 <?php if (!empty($initialMessages)): ?>     <?php foreach ($initialMessages as $m): ?>
@@ -501,6 +639,8 @@ if (!$shouldStartFresh && !empty($sessions)) {
                 <button type="button" class="btn-send" onclick="sendQuestion()">Send</button>
             </div>
         </section>
+
+        <div class="history-backdrop" id="historyBackdrop"></div>
 
     </main>
 
@@ -530,7 +670,7 @@ if (!$shouldStartFresh && !empty($sessions)) {
     </footer>
 
     <script>
-        const CONTROLLER = "../controller/AIChatbotController.php";
+        const CONTROLLER = "../controller/aiChatbotController.php";
 
         let currentSessionId = null;
 
@@ -563,20 +703,17 @@ if (!$shouldStartFresh && !empty($sessions)) {
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 body: new URLSearchParams({ action: "ask", question: question })
             })
-                .then(res => {
-                    if (!res.ok) throw new Error("Server error");
-                    return res.json();
-                })
+                .then(res => res.json())
                 .then(json => {
-                    if (json.ok && json.data) {
+                    if (json.ok) {
                         renderRichResponse(json.data);
                         refreshSessions();
                     } else {
-                        appendBubble("Unable to reach the AI service. Please try again later.", "bot");
+                        appendBubble("Unable to process your question.", "bot");
                     }
                 })
                 .catch(() => {
-                    appendBubble("Unable to reach the AI service. Please try again later.", "bot");
+                    appendBubble("Unable to connect to AI.", "bot");
                 });
         }
 
@@ -922,6 +1059,38 @@ if (!$shouldStartFresh && !empty($sessions)) {
             }
             document.querySelectorAll('.chat-session-item').forEach(attachTooltip);
         });
+    </script>
+    <script>
+        (function () {
+            var layout = document.querySelector('.chatbot-layout');
+            var toggle = document.getElementById('historyToggle');
+            var backdrop = document.getElementById('historyBackdrop');
+            var list = document.getElementById('chatHistoryList');
+            var newBtn = document.querySelector('.btn-new-chat');
+            if (!layout || !toggle) return;
+
+            function setOpen(open) {
+                layout.classList.toggle('history-open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.setAttribute('aria-label', open ? 'Hide chat history' : 'Show chat history');
+            }
+
+            function closeOnMobile() {
+                if (window.innerWidth <= 768) setOpen(false);
+            }
+
+            toggle.addEventListener('click', function () {
+                setOpen(!layout.classList.contains('history-open'));
+            });
+
+            if (backdrop) backdrop.addEventListener('click', function () { setOpen(false); });
+            if (list) list.addEventListener('click', closeOnMobile);
+            if (newBtn) newBtn.addEventListener('click', closeOnMobile);
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 768) setOpen(false);
+            });
+        })();
     </script>
 </body>
 

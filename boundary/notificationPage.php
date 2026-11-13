@@ -15,14 +15,13 @@ require_once "../controller/notificationController.php";
 $controller = new NotificationController();
 $userId = $_SESSION['user_id'] ?? null;
 
-// Determine user role (defaults to 'student' if not set)
+$controller->markAllAsRead($userId); 
+
 $userRole = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'student');
 $isLecturer = in_array($userRole, ['lecturer', 'staff', 'teacher']);
 
-// Dynamic back button destination
 $backDashboard = $isLecturer ? 'lecturerDashboardPage.php' : 'studentDashboardPage.php';
 
-// Fetch user-specific notifications
 $notifications = $controller->getNotification($userId);
 ?>
 
@@ -34,12 +33,70 @@ $notifications = $controller->getNotification($userId);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - UniBee</title>
     <link rel="stylesheet" href="../style.css">
+    <style>
+        .profile-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 45px;
+            margin: 15px 0 25px 0;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 0;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .profile-header .section-label {
+            position: absolute;
+            left: 70%;
+            transform: translateX(-50%);
+            margin: 0 !important;
+            text-align: center !important;
+            white-space: nowrap;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: #475569;
+            margin: 6px 0 0 0;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                margin: 10px 0 20px 0;
+            }
+
+            .btn-back {
+                position: static;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                left: auto;
+                transform: none;
+                text-align: left !important;
+                white-space: normal;
+                min-width: 0;
+                font-size: 1.3rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
         <div class="logo-container">
             <img src="../images/uniBeeLogo.png" alt="UniBee Logo">
@@ -47,12 +104,7 @@ $notifications = $controller->getNotification($userId);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -69,12 +121,10 @@ $notifications = $controller->getNotification($userId);
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <?php if ($isLecturer): ?>
-                        <!-- Lecturer Menu Items -->
                         <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
                         <a href="submitFeedbackPage.php">Submit Feedback</a>
                     <?php else: ?>
-                        <!-- Student Menu Items -->
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                         <a href="academicsPage.php">Academics</a>
                         <a href="facilitiesBookingPage.php">Facility Booking</a>
@@ -86,14 +136,11 @@ $notifications = $controller->getNotification($userId);
         </div>
     </header>
 
-    <!-- Notifications Section -->
     <main class="dashboard">
 
         <div class="profile-header">
-            <!-- Dynamic Back Link based on role -->
             <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
             <h2 class="section-label">Notifications</h2>
-            <div></div> <!-- Spacer for centering title -->
         </div>
 
         <?php if ($notifications === false): ?>
@@ -108,7 +155,6 @@ $notifications = $controller->getNotification($userId);
                 <?php foreach ($notifications as $n): ?>
 
                     <?php
-                    // Choose icon based on notification type
                     $icon = '../images/notification.png';
                     switch ($n['type'] ?? '') {
                         case 'event':
@@ -138,8 +184,13 @@ $notifications = $controller->getNotification($userId);
                             <p class="notification-title">
                                 <?php echo htmlspecialchars($n['title'] ?? ''); ?>
                             </p>
+                            <?php if (!empty($n['message'])): ?>
+                                <p class="notification-message">
+                                    <?php echo nl2br(htmlspecialchars($n['message'])); ?>
+                                </p>
+                            <?php endif; ?>
                             <p class="notification-time">
-                                <?php echo htmlspecialchars($n['createdAt'] ?? ''); ?>
+                                <?php echo htmlspecialchars(date('d M Y, g:i A', strtotime($n['createdAt'] ?? ''))); ?>
                             </p>
                         </div>
                     </div>
@@ -151,7 +202,6 @@ $notifications = $controller->getNotification($userId);
 
     </main>
 
-    <!-- Footer -->
     <footer>
         <div class="footer-bottom-bar">
             &copy; 2026 UniBee. All rights reserved.

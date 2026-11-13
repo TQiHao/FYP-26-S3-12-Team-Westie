@@ -86,11 +86,19 @@ $weekDateStr = $monday->format('Y-m-d');
 
 if (is_array($entries)) {
     foreach ($entries as $e) {
-        // Filter out classes that are not active for the week being viewed
+        // 1. Check Semester Active
         if (isset($e->academicYear) && !empty($e->academicYear)) {
             if (!ManageClassController::isSemesterActive($weekDateStr, $e->academicYear, $e->semester)) {
                 continue;
             }
+        }
+
+        // 2. Check Flexible Start Date and End Date
+        if (!empty($e->startDate) && $weekDateStr < $e->startDate) {
+            continue;
+        }
+        if (!empty($e->endDate) && $weekDateStr > $e->endDate) {
+            continue;
         }
 
         $day = strtolower($e->getDayOfWeek());
@@ -285,6 +293,141 @@ $hours = range(8, 22);
         .event-slot {
             background-color: #BAE6FD;
         }
+
+        .timetable-scroll {
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .timetable-controls {
+                padding: 12px 14px;
+            }
+
+            .week-range-title {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                margin: 10px 0 20px 0;
+            }
+
+            .btn-back {
+                position: static;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                left: auto;
+                transform: none;
+                text-align: left !important;
+                white-space: normal;
+                min-width: 0;
+                font-size: 1.3rem;
+            }
+
+            .timetable-controls {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding: 16px;
+            }
+
+            .date-picker-wrapper {
+                grid-column: 1 / -1;
+                order: -1;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .week-range-title {
+                text-align: center;
+                font-size: 15px;
+            }
+
+            .date-input {
+                -webkit-appearance: none;
+                appearance: none;
+                display: block;
+                width: 100%;
+                min-width: 0;
+                min-height: 44px;
+                box-sizing: border-box;
+                text-align: center;
+                font-size: 16px;
+                background-color: #f8fafc;
+            }
+
+            .date-input::-webkit-date-and-time-value {
+                text-align: center;
+            }
+
+            .timetable-nav-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 44px;
+                box-sizing: border-box;
+                text-align: center;
+                padding: 0 8px;
+                font-size: 13px;
+            }
+
+            .timetable-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 20px;
+                border: 1px solid #cccccc;
+                background: #ffffff;
+            }
+
+            .timetable-grid {
+                min-width: 860px;
+                margin-top: 0;
+            }
+
+            .timetable-grid th,
+            .timetable-grid td {
+                width: auto;
+            }
+
+            .timetable-grid th:first-child {
+                width: 76px;
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                background-color: #f8f9fa;
+                box-shadow: 1px 0 0 #cccccc;
+                font-size: 12px;
+                padding: 8px 4px;
+            }
+
+            .timetable-grid td {
+                height: 84px;
+            }
+
+            .timetable-item {
+                left: 3px;
+                right: 3px;
+                padding: 4px 3px;
+                font-size: 11px;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .timetable-item strong {
+                font-size: 12px;
+                line-height: 1.2;
+            }
+        }
     </style>
 </head>
 
@@ -357,59 +500,61 @@ $hours = range(8, 22);
             <?php elseif (empty($entries) && empty($registeredEvents)): ?>
                 <p class="no-notifications">No classes or events scheduled for this week.</p>
             <?php else: ?>
-                <table class="timetable-grid">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <?php foreach ($keys as $k): ?>
-                                <th>
-                                    <?php echo $weekDates[$k]['dayName']; ?><br>
-                                    <small
-                                        style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
-                                </th>
-                            <?php endforeach; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $skipCell = ['mon' => [], 'tue' => [], 'wed' => [], 'thu' => [], 'fri' => [], 'sat' => [], 'sun' => []];
-                        foreach ($hours as $h): ?>
+                <div class="timetable-scroll">
+                    <table class="timetable-grid">
+                        <thead>
                             <tr>
-                                <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
+                                <th>Time</th>
                                 <?php foreach ($keys as $k): ?>
-                                    <?php
-                                    if (!empty($skipCell[$k][$h])) {
-                                        continue;
-                                    }
-
-                                    if (isset($grid[$k][$h])):
-                                        $item = $grid[$k][$h];
-                                        $duration = $item['duration'];
-
-                                        for ($d = 1; $d < $duration; $d++) {
-                                            $skipCell[$k][$h + $d] = true;
+                                    <th>
+                                        <?php echo $weekDates[$k]['dayName']; ?><br>
+                                        <small
+                                            style="font-weight: normal; color: #64748b;"><?php echo $weekDates[$k]['dateStr']; ?></small>
+                                    </th>
+                                <?php endforeach; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $skipCell = ['mon' => [], 'tue' => [], 'wed' => [], 'thu' => [], 'fri' => [], 'sat' => [], 'sun' => []];
+                            foreach ($hours as $h): ?>
+                                <tr>
+                                    <th><?php echo date('g:i A', mktime($h, 0, 0)); ?></th>
+                                    <?php foreach ($keys as $k): ?>
+                                        <?php
+                                        if (!empty($skipCell[$k][$h])) {
+                                            continue;
                                         }
 
-                                        $rowspanAttr = $duration > 1 ? ' rowspan="' . $duration . '"' : '';
-                                        $slotClass = ($item['type'] === 'event') ? 'timetable-item event-slot' : 'timetable-item';
-                                        ?>
-                                        <td<?php echo $rowspanAttr; ?>>
-                                            <div class="<?php echo $slotClass; ?>"
-                                                style="top: <?php echo $item['topPercent']; ?>%; height: <?php echo $item['heightPercent']; ?>%;">
-                                                <strong><?php echo htmlspecialchars($item['title']); ?></strong>
-                                                <span
-                                                    style="font-size: 0.9em; margin: 2px 0;"><?php echo htmlspecialchars($item['location']); ?></span>
-                                                <small><?php echo htmlspecialchars($item['time']); ?></small>
-                                            </div>
-                                            </td>
-                                        <?php else: ?>
-                                            <td></td>
-                                        <?php endif; ?>
-                                    <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                        if (isset($grid[$k][$h])):
+                                            $item = $grid[$k][$h];
+                                            $duration = $item['duration'];
+
+                                            for ($d = 1; $d < $duration; $d++) {
+                                                $skipCell[$k][$h + $d] = true;
+                                            }
+
+                                            $rowspanAttr = $duration > 1 ? ' rowspan="' . $duration . '"' : '';
+                                            $slotClass = ($item['type'] === 'event') ? 'timetable-item event-slot' : 'timetable-item';
+                                            ?>
+                                            <td<?php echo $rowspanAttr; ?>>
+                                                <div class="<?php echo $slotClass; ?>"
+                                                    style="top: <?php echo $item['topPercent']; ?>%; height: <?php echo $item['heightPercent']; ?>%;">
+                                                    <strong><?php echo htmlspecialchars($item['title']); ?></strong>
+                                                    <span
+                                                        style="font-size: 0.9em; margin: 2px 0;"><?php echo htmlspecialchars($item['location']); ?></span>
+                                                    <small><?php echo htmlspecialchars($item['time']); ?></small>
+                                                </div>
+                                                </td>
+                                            <?php else: ?>
+                                                <td></td>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
     </main>

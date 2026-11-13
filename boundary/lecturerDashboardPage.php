@@ -49,7 +49,7 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -63,7 +63,6 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                     <img src="../images/dropdown.png" alt="Menu" class="dropdown-arrow">
                 </div>
 
-                <!-- FIXED DROPDOWN -->
                 <div id="profileMenu" class="dropdown-menu">
                     <a href="manageProfilePage.php">Manage Profile</a>
                     <a href="teachingPage.php">Teaching</a>
@@ -86,9 +85,20 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
                 </div>
 
                 <?php if ($nextClass): ?>
-                    <h2><?php echo htmlspecialchars($nextClass['title']) . ', ' . date('D j M, g:iA', strtotime($nextClass['nextDate'] . ' ' . $nextClass['startTime'])); ?>
+                    <h2 style="margin-bottom: 8px; font-size: 1.4em; line-height: 1.3; color: #111;">
+                        <?php if (!empty($nextClass['classCode'])): ?>
+                            <strong style="font-weight: 700;"><?php echo htmlspecialchars($nextClass['classCode']); ?></strong>
+                        <?php endif; ?>
+                        <?php echo htmlspecialchars($nextClass['moduleName']); ?>
                     </h2>
-                    <p><?php echo htmlspecialchars($nextClass['location']); ?></p>
+                    <p style="margin: 0 0 4px 0; font-weight: 600; font-size: 1rem; color: #333;">
+                        <?php echo date('g:ia', strtotime($nextClass['startTime'])); ?> -
+                        <?php echo date('g:ia', strtotime($nextClass['endTime'])); ?>,
+                        <?php echo date('D j M', strtotime($nextClass['nextDate'])); ?>
+                    </p>
+                    <p style="margin: 0; font-weight: 400; font-size: 0.95rem; color: #475569;">
+                        <?php echo htmlspecialchars($nextClass['location']); ?>
+                    </p>
                 <?php else: ?>
                     <h2>No upcoming classes</h2>
                     <p>Schedule is clear</p>
@@ -130,7 +140,6 @@ $nextEvent = $dashboardController->getNextUpcomingEvent($staffId, $universityId)
         <section class="dashboard-section">
             <h3 class="section-label">Quick actions</h3>
             <div class="quick-actions">
-                <!-- FIXED QUICK ACTION -->
                 <a href="viewAssignedModules.php" class="quick-button">View Assigned Modules</a>
             </div>
         </section>

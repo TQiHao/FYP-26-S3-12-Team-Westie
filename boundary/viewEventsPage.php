@@ -42,6 +42,116 @@ unset($_SESSION['search_keyword']);
     <title>University Campus Events - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
+        .profile-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 15px auto 25px auto;
+            min-height: 45px;
+            box-sizing: border-box;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 0;
+            margin: 0;
+            z-index: 10;
+        }
+
+        .profile-header .section-label {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0 !important;
+            text-align: center !important;
+            white-space: nowrap;
+        }
+
+        .event-search-bar {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 25px auto;
+            gap: 15px;
+            box-sizing: border-box;
+        }
+
+        .event-search-bar input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 30px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .event-search-bar input:focus {
+            border-color: var(--bg-yellow);
+            box-shadow: 0 0 0 3px rgba(255, 216, 72, 0.2);
+        }
+
+        .event-search-bar .btn-search {
+            flex-shrink: 0;
+            padding: 0 35px;
+            border: none;
+            border-radius: 30px;
+            background-color: var(--bg-yellow);
+            color: #222;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .event-search-bar .btn-search:hover {
+            background-color: #e6c23a;
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 25px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .event-info {
+            flex: 1;
+            min-width: 0;
+            margin-right: 20px;
+        }
+
+        .event-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.15rem;
+            color: #1e293b;
+        }
+
+        .event-info p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
         .event-actions {
             display: grid;
             grid-template-columns: 90px 110px 110px;
@@ -119,6 +229,49 @@ unset($_SESSION['search_keyword']);
         }
 
         @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 12px;
+                margin: 10px auto 20px auto;
+            }
+
+            .btn-back {
+                position: static;
+                flex-shrink: 0;
+            }
+
+            .profile-header .section-label {
+                position: static;
+                left: auto;
+                transform: none;
+                text-align: left !important;
+                white-space: normal;
+                min-width: 0;
+                font-size: 1.3rem;
+            }
+
+            .event-search-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .event-search-bar .btn-search {
+                padding: 12px 0;
+            }
+
+            .event-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .event-info {
+                margin-right: 0;
+            }
+
             .event-actions {
                 grid-template-columns: 1fr 1fr 1fr;
                 width: 100%;
@@ -139,12 +292,12 @@ unset($_SESSION['search_keyword']);
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong>
+                <?php
+                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
+                ?>
+            </strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -178,11 +331,9 @@ unset($_SESSION['search_keyword']);
 
     <main class="dashboard">
 
-        <div class="profile-header"
-            style="max-width: 900px; margin: 25px auto 15px auto; display:flex; align-items:center; justify-content:space-between;">
-            <a href="<?php echo $dashboardPage; ?>" class="btn-back">&#8592; Back</a>
-            <h2 class="section-label" style="margin: 0;">Campus Events</h2>
-            <div style="width: 80px;"></div>
+        <div class="profile-header">
+            <a href="<?php echo htmlspecialchars($dashboardPage); ?>" class="btn-back">&#8592; Back</a>
+            <h2 class="section-label">Campus Events</h2>
         </div>
 
         <form action="../controller/searchEventController.php" method="GET" class="event-search-bar">
@@ -196,22 +347,23 @@ unset($_SESSION['search_keyword']);
 
         <?php
         if (isset($_SESSION['search_error'])) {
-            echo '<div class="error-message" style="max-width:900px;margin:0 auto 15px auto;">'
+            echo '<div class="error-message" style="max-width:1200px;margin:0 auto 15px auto;">'
                 . $_SESSION['search_error'] . '</div>';
             unset($_SESSION['search_error']);
         }
         if (isset($_SESSION['search_no_result'])) {
-            echo '<div class="no-notifications" style="max-width:900px;margin:0 auto 15px auto;">'
+            echo '<div class="no-notifications" style="max-width:1200px;margin:0 auto 15px auto;">'
                 . $_SESSION['search_no_result'] . '</div>';
             unset($_SESSION['search_no_result']);
         }
         ?>
 
         <?php if ($eventsToDisplay === false): ?>
-            <p class="error-message">Unable to retrieve events. Please try again later.</p>
+            <p class="error-message" style="max-width:1200px;margin:0 auto;">Unable to retrieve events. Please try again
+                later.</p>
 
         <?php elseif (empty($eventsToDisplay)): ?>
-            <p class="no-notifications">No upcoming events available.</p>
+            <p class="no-notifications" style="max-width:1200px;margin:0 auto;">No upcoming events available.</p>
 
         <?php else: ?>
 

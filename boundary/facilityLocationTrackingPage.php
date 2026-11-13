@@ -262,7 +262,7 @@ $blockLabel    = $building ? $building['buildingCode'] : '';
 
     <main class="dashboard">
         <div class="facility-back-bar">
-            <a href="<?php echo $isLecturer ? 'viewEventsPage.php' : 'ViewFacilitiesPage.php'; ?>" class="btn-back">&#8592; Back</a>
+            <a href="<?php echo $isLecturer ? 'viewEventsPage.php' : 'viewFacilitiesPage.php'; ?>" class="btn-back">&#8592; Back</a>
         </div>
 
         <div class="flt-wrapper">

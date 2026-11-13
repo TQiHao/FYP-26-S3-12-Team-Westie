@@ -46,7 +46,6 @@ $fullName = $_SESSION['user_name'];
 <body>
     <script src="../script.js"></script>
 
-    <!-- Header -->
     <header class="header">
 
         <div class="logo-container">
@@ -57,22 +56,15 @@ $fullName = $_SESSION['user_name'];
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-                <strong>
-                    <?php 
-                        echo htmlspecialchars($_SESSION['user_name'] ?? 'User') . 
-                            ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'; 
-                    ?>
-                </strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
-        <!-- Header Icons -->
         <div class="dashboard-header-right">
 
             <a href="notificationPage.php" class="header-icon">
                 <img src="../images/notification.png" alt="Notifications">
             </a>
 
-            <!-- Profile + Dropdown -->
             <div class="profile-dropdown">
 
                 <div class="profile-container" onclick="toggleDropdown()">
@@ -100,14 +92,10 @@ $fullName = $_SESSION['user_name'];
 
     </header>
 
-
-    <!-- Student Dashboard -->
     <main class="dashboard">
 
-        <!-- Dashboard Summary -->
         <section class="dashboard-summary">
 
-            <!-- Next Class (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/nextClass.png" alt="Next class" class="summary-icon">
@@ -121,15 +109,23 @@ $fullName = $_SESSION['user_name'];
                     <h2>No upcoming class</h2>
                     <p>You're free!</p>
                 <?php else: ?>
-                    <h2>
-                        <?php echo htmlspecialchars($nextClass['title']); ?>,
-                        <?php echo htmlspecialchars(date('D j M, g:ia', strtotime($nextClass['nextDate'] . ' ' . $nextClass['startTime']))); ?>
+                    <h2 style="margin-bottom: 8px; font-size: 1.4em; line-height: 1.3; color: #111;">
+                        <?php if (!empty($nextClass['classCode'])): ?>
+                            <strong style="font-weight: 700;"><?php echo htmlspecialchars($nextClass['classCode']); ?></strong>
+                        <?php endif; ?>
+                        <?php echo htmlspecialchars($nextClass['moduleName']); ?>
                     </h2>
-                    <p><?php echo htmlspecialchars($nextClass['location']); ?></p>
+                    <p style="margin: 0 0 4px 0; font-weight: 600; font-size: 1rem; color: #333;">
+                        <?php echo date('g:ia', strtotime($nextClass['startTime'])); ?> -
+                        <?php echo date('g:ia', strtotime($nextClass['endTime'])); ?>,
+                        <?php echo date('D j M', strtotime($nextClass['nextDate'])); ?>
+                    </p>
+                    <p style="margin: 0; font-weight: 400; font-size: 0.95rem; color: #475569;">
+                        <?php echo htmlspecialchars($nextClass['location']); ?>
+                    </p>
                 <?php endif; ?>
             </div>
 
-            <!-- Notifications (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/noti.png" alt="Notifications" class="summary-icon">
@@ -153,7 +149,6 @@ $fullName = $_SESSION['user_name'];
                 <?php endif; ?>
             </div>
 
-            <!-- Upcoming Event (Dynamic) -->
             <div class="summary-item">
                 <div class="summary-title">
                     <img src="../images/upcomingEvent.png" alt="Upcoming event" class="summary-icon">
@@ -177,8 +172,6 @@ $fullName = $_SESSION['user_name'];
 
         </section>
 
-
-        <!-- Quick Actions -->
         <section class="dashboard-section">
 
             <h3 class="section-label">Quick actions</h3>
@@ -201,15 +194,12 @@ $fullName = $_SESSION['user_name'];
 
         </section>
 
-
-        <!-- Explore -->
         <section class="dashboard-section">
 
             <h3 class="section-label">Explore</h3>
 
             <div class="dashboard-grid">
 
-                <!-- Academics -->
                 <a href="academicsPage.php" class="dashboard-card">
                     <img src="../images/academic.png" alt="Academics" class="card-icon">
                     <h2>Academics</h2>
@@ -217,40 +207,30 @@ $fullName = $_SESSION['user_name'];
                     </p>
                 </a>
 
-
-                <!-- Facilities -->
                 <a href="viewFacilitiesPage.php" class="dashboard-card">
                     <img src="../images/facilityBooking.png" alt="Facilities Booking" class="card-icon">
                     <h2>Facilities Booking</h2>
                     <p><?php echo $activeBookings . ' Active Booking' . ($activeBookings === 1 ? '' : 's'); ?></p>
                 </a>
 
-
-                <!-- Study Groups -->
                 <a href="academicsPage.php?tab=interaction" class="dashboard-card">
                     <img src="../images/studyGrp.png" alt="Study Groups" class="card-icon">
                     <h2>Student Interaction</h2>
                     <p><?php echo $groupsJoined . ' Group' . ($groupsJoined === 1 ? '' : 's') . ' joined'; ?></p>
                 </a>
 
-
-                <!-- Campus Events -->
                 <a href="viewEventsPage.php" class="dashboard-card">
                     <img src="../images/campusEvent.png" alt="Campus Events" class="card-icon">
                     <h2>Campus Events</h2>
                     <p><?php echo $upcomingEventsCnt . ' Upcoming'; ?></p>
                 </a>
 
-
-                <!-- AI Chatbot -->
                 <a href="aiChatbotPage.php" class="dashboard-card">
                     <img src="../images/aiChatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>
                 </a>
 
-
-                <!-- Feedback -->
                 <a href="submitFeedbackPage.php" class="dashboard-card">
                     <img src="../images/feedback.png" alt="Submit Feedback" class="card-icon">
                     <h2>Submit Feedback</h2>
@@ -263,8 +243,6 @@ $fullName = $_SESSION['user_name'];
 
     </main>
 
-
-    <!-- Footer -->
     <footer>
 
         <div class="footer-bottom-bar">

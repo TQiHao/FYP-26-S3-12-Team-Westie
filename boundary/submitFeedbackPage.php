@@ -43,6 +43,9 @@ $supportStmt = $db->prepare("SELECT email FROM Universities WHERE id = ?");
 $supportStmt->execute([$_SESSION['university_id'] ?? 0]);
 $supportRow = $supportStmt->fetch(PDO::FETCH_ASSOC);
 $supportEmail = $supportRow['email'] ?? '';
+
+$prefillRating = isset($_GET['rating']) ? (int) $_GET['rating'] : 0;
+$prefillMessage = isset($_GET['message']) ? htmlspecialchars(trim($_GET['message'])) : '';
 ?>
 
 <!DOCTYPE html>
@@ -54,25 +57,24 @@ $supportEmail = $supportRow['email'] ?? '';
     <title>Submit Feedback - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        .profile-header {
+        .dashboard .profile-header {
             position: relative;
             display: flex;
             align-items: center;
-            justify-content: center;
             width: 100%;
             max-width: 800px;
             margin: 15px auto 25px auto;
-            min-height: 40px;
+            min-height: 45px;
         }
 
-        .btn-back {
+        .dashboard .btn-back {
             position: absolute;
             left: 0;
             margin: 0;
             z-index: 10;
         }
 
-        .profile-header .section-label {
+        .dashboard .profile-header .section-label {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
@@ -130,32 +132,23 @@ $supportEmail = $supportRow['email'] ?? '';
             text-decoration: underline;
         }
 
-        .notice-contacts a {
-            overflow-wrap: anywhere;
-        }
-
-        .feedback-form textarea {
-            width: 100%;
-            box-sizing: border-box;
-        }
-
         @media (max-width: 768px) {
-            .profile-header {
+            .dashboard .profile-header {
                 flex-direction: row;
                 flex-wrap: nowrap;
                 align-items: center;
                 justify-content: flex-start;
                 gap: 12px;
-                max-width: 100%;
-                margin: 10px 0 20px 0;
+                margin: 10px auto 20px auto;
+                max-width: 90%;
             }
 
-            .btn-back {
+            .dashboard .btn-back {
                 position: static;
                 flex-shrink: 0;
             }
 
-            .profile-header .section-label {
+            .dashboard .profile-header .section-label {
                 position: static;
                 left: auto;
                 transform: none;
@@ -163,42 +156,6 @@ $supportEmail = $supportRow['email'] ?? '';
                 white-space: normal;
                 min-width: 0;
                 font-size: 1.3rem;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .feedback-form {
-                width: 100%;
-                max-width: 100%;
-                box-sizing: border-box;
-            }
-
-            .feedback-notice-box {
-                padding: 14px;
-                font-size: 13px;
-            }
-
-            .notice-contacts {
-                padding: 10px;
-            }
-
-            .feedback-form textarea {
-                font-size: 16px;
-            }
-
-            .feedback-form .btn-primary {
-                width: 100%;
-            }
-
-            .modal-box {
-                width: 90%;
-                max-width: 420px;
-                box-sizing: border-box;
-            }
-
-            .error-message {
-                margin-left: 14px !important;
-                margin-right: 14px !important;
             }
         }
     </style>
@@ -216,7 +173,12 @@ $supportEmail = $supportRow['email'] ?? '';
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', $user_role)) . ')'); ?></strong>
+            <strong>
+                <?php
+                echo htmlspecialchars($_SESSION['user_name'] ?? 'User') .
+                    ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')';
+                ?>
+            </strong>
         </div>
 
         <div class="dashboard-header-right">
@@ -290,19 +252,19 @@ $supportEmail = $supportRow['email'] ?? '';
                 <label>How would you rate your experience?</label>
 
                 <div class="star-rating">
-                    <input type="radio" id="star5" name="rating" value="5" required>
+                    <input type="radio" id="star5" name="rating" value="5" <?php echo ($prefillRating === 5) ? 'checked' : ''; ?> required>
                     <label for="star5" title="Excellent">&#9733;</label>
 
-                    <input type="radio" id="star4" name="rating" value="4">
+                    <input type="radio" id="star4" name="rating" value="4" <?php echo ($prefillRating === 4) ? 'checked' : ''; ?>>
                     <label for="star4" title="Good">&#9733;</label>
 
-                    <input type="radio" id="star3" name="rating" value="3">
+                    <input type="radio" id="star3" name="rating" value="3" <?php echo ($prefillRating === 3) ? 'checked' : ''; ?>>
                     <label for="star3" title="Average">&#9733;</label>
 
-                    <input type="radio" id="star2" name="rating" value="2">
+                    <input type="radio" id="star2" name="rating" value="2" <?php echo ($prefillRating === 2) ? 'checked' : ''; ?>>
                     <label for="star2" title="Poor">&#9733;</label>
 
-                    <input type="radio" id="star1" name="rating" value="1">
+                    <input type="radio" id="star1" name="rating" value="1" <?php echo ($prefillRating === 1) ? 'checked' : ''; ?>>
                     <label for="star1" title="Very Poor">&#9733;</label>
                 </div>
             </div>
@@ -310,7 +272,7 @@ $supportEmail = $supportRow['email'] ?? '';
             <div class="form-group">
                 <label for="message">Feedback</label>
                 <textarea id="message" name="message" rows="8" placeholder="Write your feedback here..."
-                    required></textarea>
+                    required><?php echo $prefillMessage; ?></textarea>
             </div>
 
             <button type="submit" name="submit_feedback" class="btn-primary">Submit</button>

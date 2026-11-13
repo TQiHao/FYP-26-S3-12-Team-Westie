@@ -1,4 +1,9 @@
 <?php
+// ADDED: Force errors to show so we don't get blank pages
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -19,12 +24,16 @@ $searchQuery = $_GET['search'] ?? '';
 $statusFilter = array_key_exists('status', $_GET) ? $_GET['status'] : 'active';
 
 $universityId = $_SESSION['university_id'] ?? 0;
+$coordinatorEmail = $_SESSION['user_email'] ?? $_SESSION['email'] ?? '';
+$currentUserId = $_SESSION['user_id'] ?? 0;
 
 $classList = $controller->getClasses($searchQuery, '', '', $statusFilter);
-$modulesList = $controller->getAllModules($universityId);
+
+// Pass 3 arguments perfectly matching the controller
+$modulesList = $controller->getModulesForCoordinator($universityId, $coordinatorEmail, $currentUserId);
+
 $lecturersList = $controller->getLecturers($universityId);
 $studentsList = $controller->getStudents($universityId);
-
 $studentFiles = $controller->getUniversityStudentFiles($universityId);
 
 foreach ($classList as &$cls) {
@@ -70,44 +79,48 @@ if ($reopenMode !== null && $flashError !== null) {
     $flashError = null;
 }
 
-$groupedModules = [];
+$groupedFaculties = [];
 foreach ($classList as $cls) {
-    $groupKey = $cls['moduleId'];
+    $facultyName = !empty($cls['facultyName']) ? $cls['facultyName'] : 'General Faculty / Unassigned';
+    $moduleKey = $cls['moduleId'];
 
-    if (!isset($groupedModules[$groupKey])) {
-        $groupedModules[$groupKey] = [
+    if (!isset($groupedFaculties[$facultyName])) {
+        $groupedFaculties[$facultyName] = [];
+    }
+
+    if (!isset($groupedFaculties[$facultyName][$moduleKey])) {
+        $groupedFaculties[$facultyName][$moduleKey] = [
             'code' => $cls['moduleCode'],
             'name' => $cls['moduleName'],
             'classes' => []
         ];
     }
-    $groupedModules[$groupKey]['classes'][] = $cls;
+    $groupedFaculties[$facultyName][$moduleKey]['classes'][] = $cls;
 }
 
-foreach ($groupedModules as &$modGroup) {
-    usort($modGroup['classes'], function ($a, $b) {
-        if ($a['academicYear'] !== $b['academicYear']) {
-            return strcmp($a['academicYear'], $b['academicYear']);
-        }
-        if ($a['semester'] !== $b['semester']) {
-            return strcmp($a['semester'], $b['semester']);
-        }
-        $statusA = strtolower($a['status']) === 'active' ? 0 : 1;
-        $statusB = strtolower($b['status']) === 'active' ? 0 : 1;
-        return $statusA <=> $statusB;
-    });
+foreach ($groupedFaculties as &$facultyModules) {
+    uasort($facultyModules, function ($a, $b) {
+        return strcmp($a['code'], $b['code']); });
+    foreach ($facultyModules as &$modGroup) {
+        usort($modGroup['classes'], function ($a, $b) {
+            if ($a['academicYear'] !== $b['academicYear'])
+                return strcmp($a['academicYear'], $b['academicYear']);
+            if ($a['semester'] !== $b['semester'])
+                return strcmp($a['semester'], $b['semester']);
+            $statusA = strtolower($a['status']) === 'active' ? 0 : 1;
+            $statusB = strtolower($b['status']) === 'active' ? 0 : 1;
+            return $statusA <=> $statusB;
+        });
+    }
 }
-unset($modGroup);
+unset($facultyModules, $modGroup);
 
 $formActionParams = [];
-if ($searchQuery !== '') {
+if ($searchQuery !== '')
     $formActionParams['search'] = $searchQuery;
-}
-if (isset($_GET['status']) || $statusFilter !== 'active') {
+if (isset($_GET['status']) || $statusFilter !== 'active')
     $formActionParams['status'] = $statusFilter;
-}
 $formActionQs = $formActionParams ? '?' . http_build_query($formActionParams) : '';
-
 $allStatusUrl = '?' . http_build_query(['search' => $searchQuery, 'status' => '']);
 
 $moduleClassCounts = [];
@@ -126,1010 +139,150 @@ foreach ($classList as $c) {
     <title>Manage Classes - UniBee</title>
     <link rel="stylesheet" href="../style.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        .page-container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 40px;
-            box-sizing: border-box;
-        }
-
-        .filter-bar {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            box-sizing: border-box;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .search-box input {
-            flex: 1;
-            padding: 10px 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-
-        .search-box select {
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .btn-primary-small {
-            background-color: #2563eb;
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            box-sizing: border-box;
-        }
-
-        .btn-primary-small:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-secondary-small {
-            background-color: #f1f5f9;
-            color: #334155;
-            padding: 10px 16px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            cursor: pointer;
-            font-weight: 500;
-            box-sizing: border-box;
-        }
-
-        .btn-secondary-small:hover {
-            background-color: #e2e8f0;
-        }
-
-        .profile-header {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-            min-height: 45px;
-            margin: 15px 0 25px 0;
-            box-sizing: border-box;
-        }
-
-        .btn-back {
-            position: absolute;
-            left: 0;
-            margin: 0;
-            z-index: 10;
-        }
-
-        .profile-header .section-label {
-            position: absolute;
-            left: 70%;
-            transform: translateX(-50%);
-            margin: 0 !important;
-            text-align: center !important;
-            white-space: nowrap;
-        }
-
-        .module-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .empty-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 60px 20px;
-            margin-bottom: 24px;
-            text-align: center;
-            color: #64748b;
-            font-size: 16px;
-            width: 100%;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            box-sizing: border-box;
-        }
-
-        .module-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            box-sizing: border-box;
-        }
-
-        .admin-table th {
-            background-color: #f8fafc;
-            color: #1e293b;
-            font-size: 14px;
-            font-weight: 700;
-            padding: 12px 10px;
-            border-bottom: 2px solid #e2e8f0;
-            text-align: left;
-            box-sizing: border-box;
-        }
-
-        .admin-table td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 13px;
-            vertical-align: middle;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            box-sizing: border-box;
-        }
-
-        .col-module {
-            width: 20%;
-        }
-
-        .col-code {
-            width: 12%;
-        }
-
-        .col-period {
-            width: 15%;
-        }
-
-        .col-schedule {
-            width: 20%;
-        }
-
-        .col-status {
-            width: 10%;
-        }
-
-        .col-actions {
-            width: 23%;
-        }
-
-        .module-info-cell {
-            vertical-align: top;
-            padding-right: 14px;
-            border-right: 1px solid #f1f5f9;
-            font-size: 15px;
-            font-weight: 700;
-            color: #1e293b;
-            line-height: 1.4;
-            box-sizing: border-box;
-        }
-
-        .admin-table tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .row-suspended {
-            background-color: #fafafa;
-        }
-
-        .action-cell-btns {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .action-btn-sm {
-            padding: 6px 8px;
-            font-size: 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            white-space: nowrap;
-            text-align: center;
-            box-sizing: border-box;
-            flex: 1;
-        }
-
-        .btn-view {
-            background-color: #0284c7;
-            color: #fff;
-        }
-
-        .btn-view:hover {
-            background-color: #0369a1;
-        }
-
-        .btn-edit {
-            background-color: #3b82f6;
-            color: #fff;
-        }
-
-        .btn-edit:hover {
-            background-color: #2563eb;
-        }
-
-        .btn-suspend {
-            background-color: #ef4444;
-            color: #fff;
-        }
-
-        .btn-suspend:hover {
-            background-color: #dc2626;
-        }
-
-        .btn-activate {
-            background-color: #10b981;
-            color: #fff;
-        }
-
-        .btn-activate:hover {
-            background-color: #059669;
-        }
-
-        .btn-remove-sm {
-            background-color: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-            padding: 3px 8px;
-            font-size: 11px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-            box-sizing: border-box;
-        }
-
-        .btn-remove-sm:hover {
-            background-color: #ef4444;
-            color: #ffffff;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-            width: 100%;
-            max-width: 75px;
-            box-sizing: border-box;
-        }
-
-        .status-active {
-            background-color: #dcfce7;
-            color: #15803d;
-        }
-
-        .status-suspended {
-            background-color: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 12px;
-            box-sizing: border-box;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-card {
-            background: #ffffff;
-            width: 100%;
-            max-width: 680px;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            max-height: 90vh;
-            overflow-y: auto;
-            box-sizing: border-box;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 10px;
-            box-sizing: border-box;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .form-group-full {
-            grid-column: span 2;
-        }
-
-        .form-group {
-            box-sizing: border-box;
-            width: 100%;
-            min-width: 0;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #334155;
-            box-sizing: border-box;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            max-width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-
-        .searchable-select {
-            position: relative;
-            width: 100%;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-
-        .searchable-select .ss-input {
-            width: 100%;
-            max-width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-            min-width: 0;
-        }
-
-        .searchable-select .ss-dropdown {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            max-height: 220px;
-            overflow-y: auto;
-            z-index: 50;
-            margin-top: 2px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
-            box-sizing: border-box;
-        }
-
-        .searchable-select .ss-dropdown.open {
-            display: block;
-        }
-
-        .searchable-select .ss-option {
-            padding: 8px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            color: #1e293b;
-            box-sizing: border-box;
-        }
-
-        .searchable-select .ss-option:hover {
-            background: #eff6ff;
-            color: #1d4ed8;
-        }
-
-        .searchable-select .ss-empty {
-            padding: 8px 12px;
-            font-size: 13px;
-            color: #94a3b8;
-            box-sizing: border-box;
-        }
-
-        .info-group {
-            margin-bottom: 14px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 10px;
-            box-sizing: border-box;
-        }
-
-        .info-group:last-child {
-            border-bottom: none;
-        }
-
-        .info-group label {
-            font-size: 12px;
-            color: #64748b;
-            text-transform: uppercase;
-            font-weight: 700;
-            display: block;
-            margin-bottom: 4px;
-            box-sizing: border-box;
-        }
-
-        .info-group p {
-            font-size: 15px;
-            color: #1e293b;
-            margin-top: 0;
-            margin-bottom: 0;
-            font-weight: 500;
-            box-sizing: border-box;
-        }
-
-        .student-list-box {
-            min-height: 50px;
-            max-height: 160px;
-            overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 6px;
-            background: #f8fafc;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .student-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 10px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 13px;
-            color: #1e293b;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .student-item:last-child {
-            border-bottom: none;
-        }
-
-        .enrol-box {
-            margin-top: 10px;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
-            padding: 4px 10px;
-            font-size: 12px;
-            border-radius: 4px;
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            cursor: pointer;
-            box-sizing: border-box;
-        }
-
-        .tab-btn.active {
-            background: #2563eb;
-            color: #fff;
-            border-color: #2563eb;
-        }
-
-        .alert-box {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            border: 1px solid #86efac;
-            color: #166534;
-        }
-
-        .alert-danger {
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
-        }
-
-        .modal-room-suggestions {
-            display: none;
-            margin-top: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            max-height: 200px;
-            overflow-y: auto;
-            background: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .modal-room-suggestions .room-sug-item {
-            padding: 8px 12px;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .modal-room-suggestions .room-sug-item:last-child {
-            border-bottom: none;
-        }
-
-        .modal-room-suggestions .room-sug-item:hover {
-            background: #eff6ff;
-        }
-
-        .modal-room-suggestions .room-sug-reason {
-            color: #2563eb;
-            font-size: 11px;
-        }
-
-        .modal-room-suggestions .room-sug-msg {
-            padding: 10px;
-            color: #64748b;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .create-hint {
-            padding: 14px;
-            text-align: center;
-            color: #64748b;
-            font-size: 13px;
-            font-style: italic;
-            box-sizing: border-box;
-        }
-
-        .modal-error-banner {
-            padding: 10px 14px;
-            margin-bottom: 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
-            line-height: 1.4;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .field-hint {
-            font-size: 11px;
-            color: #64748b;
-            margin-top: 3px;
-            display: block;
-            font-weight: 400;
-            box-sizing: border-box;
-        }
-
-        .exam-block {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #f8fafc;
-            position: relative;
-            box-sizing: border-box;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .exam-block-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .exam-block-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #334155;
-        }
-
-        .btn-remove-exam {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-            padding: 3px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            box-sizing: border-box;
-        }
-
-        .btn-remove-exam:hover {
-            background: #ef4444;
-            color: #fff;
-        }
-
-        .btn-add-exam {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 4px;
-            box-sizing: border-box;
-        }
-
-        .btn-add-exam:hover {
-            background: #bfdbfe;
-        }
-
-        .enrol-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            width: 100%;
-            box-sizing: border-box;
-            flex-wrap: wrap;
-        }
-
-        .enrol-row .searchable-select {
-            flex: 1;
-            min-width: 0;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-
-        .enrol-row select {
-            flex: 1;
-            min-width: 0;
-            max-width: 100%;
-            padding: 6px 10px;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .enrol-btn {
-            padding: 6px 14px;
-            font-size: 13px;
-            white-space: nowrap;
-            box-sizing: border-box;
-        }
-
-        @media (max-width: 1024px) {
-            .page-container {
-                padding: 24px 20px;
-            }
-
-            .col-module {
-                width: 18%;
-            }
-
-            .col-actions {
-                width: 26%;
-            }
-
-            .action-cell-btns {
-                flex-wrap: wrap;
-            }
-        }
-
+        * { box-sizing: border-box; }
+        .page-container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 30px 40px; box-sizing: border-box; }
+        .filter-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; box-sizing: border-box; }
+        .search-box { display: flex; gap: 10px; flex: 1; width: 100%; box-sizing: border-box; }
+        .search-box input { flex: 1; padding: 10px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; min-width: 0; }
+        .search-box select { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+        .btn-primary-small { background-color: #2563eb; color: #fff; padding: 10px 18px; border-radius: 8px; text-decoration: none; border: none; cursor: pointer; font-size: 14px; font-weight: 500; box-sizing: border-box; }
+        .btn-primary-small:hover { background-color: #1d4ed8; }
+        .btn-secondary-small { background-color: #f1f5f9; color: #334155; padding: 10px 16px; border-radius: 8px; border: 1px solid #cbd5e1; cursor: pointer; font-weight: 500; box-sizing: border-box; }
+        .btn-secondary-small:hover { background-color: #e2e8f0; }
+        .profile-header { position: relative; display: flex; align-items: center; width: 100%; min-height: 45px; margin: 15px 0 25px 0; box-sizing: border-box; }
+        .btn-back { position: absolute; left: 0; margin: 0; z-index: 10; }
+        .profile-header .section-label { position: absolute; left: 70%; transform: translateX(-50%); margin: 0 !important; text-align: center !important; white-space: nowrap; }
+        .faculty-section { margin-bottom: 40px; }
+        .faculty-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #cbd5e1; display: flex; align-items: center; gap: 8px; }
+        .faculty-title::before { content: ''; display: block; width: 6px; height: 24px; background-color: #2563eb; border-radius: 4px; }
+        .module-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; width: 100%; box-sizing: border-box; }
+        .empty-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 60px 20px; margin-bottom: 24px; text-align: center; color: #64748b; font-size: 16px; width: 100%; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); box-sizing: border-box; }
+        .module-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08); transform: translateY(-2px); }
+        .table-responsive { width: 100%; overflow: hidden; box-sizing: border-box; }
+        .admin-table { width: 100%; border-collapse: collapse; table-layout: fixed; box-sizing: border-box; }
+        .admin-table th { background-color: #f8fafc; color: #1e293b; font-size: 14px; font-weight: 700; padding: 12px 10px; border-bottom: 2px solid #e2e8f0; text-align: left; box-sizing: border-box; }
+        .admin-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; overflow-wrap: break-word; word-break: break-word; box-sizing: border-box; }
+        .col-module { width: 20%; }
+        .col-code { width: 12%; }
+        .col-period { width: 15%; }
+        .col-schedule { width: 20%; }
+        .col-status { width: 10%; }
+        .col-actions { width: 23%; }
+        .module-info-cell { vertical-align: top; padding-right: 14px; border-right: 1px solid #f1f5f9; font-size: 15px; font-weight: 700; color: #1e293b; line-height: 1.4; box-sizing: border-box; }
+        .admin-table tr:hover { background-color: #f8fafc; }
+        .row-suspended { background-color: #fafafa; }
+        .action-cell-btns { display: flex; gap: 5px; align-items: center; width: 100%; box-sizing: border-box; }
+        .action-btn-sm { padding: 6px 8px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; white-space: nowrap; text-align: center; box-sizing: border-box; flex: 1; }
+        .btn-view { background-color: #0284c7; color: #fff; }
+        .btn-view:hover { background-color: #0369a1; }
+        .btn-edit { background-color: #3b82f6; color: #fff; }
+        .btn-edit:hover { background-color: #2563eb; }
+        .btn-suspend { background-color: #ef4444; color: #fff; }
+        .btn-suspend:hover { background-color: #dc2626; }
+        .btn-activate { background-color: #10b981; color: #fff; }
+        .btn-activate:hover { background-color: #059669; }
+        .btn-remove-sm { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; box-sizing: border-box; }
+        .btn-remove-sm:hover { background-color: #ef4444; color: #ffffff; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; text-align: center; width: 100%; max-width: 75px; box-sizing: border-box; }
+        .status-active { background-color: #dcfce7; color: #15803d; }
+        .status-suspended { background-color: #fee2e2; color: #b91c1c; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); justify-content: center; align-items: center; z-index: 1000; padding: 12px; box-sizing: border-box; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: #ffffff; width: 100%; max-width: 680px; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; box-sizing: border-box; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; box-sizing: border-box; width: 100%; }
+        .form-group-full { grid-column: span 2; }
+        .form-group { box-sizing: border-box; width: 100%; min-width: 0; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #334155; box-sizing: border-box; }
+        .form-group input, .form-group select { width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; min-width: 0; }
+        .searchable-select { position: relative; width: 100%; box-sizing: border-box; min-width: 0; }
+        .searchable-select .ss-input { width: 100%; max-width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box; min-width: 0; }
+        .searchable-select .ss-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; max-height: 220px; overflow-y: auto; z-index: 50; margin-top: 2px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08); box-sizing: border-box; }
+        .searchable-select .ss-dropdown.open { display: block; }
+        .searchable-select .ss-option { padding: 8px 12px; font-size: 13px; cursor: pointer; color: #1e293b; box-sizing: border-box; }
+        .searchable-select .ss-option:hover { background: #eff6ff; color: #1d4ed8; }
+        .searchable-select .ss-empty { padding: 8px 12px; font-size: 13px; color: #94a3b8; box-sizing: border-box; }
+        .info-group { margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; box-sizing: border-box; }
+        .info-group:last-child { border-bottom: none; }
+        .info-group label { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px; box-sizing: border-box; }
+        .info-group p { font-size: 15px; color: #1e293b; margin-top: 0; margin-bottom: 0; font-weight: 500; box-sizing: border-box; }
+        .student-list-box { min-height: 50px; max-height: 160px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px; background: #f8fafc; box-sizing: border-box; width: 100%; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; color: #1e293b; box-sizing: border-box; width: 100%; }
+        .student-item:last-child { border-bottom: none; }
+        .enrol-box { margin-top: 10px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; width: 100%; }
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 10px; box-sizing: border-box; flex-wrap: wrap; }
+        .tab-btn { padding: 4px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; box-sizing: border-box; }
+        .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        .alert-box { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; box-sizing: border-box; width: 100%; }
+        .alert-success { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+        .alert-danger { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+        .modal-room-suggestions { display: none; margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 6px; max-height: 200px; overflow-y: auto; background: #fff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); box-sizing: border-box; width: 100%; }
+        .modal-room-suggestions .room-sug-item { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 13px; box-sizing: border-box; }
+        .modal-room-suggestions .room-sug-item:last-child { border-bottom: none; }
+        .modal-room-suggestions .room-sug-item:hover { background: #eff6ff; }
+        .modal-room-suggestions .room-sug-reason { color: #2563eb; font-size: 11px; }
+        .modal-room-suggestions .room-sug-msg { padding: 10px; color: #64748b; font-size: 13px; box-sizing: border-box; }
+        .create-hint { padding: 14px; text-align: center; color: #64748b; font-size: 13px; font-style: italic; box-sizing: border-box; }
+        .modal-error-banner { padding: 10px 14px; margin-bottom: 14px; border-radius: 6px; font-size: 13px; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; line-height: 1.4; box-sizing: border-box; width: 100%; }
+        .field-hint { font-size: 11px; color: #64748b; margin-top: 3px; display: block; font-weight: 400; box-sizing: border-box; }
+        .exam-block { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #f8fafc; position: relative; box-sizing: border-box; width: 100%; overflow: hidden; }
+        .exam-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; box-sizing: border-box; width: 100%; }
+        .exam-block-title { font-size: 13px; font-weight: 700; color: #334155; }
+        .btn-remove-exam { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; box-sizing: border-box; }
+        .btn-remove-exam:hover { background: #ef4444; color: #fff; }
+        .btn-add-exam { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; margin-top: 4px; box-sizing: border-box; }
+        .btn-add-exam:hover { background: #bfdbfe; }
+        .enrol-row { display: flex; gap: 8px; align-items: center; width: 100%; box-sizing: border-box; flex-wrap: wrap; }
+        .enrol-row .searchable-select { flex: 1; min-width: 0; max-width: 100%; box-sizing: border-box; }
+        .enrol-row select { flex: 1; min-width: 0; max-width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box; }
+        .enrol-btn { padding: 6px 14px; font-size: 13px; white-space: nowrap; box-sizing: border-box; }
+        @media (max-width: 1024px) { .page-container { padding: 24px 20px; } .col-module { width: 18%; } .col-actions { width: 26%; } .action-cell-btns { flex-wrap: wrap; } }
         @media (max-width: 768px) {
-            .page-container {
-                padding: 20px 14px;
-            }
-
-            .profile-header {
-                flex-direction: row;
-                flex-wrap: nowrap;
-                align-items: center;
-                justify-content: flex-start;
-                gap: 12px;
-                margin: 10px 0 20px 0;
-            }
-
-            .btn-back {
-                position: static;
-                flex-shrink: 0;
-            }
-
-            .profile-header .section-label {
-                position: static;
-                left: auto;
-                transform: none;
-                text-align: left !important;
-                white-space: normal;
-                min-width: 0;
-                font-size: 1.3rem;
-            }
-
-            .filter-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-box {
-                flex-wrap: wrap;
-            }
-
-            .search-box input {
-                flex: 1 1 100%;
-                min-width: 0;
-            }
-
-            .search-box select {
-                flex: 1;
-                min-width: 0;
-            }
-
-            .filter-bar>.btn-primary-small {
-                width: 100%;
-                padding: 12px 18px;
-            }
-
-            .module-card {
-                padding: 12px;
-            }
-
-            .module-card:hover {
-                transform: none;
-            }
-
-            .table-responsive {
-                overflow: visible;
-            }
-
-            .admin-table,
-            .admin-table tbody,
-            .admin-table tr,
-            .admin-table td {
-                display: block;
-                width: 100%;
-                box-sizing: border-box;
-            }
-
-            .admin-table {
-                table-layout: auto;
-            }
-
-            .admin-table thead {
-                display: none;
-            }
-
-            .admin-table tr {
-                border: 1px solid #e2e8f0;
-                border-radius: 10px;
-                padding: 4px 12px;
-                margin-bottom: 12px;
-                background: #fff;
-            }
-
-            .admin-table tr:hover {
-                background-color: #fff;
-            }
-
-            .admin-table tr.row-suspended {
-                background-color: #fafafa;
-            }
-
-            .admin-table td {
-                border-bottom: 1px solid #f1f5f9;
-                padding: 10px 0;
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                gap: 12px;
-                text-align: right;
-            }
-
-            .admin-table td:last-child {
-                border-bottom: none;
-            }
-
-            .admin-table td[data-label]::before {
-                content: attr(data-label);
-                flex: 0 0 38%;
-                text-align: left;
-                font-size: 12px;
-                font-weight: 700;
-                color: #64748b;
-                text-transform: uppercase;
-            }
-
-            .admin-table td.module-info-cell {
-                display: block;
-                text-align: left;
-                border-right: none;
-                padding: 8px 0 10px 0;
-                margin-bottom: 4px;
-                font-size: 16px;
-                border-bottom: 2px solid #e2e8f0;
-            }
-
-            .admin-table td.col-actions {
-                display: block;
-            }
-
-            .action-cell-btns {
-                flex-wrap: wrap;
-            }
-
-            .action-btn-sm {
-                padding: 10px 8px;
-                font-size: 13px;
-            }
-
-            .status-badge {
-                width: auto;
-                min-width: 70px;
-            }
-
-            .modal-overlay {
-                padding: 16px 12px;
-                align-items: flex-start;
-                overflow-y: auto;
-            }
-
-            .modal-card {
-                padding: 16px;
-                max-height: none;
-                margin: 0 auto;
-                width: 100%;
-                box-sizing: border-box;
-            }
-
-            .form-grid {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .form-group-full {
-                grid-column: span 1;
-            }
-
-            .exam-block {
-                overflow: visible;
-            }
-
-            .form-group input[type="date"],
-            .form-group input[type="time"] {
-                -webkit-appearance: none;
-                appearance: none;
-                display: block;
-                width: 100%;
-                max-width: 100%;
-                min-width: 0;
-                min-height: 40px;
-                box-sizing: border-box;
-                text-align: left;
-            }
-
-            .form-group input[type="date"]::-webkit-date-and-time-value,
-            .form-group input[type="time"]::-webkit-date-and-time-value {
-                text-align: left;
-                min-height: 1.2em;
-            }
-
-            .form-group input,
-            .form-group select,
-            .searchable-select .ss-input {
-                font-size: 16px;
-            }
+            .page-container { padding: 20px 14px; }
+            .profile-header { flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: flex-start; gap: 12px; margin: 10px 0 20px 0; }
+            .btn-back { position: static; flex-shrink: 0; }
+            .profile-header .section-label { position: static; left: auto; transform: none; text-align: left !important; white-space: normal; min-width: 0; font-size: 1.3rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .search-box { flex-wrap: wrap; }
+            .search-box input { flex: 1 1 100%; min-width: 0; }
+            .search-box select { flex: 1; min-width: 0; }
+            .filter-bar>.btn-primary-small { width: 100%; padding: 12px 18px; }
+            .module-card { padding: 12px; }
+            .module-card:hover { transform: none; }
+            .table-responsive { overflow: visible; }
+            .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; box-sizing: border-box; }
+            .admin-table { table-layout: auto; }
+            .admin-table thead { display: none; }
+            .admin-table tr { border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 12px; margin-bottom: 12px; background: #fff; }
+            .admin-table tr:hover { background-color: #fff; }
+            .admin-table tr.row-suspended { background-color: #fafafa; }
+            .admin-table td { border-bottom: 1px solid #f1f5f9; padding: 10px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; text-align: right; }
+            .admin-table td:last-child { border-bottom: none; }
+            .admin-table td[data-label]::before { content: attr(data-label); flex: 0 0 38%; text-align: left; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+            .admin-table td.module-info-cell { display: block; text-align: left; border-right: none; padding: 8px 0 10px 0; margin-bottom: 4px; font-size: 16px; border-bottom: 2px solid #e2e8f0; }
+            .admin-table td.col-actions { display: block; }
+            .action-cell-btns { flex-wrap: wrap; }
+            .action-btn-sm { padding: 10px 8px; font-size: 13px; }
+            .status-badge { width: auto; min-width: 70px; }
+            .modal-overlay { padding: 16px 12px; align-items: flex-start; overflow-y: auto; }
+            .modal-card { padding: 16px; max-height: none; margin: 0 auto; width: 100%; box-sizing: border-box; }
+            .form-grid { grid-template-columns: minmax(0, 1fr); }
+            .form-group-full { grid-column: span 1; }
+            .exam-block { overflow: visible; }
+            .form-group input[type="date"], .form-group input[type="time"] { -webkit-appearance: none; appearance: none; display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 40px; box-sizing: border-box; text-align: left; }
+            .form-group input[type="date"]::-webkit-date-and-time-value, .form-group input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; }
+            .form-group input, .form-group select, .searchable-select .ss-input { font-size: 16px; }
         }
-
-        @media (max-width: 600px) {
-            .enrol-row {
-                flex-wrap: wrap;
-            }
-
-            .enrol-row .searchable-select,
-            .enrol-row select,
-            .enrol-btn,
-            .enrol-row .btn-primary-small {
-                width: 100%;
-                flex: 1 1 100%;
-                max-width: 100%;
-            }
-        }
-
+        @media (max-width: 600px) { .enrol-row { flex-wrap: wrap; } .enrol-row .searchable-select, .enrol-row select, .enrol-btn, .enrol-row .btn-primary-small { width: 100%; flex: 1 1 100%; max-width: 100%; } }
         @media (max-width: 480px) {
-
-            .modal-card div[style*="display: flex"],
-            .modal-card div[style*="display:flex"] {
-                flex-wrap: wrap;
-            }
-
-            .modal-card div[style*="justify-content: flex-end"] {
-                flex-direction: column-reverse;
-            }
-
-            .modal-card div[style*="justify-content: flex-end"] button {
-                width: 100%;
-            }
-
-            .modal-card>div[style*="text-align: right"] {
-                display: flex;
-                flex-direction: column-reverse;
-                gap: 8px;
-            }
-
-            .modal-card>div[style*="text-align: right"] button {
-                width: 100%;
-            }
-
-            .student-item {
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-
-            .tab-buttons {
-                flex-wrap: wrap;
-            }
-
-            .header .welcome-message {
-                font-size: 12px;
-            }
+            .modal-card div[style*="display: flex"], .modal-card div[style*="display:flex"] { flex-wrap: wrap; }
+            .modal-card div[style*="justify-content: flex-end"] { flex-direction: column-reverse; }
+            .modal-card div[style*="justify-content: flex-end"] button { width: 100%; }
+            .modal-card>div[style*="text-align: right"] { display: flex; flex-direction: column-reverse; gap: 8px; }
+            .modal-card>div[style*="text-align: right"] button { width: 100%; }
+            .student-item { flex-wrap: wrap; gap: 6px; }
+            .tab-buttons { flex-wrap: wrap; }
+            .header .welcome-message { font-size: 12px; }
         }
     </style>
 </head>
@@ -1160,7 +313,7 @@ foreach ($classList as $c) {
                     <a href="manageClassPage.php">Manage Classes</a>
                     <a href="aiChatbotPage.php">AI Chatbot</a>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -1174,10 +327,10 @@ foreach ($classList as $c) {
         </div>
 
         <?php if ($flashMessage): ?>
-            <div class="alert-box alert-success"><?php echo htmlspecialchars($flashMessage); ?></div>
+                <div class="alert-box alert-success"><?php echo htmlspecialchars($flashMessage); ?></div>
         <?php endif; ?>
         <?php if ($flashError): ?>
-            <div class="alert-box alert-danger"><?php echo htmlspecialchars($flashError); ?></div>
+                <div class="alert-box alert-danger"><?php echo htmlspecialchars($flashError); ?></div>
         <?php endif; ?>
 
         <div class="filter-bar">
@@ -1196,103 +349,115 @@ foreach ($classList as $c) {
             <button type="button" class="btn-primary-small" onclick="openCreateModal()">+ Create New Class</button>
         </div>
 
-        <?php if (empty($groupedModules)): ?>
-            <div class="empty-card">
-                <?php if ($statusFilter === 'active'): ?>
-                    No active classes found matching your criteria.<br>
-                    <span style="display:inline-block; margin-top:8px; font-size:14px;">
-                        Looking for a suspended class to reactivate?
-                        <a href="<?php echo htmlspecialchars($allStatusUrl, ENT_QUOTES); ?>"
-                            style="color:#2563eb; font-weight:600;">Show all statuses</a>.
-                    </span>
-                <?php else: ?>
-                    No classes found matching your criteria.
-                <?php endif; ?>
-            </div>
-        <?php else: ?>
-            <?php foreach ($groupedModules as $mod): ?>
-                <div class="module-card">
-                    <div class="table-responsive">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-module">Module Name</th>
-                                    <th class="col-code">Class Code</th>
-                                    <th class="col-period">Academic Period</th>
-                                    <th class="col-schedule">Schedule & Venue</th>
-                                    <th class="col-status">Status</th>
-                                    <th class="col-actions">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php
-                                $classCount = count($mod['classes']);
-                                foreach ($mod['classes'] as $index => $cls):
-
-                                    $ayRaw = $cls['academicYear'] ?? '2026/2027';
-                                    if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
-                                        $ayFormatted = 'AY ' . $matches[1] . '/' . $matches[2];
-                                    } else {
-                                        $ayFormatted = 'AY ' . $ayRaw;
-                                    }
-
-                                    $semRaw = $cls['semester'] ?? '1';
-                                    $semClean = preg_replace('/^Semester\s+/i', '', trim($semRaw));
-                                    $semFormatted = 'Semester ' . $semClean;
-                                    ?>
-                                    <tr class="<?php echo strtolower($cls['status']) !== 'active' ? 'row-suspended' : ''; ?>">
-                                        <?php if ($index === 0): ?>
-                                            <td rowspan="<?php echo $classCount; ?>" class="module-info-cell col-module">
-                                                <div><?php echo htmlspecialchars($mod['code'] . " - " . $mod['name']); ?></div>
-                                            </td>
-                                        <?php endif; ?>
-                                        <td class="col-code" data-label="Class Code">
-                                            <strong><?php echo htmlspecialchars($cls['classCode']); ?></strong>
-                                        </td>
-                                        <td class="col-period" data-label="Academic Period">
-                                            <span
-                                                style="font-weight: 500; color: #475569;"><?php echo htmlspecialchars($ayFormatted); ?></span><br>
-                                            <span
-                                                style="font-size: 12px; color: #64748b;"><?php echo htmlspecialchars($semFormatted); ?></span>
-                                        </td>
-                                        <td class="col-schedule" data-label="Schedule & Venue">
-                                            <?php echo ucfirst($cls['dayOfWeek'] ?? '-'); ?>
-                                            (<?php echo htmlspecialchars(substr($cls['startTime'] ?? '', 0, 5)); ?> -
-                                            <?php echo htmlspecialchars(substr($cls['endTime'] ?? '', 0, 5)); ?>)<br>
-                                            <span style="color: #64748b; font-size: 13px;">Venue:
-                                                <?php echo htmlspecialchars($cls['room'] ?? 'TBA'); ?></span>
-                                        </td>
-                                        <td class="col-status" data-label="Status">
-                                            <?php if (strtolower($cls['status']) === 'active'): ?>
-                                                <span class="status-badge status-active">Active</span>
-                                            <?php else: ?>
-                                                <span class="status-badge status-suspended">Inactive</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="col-actions">
-                                            <div class="action-cell-btns">
-                                                <button type="button" class="action-btn-sm btn-view"
-                                                    onclick='openViewModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>View</button>
-
-                                                <button type="button" class="action-btn-sm btn-edit"
-                                                    onclick='openEditModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>Edit</button>
-
-                                                <?php if (strtolower($cls['status']) === 'active'): ?>
-                                                    <button type="button" class="action-btn-sm btn-suspend"
-                                                        onclick="toggleStatus(<?php echo $cls['id']; ?>, 'suspended')">Suspend</button>
-                                                <?php else: ?>
-                                                    <button type="button" class="action-btn-sm btn-activate"
-                                                        onclick="toggleStatus(<?php echo $cls['id']; ?>, 'active')">Activate</button>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+        <?php if (empty($groupedFaculties)): ?>
+                <div class="empty-card">
+                    <?php if ($statusFilter === 'active'): ?>
+                            No active classes found matching your criteria.<br>
+                            <span style="display:inline-block; margin-top:8px; font-size:14px;">
+                                Looking for a suspended class to reactivate?
+                                <a href="<?php echo htmlspecialchars($allStatusUrl, ENT_QUOTES); ?>"
+                                    style="color:#2563eb; font-weight:600;">Show all statuses</a>.
+                            </span>
+                    <?php else: ?>
+                            No classes found matching your criteria.
+                    <?php endif; ?>
                 </div>
-            <?php endforeach; ?>
+        <?php else: ?>
+                <?php foreach ($groupedFaculties as $facultyName => $facultyModules): ?>
+                        <div class="faculty-section">
+                            <h3 class="faculty-title"><?php echo htmlspecialchars($facultyName); ?></h3>
+                    
+                            <?php foreach ($facultyModules as $mod): ?>
+                                    <div class="module-card">
+                                        <div class="table-responsive">
+                                            <table class="admin-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="col-module">Module Name</th>
+                                                        <th class="col-code">Class Code</th>
+                                                        <th class="col-period">Academic Period</th>
+                                                        <th class="col-schedule">Schedule & Venue</th>
+                                                        <th class="col-status">Status</th>
+                                                        <th class="col-actions">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php
+                                                    $classCount = count($mod['classes']);
+                                                    foreach ($mod['classes'] as $index => $cls):
+
+                                                        $ayRaw = $cls['academicYear'] ?? '2026/2027';
+                                                        if (preg_match('/^20(\d{2})\/20(\d{2})$/', $ayRaw, $matches)) {
+                                                            $ayFormatted = 'AY ' . $matches[1] . '/' . $matches[2];
+                                                        } else {
+                                                            $ayFormatted = 'AY ' . $ayRaw;
+                                                        }
+
+                                                        $semRaw = $cls['semester'] ?? '1';
+                                                        $semClean = preg_replace('/^Semester\s+/i', '', trim($semRaw));
+                                                        $semFormatted = 'Semester ' . $semClean;
+
+                                                        $dateRangeText = "";
+                                                        if (!empty($cls['startDate']) && !empty($cls['endDate'])) {
+                                                            $dateRangeText = "<br><span style='font-size:12px; color:#64748b;'>" . date('d M Y', strtotime($cls['startDate'])) . " to " . date('d M Y', strtotime($cls['endDate'])) . "</span>";
+                                                        }
+                                                        ?>
+                                                            <tr class="<?php echo strtolower($cls['status']) !== 'active' ? 'row-suspended' : ''; ?>">
+                                                                <?php if ($index === 0): ?>
+                                                                        <td rowspan="<?php echo $classCount; ?>" class="module-info-cell col-module">
+                                                                            <div><?php echo htmlspecialchars($mod['code'] . " - " . $mod['name']); ?></div>
+                                                                        </td>
+                                                                <?php endif; ?>
+                                                                <td class="col-code" data-label="Class Code">
+                                                                    <strong><?php echo htmlspecialchars($cls['classCode']); ?></strong>
+                                                                </td>
+                                                                <td class="col-period" data-label="Academic Period">
+                                                                    <span
+                                                                        style="font-weight: 500; color: #475569;"><?php echo htmlspecialchars($ayFormatted); ?></span><br>
+                                                                    <span
+                                                                        style="font-size: 12px; color: #64748b;"><?php echo htmlspecialchars($semFormatted); ?></span>
+                                                                    <?php echo $dateRangeText; ?>
+                                                                </td>
+                                                                <td class="col-schedule" data-label="Schedule & Venue">
+                                                                    <?php echo ucfirst($cls['dayOfWeek'] ?? '-'); ?>
+                                                                    (<?php echo htmlspecialchars(substr($cls['startTime'] ?? '', 0, 5)); ?> -
+                                                                    <?php echo htmlspecialchars(substr($cls['endTime'] ?? '', 0, 5)); ?>)<br>
+                                                                    <span style="color: #64748b; font-size: 13px;">Venue:
+                                                                        <?php echo htmlspecialchars($cls['room'] ?? 'TBA'); ?></span>
+                                                                </td>
+                                                                <td class="col-status" data-label="Status">
+                                                                    <?php if (strtolower($cls['status']) === 'active'): ?>
+                                                                            <span class="status-badge status-active">Active</span>
+                                                                    <?php else: ?>
+                                                                            <span class="status-badge status-suspended">Inactive</span>
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                                <td class="col-actions">
+                                                                    <div class="action-cell-btns">
+                                                                        <button type="button" class="action-btn-sm btn-view"
+                                                                            onclick='openViewModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>View</button>
+
+                                                                        <button type="button" class="action-btn-sm btn-edit"
+                                                                            onclick='openEditModal(<?php echo htmlspecialchars(json_encode($cls), ENT_QUOTES); ?>)'>Edit</button>
+
+                                                                        <?php if (strtolower($cls['status']) === 'active'): ?>
+                                                                                <button type="button" class="action-btn-sm btn-suspend"
+                                                                                    onclick="toggleStatus(<?php echo $cls['id']; ?>, 'suspended')">Suspend</button>
+                                                                        <?php else: ?>
+                                                                                <button type="button" class="action-btn-sm btn-activate"
+                                                                                    onclick="toggleStatus(<?php echo $cls['id']; ?>, 'active')">Activate</button>
+                                                                        <?php endif; ?>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                            <?php endforeach; ?>
+                        </div>
+                <?php endforeach; ?>
         <?php endif; ?>
     </main>
 
@@ -1397,6 +562,18 @@ foreach ($classList as $c) {
                             create a separate class entry for each day.</span>
                     </div>
 
+                    <div class="form-group">
+                        <label>Start Date (Optional)</label>
+                        <input type="date" name="startDate" id="modalStartDate">
+                        <span class="field-hint">Leave blank if it starts at the beginning of the semester.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>End Date (Optional)</label>
+                        <input type="date" name="endDate" id="modalEndDate">
+                        <span class="field-hint">Leave blank if it runs until the end of the semester.</span>
+                    </div>
+
                     <div class="form-group form-group-full">
                         <label>Venue</label>
                         <div style="display: flex; gap: 8px; width: 100%; box-sizing: border-box;">
@@ -1424,7 +601,7 @@ foreach ($classList as $c) {
 
                     <div class="form-group">
                         <label>Academic Year</label>
-                        <input type="text" name="academicYear" id="modalAcademicYear" placeholder="e.g. 2026/2027"
+                        <input type="text" name="academicYear" id="modalAcademicYear" placeholder="e.g. 2027/2028"
                             required>
                         <span class="field-hint">Follow your university's exact format (e.g. 2026/2027).</span>
                     </div>
@@ -1442,9 +619,9 @@ foreach ($classList as $c) {
                         <select name="staffId" id="modalStaffId">
                             <option value="">-- Unassigned --</option>
                             <?php foreach ($lecturersList as $lec): ?>
-                                <option value="<?php echo $lec['id']; ?>">
-                                    <?php echo htmlspecialchars($lec['fullName'] . ' (' . $lec['email'] . ')'); ?>
-                                </option>
+                                    <option value="<?php echo $lec['id']; ?>">
+                                        <?php echo htmlspecialchars($lec['fullName'] . ' (' . $lec['email'] . ')'); ?>
+                                    </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -1483,23 +660,23 @@ foreach ($classList as $c) {
 
                         <div id="tabCsvContent" style="display: none;">
                             <?php if (empty($studentFiles)): ?>
-                                <p style="font-size: 12px; color: #94a3b8; margin: 0;">Your university admin has not
-                                    uploaded any student file yet.</p>
+                                    <p style="font-size: 12px; color: #94a3b8; margin: 0;">Your university admin has not
+                                        uploaded any student file yet.</p>
                             <?php else: ?>
-                                <div class="enrol-row">
-                                    <select id="csvFileSelectId">
-                                        <option value="">-- Select file uploaded by admin --</option>
-                                        <?php foreach ($studentFiles as $sf): ?>
-                                            <option value="<?php echo htmlspecialchars($sf['fileName']); ?>">
-                                                <?php echo htmlspecialchars($sf['fileName'] . ' (' . date('d M Y', strtotime($sf['uploadedAt'])) . ')'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="button" class="btn-primary-small enrol-btn"
-                                        onclick="submitFileEnrol()">Enrol from File</button>
-                                </div>
-                                <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">The file's first column
-                                    should contain student email or student ID.</p>
+                                    <div class="enrol-row">
+                                        <select id="csvFileSelectId">
+                                            <option value="">-- Select file uploaded by admin --</option>
+                                            <?php foreach ($studentFiles as $sf): ?>
+                                                    <option value="<?php echo htmlspecialchars($sf['fileName']); ?>">
+                                                        <?php echo htmlspecialchars($sf['fileName'] . ' (' . date('d M Y', strtotime($sf['uploadedAt'])) . ')'); ?>
+                                                    </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="button" class="btn-primary-small enrol-btn"
+                                            onclick="submitFileEnrol()">Enrol from File</button>
+                                    </div>
+                                    <p style="font-size: 11px; color: #64748b; margin: 8px 0 0 0;">The file's first column
+                                        should contain student email or student ID.</p>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1753,21 +930,29 @@ foreach ($classList as $c) {
                 moduleSearch.focus();
                 return;
             }
-
+            
             const ay = document.getElementById('modalAcademicYear').value.trim();
             const sem = document.getElementById('modalSemester').value.trim();
+            
+            const datesToCheck = [];
+            const startD = document.getElementById('modalStartDate').value;
+            const endD = document.getElementById('modalEndDate').value;
+            if (startD) datesToCheck.push(startD);
+            if (endD) datesToCheck.push(endD);
+            
             const examDates = document.querySelectorAll('input[name="examDate[]"]');
+            examDates.forEach(inp => { if (inp.value) datesToCheck.push(inp.value); });
 
-            if (ay && examDates.length > 0) {
+            if (ay && datesToCheck.length > 0) {
                 let startYear = 0, endYear = 0;
                 const ayMatch = ay.match(/(\d{4})\s*\/\s*(\d{4})/);
                 if (ayMatch) {
                     startYear = parseInt(ayMatch[1]);
                     endYear = parseInt(ayMatch[2]);
-
+                    
                     let validMonths = [];
                     const monthRangeMatch = sem.match(/([A-Za-z]{3,})\s*(?:-|to|until)\s*([A-Za-z]{3,})/i);
-
+                    
                     if (monthRangeMatch) {
                         const sM = parseMonthStr(monthRangeMatch[1]);
                         const eM = parseMonthStr(monthRangeMatch[2]);
@@ -1780,22 +965,22 @@ foreach ($classList as $c) {
                             }
                         }
                     }
-
+                    
                     if (validMonths.length > 0) {
-                        for (const input of examDates) {
-                            if (!input.value) continue;
-                            const d = new Date(input.value);
+                        for (const dateVal of datesToCheck) {
+                            if (!dateVal) continue;
+                            const d = new Date(dateVal);
                             if (isNaN(d.getTime())) continue;
-
+                            
                             const y = d.getFullYear();
                             const m = d.getMonth() + 1;
-
+                            
                             if (!validMonths.includes(m)) {
                                 e.preventDefault();
-                                alert(`Exam date (${input.value}) is outside the allowed months for ${sem}.`);
+                                alert(`Date (${dateVal}) is outside the allowed months for ${sem}.`);
                                 return;
                             }
-
+                            
                             let allowedYears = [];
                             if (validMonths[0] >= 8) {
                                 allowedYears = [startYear, endYear];
@@ -1804,10 +989,10 @@ foreach ($classList as $c) {
                             } else {
                                 allowedYears = [startYear];
                             }
-
+                            
                             if (!allowedYears.includes(y)) {
                                 e.preventDefault();
-                                alert(`Exam date (${input.value}) must be in ${allowedYears.join(' or ')} for ${ay}.`);
+                                alert(`Date (${dateVal}) must be in ${allowedYears.join(' or ')} for ${ay}.`);
                                 return;
                             }
                         }
@@ -1868,7 +1053,11 @@ foreach ($classList as $c) {
 
             let semText = data.semester;
             semText = semText.replace(/^Semester\s+/i, '');
-            document.getElementById('viewSemester').textContent = 'AY ' + data.academicYear + ' • Semester ' + semText;
+            let dateRange = "";
+            if (data.startDate && data.endDate) {
+                dateRange = " (" + data.startDate + " to " + data.endDate + ")";
+            }
+            document.getElementById('viewSemester').textContent = 'AY ' + data.academicYear + ' • Semester ' + semText + dateRange;
 
             let day = data.dayOfWeek ? data.dayOfWeek.toUpperCase() : '-';
             let start = data.startTime ? data.startTime.substring(0, 5) : '';
@@ -2050,6 +1239,8 @@ foreach ($classList as $c) {
             document.getElementById('modalClassCode').value = '';
             document.getElementById('modalClassName').value = '';
             document.getElementById('modalRoom').value = '';
+            document.getElementById('modalStartDate').value = '';
+            document.getElementById('modalEndDate').value = '';
             document.getElementById('modalStartTime').value = '';
             document.getElementById('modalEndTime').value = '';
             document.getElementById('modalCapacity').value = '40';
@@ -2092,6 +1283,8 @@ foreach ($classList as $c) {
             document.getElementById('modalClassName').value = data.className || data.classCode;
             document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
             document.getElementById('modalRoom').value = data.room;
+            document.getElementById('modalStartDate').value = data.startDate || '';
+            document.getElementById('modalEndDate').value = data.endDate || '';
             document.getElementById('modalStartTime').value = data.startTime;
             document.getElementById('modalEndTime').value = data.endTime;
             document.getElementById('modalCapacity').value = data.capacity || 40;
@@ -2176,11 +1369,15 @@ foreach ($classList as $c) {
             }
         }
 
-        function suggestRoomsInline() {
+                function suggestRoomsInline() {
             const day = document.getElementById('modalDayOfWeek').value;
             const startTime = document.getElementById('modalStartTime').value;
             const endTime = document.getElementById('modalEndTime').value;
             const capacity = document.getElementById('modalCapacity').value;
+            const academicYear = document.getElementById('modalAcademicYear').value.trim();
+            const semester = document.getElementById('modalSemester').value.trim();
+            const startDate = document.getElementById('modalStartDate').value;
+            const endDate = document.getElementById('modalEndDate').value;
 
             if (!day || !startTime || !endTime || !capacity) {
                 alert('Please fill in Day, Start Time, End Time, and Capacity first.');
@@ -2203,6 +1400,10 @@ foreach ($classList as $c) {
             fd.append('startTime', startTime);
             fd.append('endTime', endTime);
             fd.append('capacity', capacity);
+            fd.append('academicYear', academicYear);
+            fd.append('semester', semester);
+            fd.append('startDate', startDate);
+            fd.append('endDate', endDate);
 
             fetch('../controller/roomSuggestionController.php', { method: 'POST', body: fd })
                 .then(r => r.json())
@@ -2252,6 +1453,8 @@ foreach ($classList as $c) {
             if (data.className) document.getElementById('modalClassName').value = data.className;
             if (data.dayOfWeek) document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
             if (data.room) document.getElementById('modalRoom').value = data.room;
+            if (data.startDate) document.getElementById('modalStartDate').value = data.startDate;
+            if (data.endDate) document.getElementById('modalEndDate').value = data.endDate;
             if (data.startTime) document.getElementById('modalStartTime').value = data.startTime;
             if (data.endTime) document.getElementById('modalEndTime').value = data.endTime;
             if (data.capacity) document.getElementById('modalCapacity').value = data.capacity;
@@ -2281,6 +1484,8 @@ foreach ($classList as $c) {
             if (data.className) document.getElementById('modalClassName').value = data.className;
             if (data.dayOfWeek) document.getElementById('modalDayOfWeek').value = data.dayOfWeek;
             if (data.room) document.getElementById('modalRoom').value = data.room;
+            if (data.startDate) document.getElementById('modalStartDate').value = data.startDate;
+            if (data.endDate) document.getElementById('modalEndDate').value = data.endDate;
             if (data.startTime) document.getElementById('modalStartTime').value = data.startTime;
             if (data.endTime) document.getElementById('modalEndTime').value = data.endTime;
             if (data.capacity) document.getElementById('modalCapacity').value = data.capacity;
@@ -2324,21 +1529,21 @@ foreach ($classList as $c) {
 
         document.addEventListener('DOMContentLoaded', function () {
             <?php if ($autoOpenClass): ?>
-                openEditModal(<?php echo json_encode($autoOpenClass, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
+                    openEditModal(<?php echo json_encode($autoOpenClass, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>);
             <?php elseif ($reopenMode === 'create' && $reopenData): ?>
-                openCreateModal();
-                fillFormFromData(REOPEN_DATA);
-                showModalError(REOPEN_ERROR);
-            <?php elseif ($reopenMode === 'edit' && $reopenData): ?>
-                var editId = <?php echo (int) ($reopenData['class_id'] ?? 0); ?>;
-                var editClass = CLASS_LIST.find(function (c) { return c.id == editId; });
-                if (editClass) {
-                    openEditModal(editClass);
+                    openCreateModal();
                     fillFormFromData(REOPEN_DATA);
                     showModalError(REOPEN_ERROR);
-                }
+            <?php elseif ($reopenMode === 'edit' && $reopenData): ?>
+                    var editId = <?php echo (int) ($reopenData['class_id'] ?? 0); ?>;
+                    var editClass = CLASS_LIST.find(function (c) { return c.id == editId; });
+                    if (editClass) {
+                        openEditModal(editClass);
+                        fillFormFromData(REOPEN_DATA);
+                        showModalError(REOPEN_ERROR);
+                    }
             <?php elseif ($prefill): ?>
-                applyPrefill(PREFILL);
+                    applyPrefill(PREFILL);
             <?php endif; ?>
         });
     </script>

@@ -39,8 +39,7 @@ $activeClassCount = is_array($activeClasses) ? count($activeClasses) : 0;
 
         <div class="welcome-message">
             <span>Welcome back,</span>
-            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') .
-                ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
+            <strong><?php echo htmlspecialchars(($_SESSION['user_name'] ?? 'User') . ' (' . ucwords(str_replace('_', ' ', strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'User'))) . ')'); ?></strong>
         </div>
 
         <!-- Profile + Dropdown -->
@@ -86,7 +85,7 @@ $activeClassCount = is_array($activeClasses) ? count($activeClasses) : 0;
 
                 <!-- AI Chatbot -->
                 <a href="aiChatbotPage.php" class="dashboard-card">
-                    <img src="../images/aichatbot.png" alt="AI Chatbot" class="card-icon">
+                    <img src="../images/aiChatbot.png" alt="AI Chatbot" class="card-icon">
                     <h2>AI Chatbot</h2>
                     <p>Ask a Question</p>
                 </a>
