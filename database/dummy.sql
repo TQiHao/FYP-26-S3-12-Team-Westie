@@ -102,20 +102,9 @@ ON DUPLICATE KEY UPDATE className=VALUES(className), status='active';
 
 -- ============================================
 -- 6. TIMETABLE ENTRIES
+-- (Cleared to prevent bypassing semester restrictions)
 -- ============================================
 DELETE FROM TimetableEntries WHERE userId IN (SELECT id FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com'));
-
-INSERT INTO TimetableEntries (userId, title, dayOfWeek, startTime, endTime, location)
-SELECT id, 'CS201 - Data Structures', 'mon', '09:00:00', '12:00:00', 'B201' 
-FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
-
-INSERT INTO TimetableEntries (userId, title, dayOfWeek, startTime, endTime, location)
-SELECT id, 'MATH255 - Maths Algorithm', 'tue', '10:00:00', '13:00:00', 'C101' 
-FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
-
-INSERT INTO TimetableEntries (userId, title, dayOfWeek, startTime, endTime, location)
-SELECT id, 'CSIT111 - System Security', 'thu', '10:00:00', '13:00:00', 'D3' 
-FROM Users WHERE email IN ('student@unibee.com', 'lecturer@unibee.com');
 
 -- ============================================
 -- 6b. STUDENT ENROLMENTS (for student Evan Lu)
