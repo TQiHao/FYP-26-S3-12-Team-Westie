@@ -1,6 +1,4 @@
 
-USE unibee;
-
 -- Universities Table
 CREATE TABLE Universities (
     id INT PRIMARY KEY AUTO_INCREMENT,
