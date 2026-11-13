@@ -2,10 +2,10 @@
 
 class Database
 {
-    private $host = 'localhost:3307';
-    private $dbname = 'unibee';
-    private $username = 'root';
-    private $password = '';
+    private $host = 'sql310.infinityfree.com';
+    private $dbname = 'if0_43226272_unibee';
+    private $username = 'if0_43226272';
+    private $password = 'unibee1234';
     private $pdo;
 
     public function connect()
@@ -29,8 +29,8 @@ class Database
         $host = $parts[0] === 'localhost' ? '127.0.0.1' : $parts[0];
 
         return [
-            'host'     => $host,
-            'port'     => $parts[1] ?? '3306',
+            'host' => $host,
+            'port' => $parts[1] ?? '3306',
             'database' => $this->dbname,
             'username' => $this->username,
             'password' => $this->password,
