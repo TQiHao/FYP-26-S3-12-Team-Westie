@@ -1,0 +1,25 @@
+name,code,credits,semester,description
+Introduction to Business,BA101,4,1,"Introduces key business concepts, business environments, and organisational functions."
+Principles of Accounting,BA102,4,1,"Covers basic financial accounting concepts, transaction recording, and financial statements."
+Business Communication,BA103,4,1,"Develops written, verbal, and presentation skills for professional business settings."
+Principles of Management,BA104,4,1,"Introduces management principles, leadership, planning, and organisational structure."
+Microeconomics,BA201,4,2,"Examines consumer behaviour, firms, market structures, and resource allocation."
+Marketing Fundamentals,BA202,4,2,"Introduces marketing principles, customer behaviour, segmentation, and the marketing mix."
+Business Statistics,BA203,4,2,"Covers descriptive statistics, probability, data analysis, and business decision-making."
+Business Information Systems,BA204,4,2,Explores how information systems support business operations and management.
+Corporate Finance,BA301,4,3,"Introduces financial management, investment decisions, and sources of business finance."
+Macroeconomics,BA302,4,3,"Examines national economies, inflation, unemployment, economic growth, and fiscal policy."
+Human Resource Management,BA303,4,3,"Covers recruitment, training, performance management, and employee relations."
+Operations Management,BA304,4,3,"Explores process design, quality management, capacity planning, and operations strategy."
+Business Law,BA401,4,4,"Introduces legal principles relevant to contracts, business organisations, and commercial activities."
+Consumer Behaviour,BA402,4,4,Examines psychological and social factors that influence consumer purchasing decisions.
+Management Accounting,BA403,4,4,"Covers costing, budgeting, and the use of accounting information for management decisions."
+Business Research Methods,BA404,4,4,"Introduces research design, data collection, analysis, and business report writing."
+Strategic Management,BA501,4,5,"Examines strategy formulation, competitive analysis, and implementation in organisations."
+Entrepreneurship,BA502,4,5,"Explores opportunity identification, business model development, and venture planning."
+International Business,BA503,4,5,"Studies global business environments, international trade, and cross-cultural management."
+Business Analytics,BA504,4,5,Introduces the use of business data and analytical methods to support decisions.
+Business Ethics and Sustainability,BA601,4,6,"Examines ethical decision-making, corporate responsibility, and sustainable business practices."
+Project Management,BA602,4,6,"Covers project planning, scheduling, risk management, and project execution."
+Digital Business,BA603,4,6,"Explores digital platforms, e-commerce, and technology-driven business models."
+Business Capstone Project,BA604,4,6,Integrates business knowledge through an applied project addressing a practical business issue.
