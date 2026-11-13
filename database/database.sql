@@ -233,6 +233,8 @@ CREATE TABLE Classes (
     capacity INT,
     academicYear VARCHAR(20),
     semester VARCHAR(20),
+    startDate DATE NULL, 
+    endDate DATE NULL,
     status VARCHAR(50) DEFAULT 'active',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -536,7 +538,7 @@ CREATE TABLE ChatHistory (
     sessionId INT NULL,
     question TEXT NOT NULL,
     answer TEXT,
-    source ENUM('faq', 'tfidf', 'phi3') DEFAULT 'faq',
+    source VARCHAR(50) DEFAULT 'faq',
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
