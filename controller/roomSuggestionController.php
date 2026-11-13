@@ -1,4 +1,5 @@
 <?php
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -63,7 +64,7 @@ function handleFindRooms($db, $universityId)
         return;
     }
 
-    $rooms = findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $capacity, 5);
+    $rooms = findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $capacity);
 
     if (empty($rooms)) {
         $occupied = findOccupiedRooms($db, $universityId, $day, $startTime, $endTime);
@@ -110,7 +111,7 @@ function handleFindExamVenues($db, $universityId)
         return;
     }
 
-    $venues = findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $capacity, $excludeClassId, 5);
+    $venues = findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $capacity, $excludeClassId);
 
     if (empty($venues)) {
         $occupied = findOccupiedExamVenues($db, $examDate, $startTime, $endTime, $excludeClassId);
@@ -153,29 +154,28 @@ function getUniversityIdByUser($db, $userId)
 }
 
 
-function findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $minCapacity, $limit = 5)
+function findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $minCapacity)
 {
     try {
         $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
                 FROM Facilities f
                 WHERE f.universityId = ?
-                  AND f.type IN ('lecture hall', 'classroom', 'lab')
+                  AND (LOWER(f.type) LIKE '%lecture%' OR LOWER(f.type) LIKE '%hall%' OR LOWER(f.type) LIKE '%classroom%' OR LOWER(f.type) LIKE '%lab%')
                   AND f.status = 'active'
                   AND f.roomCode IS NOT NULL
                   AND f.capacity >= ?
                   AND NOT EXISTS (
                       SELECT 1 FROM Classes c
-                      WHERE c.room = f.roomCode
+                      WHERE TRIM(c.room) = TRIM(f.roomCode)
                         AND c.dayOfWeek = ?
                         AND c.status = 'active'
                         AND c.startTime < ?
                         AND c.endTime > ?
                   )
-                ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
-                LIMIT " . (int) $limit;
+                ORDER BY f.capacity ASC, f.roomCode ASC";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([$universityId, $minCapacity, $day, $endTime, $startTime, $minCapacity]);
+        $stmt->execute([$universityId, $minCapacity, $day, $endTime, $startTime]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         error_log("Find Available Rooms Error: " . $e->getMessage());
@@ -189,9 +189,9 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
     try {
         $sql = "SELECT DISTINCT f.roomCode, f.name, c.className, c.classCode, c.startTime, c.endTime
                 FROM Facilities f
-                JOIN Classes c ON c.room = f.roomCode
+                JOIN Classes c ON TRIM(c.room) = TRIM(f.roomCode)
                 WHERE f.universityId = ?
-                  AND f.type IN ('lecture hall', 'classroom', 'lab')
+                  AND (LOWER(f.type) LIKE '%lecture%' OR LOWER(f.type) LIKE '%hall%' OR LOWER(f.type) LIKE '%classroom%' OR LOWER(f.type) LIKE '%lab%')
                   AND c.dayOfWeek = ?
                   AND c.status = 'active'
                   AND c.startTime < ?
@@ -207,26 +207,25 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
 }
 
 
-function findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $minCapacity, $excludeClassId, $limit = 5)
+function findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $minCapacity, $excludeClassId)
 {
     try {
         $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
                 FROM Facilities f
                 WHERE f.universityId = ?
-                  AND f.type IN ('lecture hall', 'classroom')
+                  AND (LOWER(f.type) LIKE '%lecture%' OR LOWER(f.type) LIKE '%hall%' OR LOWER(f.type) LIKE '%classroom%')
                   AND f.status = 'active'
                   AND f.roomCode IS NOT NULL
                   AND f.capacity >= ?
                   AND NOT EXISTS (
                       SELECT 1 FROM Exam e
-                      WHERE e.venue = f.roomCode
+                      WHERE TRIM(e.venue) = TRIM(f.roomCode)
                         AND e.examDate = ?
                         AND e.startTime < ?
                         AND e.endTime > ?
                         AND (? = 0 OR e.classId != ?)
                   )
-                ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
-                LIMIT " . (int) $limit;
+                ORDER BY f.capacity ASC, f.roomCode ASC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute([
@@ -236,8 +235,7 @@ function findAvailableExamVenues($db, $universityId, $examDate, $startTime, $end
             $endTime,
             $startTime,
             $excludeClassId,
-            $excludeClassId,
-            $minCapacity,
+            $excludeClassId
         ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
