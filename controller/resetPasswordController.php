@@ -20,7 +20,6 @@ class ResetPasswordController
         $this->db = $database->connect();
     }
 
-    // Step 1: Request password reset
     public function requestReset($email)
     {
         if (empty($email)) {
@@ -28,7 +27,6 @@ class ResetPasswordController
             return false;
         }
 
-        // Checks for System Admins first, then university users.
         $account = $this->findAccountByEmail($email);
 
         if (!$account) {
@@ -36,7 +34,6 @@ class ResetPasswordController
             return false;
         }
 
-        // A suspended System Admin must not be able to change the account's credentials
         if ($account['accountType'] === 'system_admin' && $account['status'] === 'suspended') {
             $_SESSION['reset_error'] = "Your account has been suspended. Please contact support.";
             return false;
@@ -68,20 +65,34 @@ class ResetPasswordController
             return false;
         }
 
-        $resetLink = "http://localhost/FYP-26-S3-12-Team-Westie/boundary/resetPasswordPage.php?token=" . $token;
+        $resetLink = $this->buildResetLink($token);
         error_log("Password reset link for $email: $resetLink");
 
-        // System Admin activity belongs in the System Logs
         if ($account['accountType'] === 'system_admin') {
-            SystemLog::record('authentication', 'info', 'Password Reset Requested',
-                "A password reset link was requested for the system admin account $email.");
+            SystemLog::record(
+                'authentication',
+                'info',
+                'Password Reset Requested',
+                "A password reset link was requested for the system admin account $email."
+            );
         }
 
         $_SESSION['reset_success'] = "A password reset link has been sent to your email.";
         return true;
     }
 
-    // Step 2: Validate reset token
+    private function buildResetLink($token)
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+        $script = $_SERVER['SCRIPT_NAME'] ?? '/boundary/resetPasswordPage.php';
+        $basePath = rtrim(dirname($script), '/');
+        $basePath = preg_replace('#/controller$#', '', $basePath);
+
+        return $scheme . '://' . $host . $basePath . '/boundary/resetPasswordPage.php?token=' . urlencode($token);
+    }
+
     public function validateToken($token)
     {
         if (empty($token)) {
@@ -89,7 +100,6 @@ class ResetPasswordController
             return false;
         }
 
-        // First look for a System Admin token
         $tokenData = false;
         try {
             $sql = "SELECT t.id AS tokenId, t.expiresAt, a.id AS userId, a.email, a.fullName
@@ -106,7 +116,6 @@ class ResetPasswordController
         if ($tokenData) {
             $tokenData['accountType'] = 'system_admin';
         } else {
-            // Otherwise it must be a university user's token
             $sql = "SELECT prt.*, u.id as userId, u.email, u.fullName 
                     FROM PasswordResetTokens prt
                     JOIN Users u ON prt.userId = u.id
@@ -134,7 +143,6 @@ class ResetPasswordController
         return $tokenData;
     }
 
-    // Step 3: Reset password
     public function resetPassword($token, $newPassword, $confirmPassword)
     {
         $tokenData = $this->validateToken($token);
@@ -160,14 +168,12 @@ class ResetPasswordController
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
         $isAdmin = $tokenData['accountType'] === 'system_admin';
 
-        // The new password and the "token used" flag change together or not at all
         $this->db->beginTransaction();
         try {
             if ($isAdmin) {
                 $stmt = $this->db->prepare("UPDATE SystemAdmins SET passwordHash = ? WHERE id = ?");
                 $stmt->execute([$passwordHash, $tokenData['userId']]);
 
-                // Use up every open reset link for this admin, not just this one
                 $stmt = $this->db->prepare("UPDATE SystemAdminResetTokens SET isUsed = TRUE WHERE adminId = ?");
                 $stmt->execute([$tokenData['userId']]);
             } else {
@@ -189,15 +195,18 @@ class ResetPasswordController
         }
 
         if ($isAdmin) {
-            SystemLog::record('authentication', 'info', 'Password Reset',
-                "The password of the system admin account {$tokenData['email']} was reset.");
+            SystemLog::record(
+                'authentication',
+                'info',
+                'Password Reset',
+                "The password of the system admin account {$tokenData['email']} was reset."
+            );
         }
 
         $_SESSION['reset_confirm_success'] = "Password successfully reset. You can now log in with your new password.";
         return true;
     }
 
-    // Find the account behind an email. System Admins are checked first, like the login page does.
     private function findAccountByEmail($email)
     {
         $stmt = $this->db->prepare("SELECT id, email, status FROM SystemAdmins WHERE email = ?");
@@ -225,7 +234,6 @@ class ResetPasswordController
     }
 }
 
-// Handle request reset form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['request_reset'])) {
     $email = trim($_POST['email']);
     $controller = new ResetPasswordController();
@@ -234,7 +242,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['request_reset'])) {
     exit();
 }
 
-// Handle reset password form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['reset_password'])) {
     $token = trim($_POST['token']);
     $newPassword = $_POST['new_password'];

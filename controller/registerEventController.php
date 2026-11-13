@@ -57,31 +57,32 @@ class RegisterEventController
         }
     }
 
-    /**
-     * Check if an event conflicts with user's mandatory class schedule
-     */
     public function hasScheduleConflict($userId, $startDatetime, $endDatetime)
     {
         try {
             $eventStart = new DateTime($startDatetime);
             $eventEnd = new DateTime($endDatetime);
 
-            // Use 3-letter format ('mon', 'tue', 'thu') to match TimetableEntries table
             $dayOfWeek = strtolower($eventStart->format('D'));
             $startTime = $eventStart->format('H:i:s');
             $endTime = $eventEnd->format('H:i:s');
 
-            // Query TimetableEntries table
-            $sql = "SELECT title, startTime, endTime 
-                    FROM TimetableEntries 
-                    WHERE userId = ? 
-                      AND LOWER(dayOfWeek) = ?
-                      AND startTime < ? 
-                      AND endTime > ?
+            $sql = "SELECT c.classCode, c.className, c.startTime, c.endTime, m.code AS moduleCode
+                    FROM Classes c
+                    INNER JOIN Modules m ON m.id = c.moduleId
+                    LEFT JOIN StudentEnrolments se
+                        ON se.classId = c.id
+                        AND se.studentId = ?
+                        AND se.status = 'enrolled'
+                    WHERE c.status = 'active'
+                      AND c.dayOfWeek = ?
+                      AND c.startTime < ?
+                      AND c.endTime > ?
+                      AND (c.staffId = ? OR se.id IS NOT NULL)
                     LIMIT 1";
 
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$userId, $dayOfWeek, $endTime, $startTime]);
+            $stmt->execute([$userId, $dayOfWeek, $endTime, $startTime, $userId]);
             $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return $conflict ?: false;
@@ -91,9 +92,6 @@ class RegisterEventController
         }
     }
 
-    /**
-     * Register any valid user (Student or Lecturer) for an event
-     */
     public function registerForEvent($eventId, $userId)
     {
         $event = $this->getEventById($eventId);
@@ -101,24 +99,20 @@ class RegisterEventController
             return null;
         }
 
-        // 1. Check schedule conflict with existing timetable classes
         $conflict = $this->hasScheduleConflict($userId, $event['startDatetime'], $event['endDatetime']);
         if ($conflict) {
             return "conflict";
         }
 
-        // 2. Check capacity
         $registrationCount = $this->getRegistrationCount($eventId);
         if ($event['capacity'] !== null && $registrationCount >= $event['capacity']) {
             return "full";
         }
 
-        // 3. Check existing registration
         if ($this->registrationEntity->checkExistingMembership($userId, $eventId)) {
             return "already";
         }
 
-        // 4. Perform registration
         if ($this->registrationEntity->registerForEvent($userId, $eventId)) {
             return true;
         }
@@ -127,7 +121,6 @@ class RegisterEventController
     }
 }
 
-// Handle Form Submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['register_event'])) {
     $eventId = $_POST['eventId'];
     $userId = $_SESSION['user_id'];

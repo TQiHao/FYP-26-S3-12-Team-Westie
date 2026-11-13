@@ -41,7 +41,7 @@ class StudentDashboardController
             $dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
             $todayIndex = array_search($today, $dayOrder);
 
-            $sql = "SELECT CONCAT(m.code, ' - ', m.name) AS title,
+            $sql = "SELECT c.classCode, m.name AS moduleName,
                            c.dayOfWeek, c.startTime, c.endTime, c.room AS location,
                            c.academicYear, c.semester
                     FROM StudentEnrolments se
@@ -60,7 +60,6 @@ class StudentDashboardController
                 return null;
             }
 
-            // Filter out classes that are not currently active in their semester
             $classes = array_filter($classes, function ($c) use ($todayDate) {
                 return ManageClassController::isSemesterActive($todayDate, $c['academicYear'], $c['semester']);
             });

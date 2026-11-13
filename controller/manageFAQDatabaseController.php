@@ -3,6 +3,8 @@
 require_once "../controller/authGuard.php";
 requireRole(['university_admin']);
 
+require_once "../database/database.php";
+
 class FAQ
 {
     private $id;
@@ -96,43 +98,20 @@ class ManageFAQDatabaseController
         'cocaine',
         'heroin',
         'meth',
-        'weed',
-        'marijuana',
         'terrorist',
         'terrorism',
         'bomb',
-        'shooting',
         'murder',
         'suicide',
-        'kill',
-        'killing',
         'nigger',
         'faggot',
-        'retard',
-        'idiot',
-        'stupid',
-        'hate',
-        'worst',
-        'terrible',
-        'awful',
-        'useless',
-        'garbage',
-        'trash',
-        'crap',
-        'sucks',
-        'scam',
-        'fraud',
-        'corrupt',
-        'racist',
-        'sexist'
+        'retard'
     ];
 
     public function __construct()
     {
-        $this->conn = new mysqli("127.0.0.1", "root", "", "unibee", 3307);
-        if ($this->conn->connect_error) {
-            die("Connection failed: " . $this->conn->connect_error);
-        }
+        $database = new Database();
+        $this->conn = $database->connect();
     }
 
     private function isBlocked($text)
@@ -151,29 +130,20 @@ class ManageFAQDatabaseController
         $stmt = $this->conn->prepare(
             "SELECT id FROM FAQs WHERE universityId = ? AND LOWER(TRIM(question)) = LOWER(TRIM(?)) LIMIT 1"
         );
-        if (!$stmt) {
-            return false;
-        }
-        $stmt->bind_param("is", $universityId, $question);
-        $stmt->execute();
-        $stmt->store_result();
-        $exists = $stmt->num_rows > 0;
-        $stmt->close();
-        return $exists;
+        $stmt->execute([$universityId, $question]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
     }
 
     public function getAllFAQs($universityId, $search = '')
     {
         $sql = "SELECT id, universityId, createdBy, question, answer, createdAt, updatedAt
-                   FROM FAQs
-                   WHERE universityId = ?";
-        $types = "i";
+                FROM FAQs
+                WHERE universityId = ?";
         $params = [$universityId];
 
         if (trim($search) !== '') {
             $sql .= " AND (question LIKE ? OR answer LIKE ?)";
             $like = '%' . $search . '%';
-            $types .= "ss";
             $params[] = $like;
             $params[] = $like;
         }
@@ -181,18 +151,12 @@ class ManageFAQDatabaseController
         $sql .= " ORDER BY createdAt DESC";
 
         $stmt = $this->conn->prepare($sql);
-        if (!$stmt) {
-            return [];
-        }
-        $stmt->bind_param($types, ...$params);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $stmt->execute($params);
 
         $faqs = [];
-        while ($row = $result->fetch_assoc()) {
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $faqs[] = new FAQ($row);
         }
-        $stmt->close();
         return $faqs;
     }
 
@@ -211,26 +175,15 @@ class ManageFAQDatabaseController
         $dupStmt = $this->conn->prepare(
             "SELECT id FROM FAQs WHERE universityId = ? AND LOWER(TRIM(question)) = LOWER(TRIM(?)) AND id <> ? LIMIT 1"
         );
-        if ($dupStmt) {
-            $dupStmt->bind_param("isi", $universityId, $question, $id);
-            $dupStmt->execute();
-            $dupStmt->store_result();
-            if ($dupStmt->num_rows > 0) {
-                $dupStmt->close();
-                return ['status' => 'error', 'message' => 'An FAQ with the same question already exists.'];
-            }
-            $dupStmt->close();
+        $dupStmt->execute([$universityId, $question, $id]);
+        if ($dupStmt->fetch(PDO::FETCH_ASSOC)) {
+            return ['status' => 'error', 'message' => 'An FAQ with the same question already exists.'];
         }
 
         $stmt = $this->conn->prepare(
             "UPDATE FAQs SET question = ?, answer = ? WHERE id = ? AND universityId = ?"
         );
-        if (!$stmt) {
-            return ['status' => 'error', 'message' => 'Database error.'];
-        }
-        $stmt->bind_param("ssii", $question, $answer, $id, $universityId);
-        $ok = $stmt->execute();
-        $stmt->close();
+        $ok = $stmt->execute([$question, $answer, $id, $universityId]);
 
         return $ok
             ? ['status' => 'ok']
@@ -240,13 +193,7 @@ class ManageFAQDatabaseController
     public function deleteFAQ($id, $universityId)
     {
         $stmt = $this->conn->prepare("DELETE FROM FAQs WHERE id = ? AND universityId = ?");
-        if (!$stmt) {
-            return false;
-        }
-        $stmt->bind_param("ii", $id, $universityId);
-        $ok = $stmt->execute();
-        $stmt->close();
-        return $ok;
+        return $stmt->execute([$id, $universityId]);
     }
 
     public function importFromCSV($universityId, $userId, $filePath)
@@ -332,15 +279,13 @@ class ManageFAQDatabaseController
                 continue;
             }
 
-            $stmt->bind_param("iiss", $universityId, $createdBy, $question, $answer);
-            if ($stmt->execute()) {
+            if ($stmt->execute([$universityId, $createdBy, $question, $answer])) {
                 $imported++;
             } else {
                 $skipped++;
                 $reasons[] = "Row $rowNum skipped: database error.";
             }
         }
-        $stmt->close();
         fclose($handle);
 
         return [
@@ -350,9 +295,5 @@ class ManageFAQDatabaseController
             'reasons' => $reasons,
         ];
     }
-
-    public function close()
-    {
-        $this->conn->close();
-    }
 }
+?>

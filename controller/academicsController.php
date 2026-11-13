@@ -31,6 +31,7 @@ class AcademicsController
             return null;
         }
 
+        // ADDED: c.startDate, c.endDate
         $sql = "SELECT
                     c.id                AS id,
                     se.studentId        AS userId,
@@ -41,6 +42,8 @@ class AcademicsController
                     c.room              AS location,
                     c.academicYear,
                     c.semester,
+                    c.startDate,
+                    c.endDate,
                     c.createdAt,
                     c.updatedAt
                 FROM StudentEnrolments se
@@ -76,9 +79,13 @@ class AcademicsController
                     $row['createdAt'],
                     $row['updatedAt']
                 );
-                // Attach academicYear and semester to the object
                 $entry->academicYear = $row['academicYear'];
                 $entry->semester = $row['semester'];
+
+                // Attach startDate and endDate dynamically
+                $entry->startDate = $row['startDate'];
+                $entry->endDate = $row['endDate'];
+
                 $entries[] = $entry;
             }
             return $entries;

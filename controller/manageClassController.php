@@ -4,9 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../controller/authGuard.php";
-requireRole(['course_coordinator']);
-
 require_once "../entity/class.php";
+require_once "../database/database.php";
 
 class ManageClassController
 {
@@ -14,12 +13,109 @@ class ManageClassController
 
     public function __construct()
     {
+        requireRole(['course_coordinator']);
         $this->classEntity = new ClassEntity();
     }
 
     public function getClasses($searchQuery = '', $facultyId = '', $departmentId = '', $statusFilter = '')
     {
         return $this->classEntity->getClasses($searchQuery, $facultyId, $departmentId, $statusFilter);
+    }
+
+    public function getModulesForCoordinator($universityId, $coordinatorEmail, $userId)
+    {
+        try {
+            $allModules = $this->classEntity->getAllModules($universityId);
+            if (empty($allModules)) {
+                return []; // No modules exist in the database at all
+            }
+
+            $db = (new Database())->connect();
+
+            // 1. If email is missing from session, fetch it from the Users table
+            if (empty($coordinatorEmail) && $userId > 0) {
+                try {
+                    $stmt = $db->prepare("SELECT email FROM Users WHERE id = ?");
+                    $stmt->execute([$userId]);
+                    $coordinatorEmail = $stmt->fetchColumn();
+                } catch (Exception $e) {
+                    // Ignore, fallback will trigger
+                }
+            }
+
+            if (empty($coordinatorEmail)) {
+                return $allModules; // Fallback: show all if we can't find email
+            }
+
+            // 2. Detect the Programme table name (Programmes vs Programs)
+            $tableName = 'Programmes';
+            try {
+                $db->query("SELECT 1 FROM Programmes LIMIT 1");
+            } catch (Exception $e) {
+                try {
+                    $db->query("SELECT 1 FROM Programs LIMIT 1");
+                    $tableName = 'Programs';
+                } catch (Exception $e2) {
+                    return $allModules; // Table not found, fallback to all
+                }
+            }
+
+            // 3. Detect the correct email column
+            $emailCol = 'courseCoordinatorEmail';
+            try {
+                $colsStmt = $db->query("SHOW COLUMNS FROM {$tableName}");
+                $cols = $colsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                if (!in_array('courseCoordinatorEmail', $cols)) {
+                    if (in_array('coordinatorEmail', $cols))
+                        $emailCol = 'coordinatorEmail';
+                    elseif (in_array('coordinator_email', $cols))
+                        $emailCol = 'coordinator_email';
+                    elseif (in_array('email', $cols))
+                        $emailCol = 'email';
+                    else
+                        $emailCol = $cols[1] ?? 'courseCoordinatorEmail';
+                }
+            } catch (Exception $e) {
+                // Ignore column check errors
+            }
+
+            // 4. Fetch the programmes assigned to this coordinator (Case-Insensitive)
+            $stmt = $db->prepare("SELECT code FROM {$tableName} WHERE LOWER({$emailCol}) = LOWER(?)");
+            $stmt->execute([trim($coordinatorEmail)]);
+            $assignedProgrammes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // FALLBACK: If no programmes are found for this email, show ALL modules
+            if (empty($assignedProgrammes)) {
+                return $allModules;
+            }
+
+            // 5. Filter modules
+            $filteredModules = [];
+            foreach ($allModules as $mod) {
+                foreach ($assignedProgrammes as $progCode) {
+                    $cleanModCode = strtolower(str_replace(' ', '', $mod['code']));
+                    $cleanProgCode = strtolower(str_replace(' ', '', $progCode));
+
+                    // Match if module starts with programme code (e.g., "bcy101" starts with "bcy")
+                    if (!empty($cleanProgCode) && strpos($cleanModCode, $cleanProgCode) === 0) {
+                        $filteredModules[] = $mod;
+                        break;
+                    }
+                }
+            }
+
+            // If filtering somehow resulted in 0 modules (e.g. codes don't match), fallback to all
+            if (empty($filteredModules)) {
+                return $allModules;
+            }
+
+            return $filteredModules;
+
+        } catch (Exception $e) {
+            error_log("getModulesForCoordinator error: " . $e->getMessage());
+            return $this->classEntity->getAllModules($universityId); // Final fallback
+        }
     }
 
     public function getEnrolledStudents($classId)
@@ -30,11 +126,6 @@ class ManageClassController
     public function getExamsByClassId($classId)
     {
         return $this->classEntity->getExamsByClassId($classId);
-    }
-
-    public function getAllModules($universityId)
-    {
-        return $this->classEntity->getAllModules($universityId);
     }
 
     public function getLecturers($universityId)
@@ -256,20 +347,30 @@ class ManageClassController
         return true;
     }
 
-    public function validateExamDatesAgainstSemester($data)
+    public function validateDatesAgainstSemester($data)
     {
         $ay = trim($data['academicYear'] ?? '');
         $sem = trim($data['semester'] ?? '');
-        $examDates = $data['examDate'] ?? [];
 
-        if (empty($ay) || empty($examDates))
+        $datesToCheck = [];
+        if (!empty($data['startDate']))
+            $datesToCheck[] = $data['startDate'];
+        if (!empty($data['endDate']))
+            $datesToCheck[] = $data['endDate'];
+
+        if (!empty($data['examDate']) && is_array($data['examDate'])) {
+            foreach ($data['examDate'] as $d) {
+                if (!empty($d))
+                    $datesToCheck[] = $d;
+            }
+        }
+
+        if (empty($ay) || empty($datesToCheck))
             return null;
 
-        foreach ($examDates as $dateStr) {
-            if (empty($dateStr))
-                continue;
+        foreach ($datesToCheck as $dateStr) {
             if (!self::isSemesterActive($dateStr, $ay, $sem)) {
-                return "Exam date ({$dateStr}) is outside the allowed period for {$sem}.";
+                return "Date ({$dateStr}) is outside the allowed period for {$sem} ({$ay}).";
             }
         }
         return null;
@@ -341,7 +442,7 @@ class ManageClassController
         if (!$info)
             return;
 
-        $title = "New module assignment: " . $info['moduleCode'] . " - " . $info['moduleName'];
+        $title = "New module assignment: " . $info['moduleCode'] . " - " . $info['classCode'];
         $message = "You have been assigned to teach " . $info['moduleCode'] . " - " . $info['moduleName']
             . " (Class " . $info['classCode'] . ") on " . ucfirst($info['dayOfWeek'])
             . " " . substr($info['startTime'], 0, 5) . "-" . substr($info['endTime'], 0, 5)
@@ -363,10 +464,7 @@ class ManageClassController
 
         try {
             $db = (new Database())->connect();
-
-            $stmt = $db->prepare(
-                "SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'"
-            );
+            $stmt = $db->prepare("SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'");
             $stmt->execute([$classId]);
             $students = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -416,9 +514,7 @@ class ManageClassController
             . implode("\n", $lines);
 
         try {
-            $stmt = $db->prepare(
-                "SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'"
-            );
+            $stmt = $db->prepare("SELECT studentId FROM StudentEnrolments WHERE classId = ? AND status = 'enrolled'");
             $stmt->execute([$classId]);
             $students = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -443,9 +539,7 @@ class ManageClassController
             if ((int) $check->fetchColumn() > 0) {
                 return;
             }
-            $ins = $db->prepare(
-                "INSERT INTO Notifications (userId, type, title, message) VALUES (?, ?, ?, ?)"
-            );
+            $ins = $db->prepare("INSERT INTO Notifications (userId, type, title, message) VALUES (?, ?, ?, ?)");
             $ins->execute([$userId, $type, $title, $message]);
         } catch (Exception $e) {
             error_log("insertNotification error: " . $e->getMessage());
@@ -454,25 +548,25 @@ class ManageClassController
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    requireRole(['course_coordinator']);
+
     $controller = new ManageClassController();
     $currentUserId = $_SESSION['user_id'] ?? 1;
     $universityId = $_SESSION['university_id'] ?? 0;
     $action = $_POST['action'];
 
     if ($action === 'create_class' || $action === 'update_class') {
-        $validationError = $controller->validateExamDatesAgainstSemester($_POST);
+        $validationError = $controller->validateDatesAgainstSemester($_POST);
         if ($validationError) {
             $_SESSION['flash_error'] = "Cannot " . ($action === 'create_class' ? 'create' : 'update') . ": " . $validationError;
             $_SESSION['reopen_class_form'] = ($action === 'create_class') ? 'create' : 'edit';
             $_SESSION['class_form_data'] = $_POST;
 
             $returnParams = [];
-            if (isset($_GET['search']) && $_GET['search'] !== '') {
+            if (isset($_GET['search']) && $_GET['search'] !== '')
                 $returnParams['search'] = $_GET['search'];
-            }
-            if (isset($_GET['status']) && in_array($_GET['status'], ['', 'active', 'suspended'], true)) {
+            if (isset($_GET['status']) && in_array($_GET['status'], ['', 'active', 'suspended'], true))
                 $returnParams['status'] = $_GET['status'];
-            }
             $redirectQs = $returnParams ? '?' . http_build_query($returnParams) : '';
 
             header("Location: ../boundary/manageClassPage.php" . $redirectQs);
@@ -496,9 +590,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } elseif ($status === "LECTURER_CLASH") {
             $c = $res['clash'] ?? null;
             if ($c) {
-                $_SESSION['flash_error'] = "Cannot create: The lecturer already teaches "
-                    . $c['classCode'] . " on " . ucfirst($c['dayOfWeek']) . " "
-                    . substr($c['startTime'], 0, 5) . "-" . substr($c['endTime'], 0, 5) . ".";
+                $_SESSION['flash_error'] = "Cannot create: The lecturer already teaches " . $c['classCode'] . " on " . ucfirst($c['dayOfWeek']) . " " . substr($c['startTime'], 0, 5) . "-" . substr($c['endTime'], 0, 5) . ".";
             } else {
                 $_SESSION['flash_error'] = "Cannot create: The lecturer has another class at that time.";
             }
@@ -525,9 +617,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } elseif ($status === "LECTURER_CLASH") {
             $c = $res['clash'] ?? null;
             if ($c) {
-                $_SESSION['flash_error'] = "Cannot update: The lecturer already teaches "
-                    . $c['classCode'] . " on " . ucfirst($c['dayOfWeek']) . " "
-                    . substr($c['startTime'], 0, 5) . "-" . substr($c['endTime'], 0, 5) . ".";
+                $_SESSION['flash_error'] = "Cannot update: The lecturer already teaches " . $c['classCode'] . " on " . ucfirst($c['dayOfWeek']) . " " . substr($c['startTime'], 0, 5) . "-" . substr($c['endTime'], 0, 5) . ".";
             } else {
                 $_SESSION['flash_error'] = "Cannot update: The lecturer has another class at that time.";
             }
@@ -574,8 +664,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $msg = "Enrolled {$result['enrolled']} student(s).";
             if (!empty($result['skippedClash'])) {
                 $names = array_map(function ($s) {
-                    return $s['identifier'];
-                }, $result['skippedClash']);
+                    return $s['identifier']; }, $result['skippedClash']);
                 $msg .= " Skipped " . count($names) . " due to clash: " . implode(', ', array_slice($names, 0, 5));
                 if (count($names) > 5)
                     $msg .= " (+" . (count($names) - 5) . " more)";
@@ -589,12 +678,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     $returnParams = [];
-    if (isset($_GET['search']) && $_GET['search'] !== '') {
+    if (isset($_GET['search']) && $_GET['search'] !== '')
         $returnParams['search'] = $_GET['search'];
-    }
-    if (isset($_GET['status']) && in_array($_GET['status'], ['', 'active', 'suspended'], true)) {
+    if (isset($_GET['status']) && in_array($_GET['status'], ['', 'active', 'suspended'], true))
         $returnParams['status'] = $_GET['status'];
-    }
     $redirectQs = $returnParams ? '?' . http_build_query($returnParams) : '';
 
     header("Location: ../boundary/manageClassPage.php" . $redirectQs);

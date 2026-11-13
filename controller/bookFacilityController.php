@@ -7,8 +7,6 @@ require_once "../controller/authGuard.php";
 requireRole(['student']);
 
 require_once "../database/database.php";
-require_once "../entity/bookableFacilities.php";
-require_once "../entity/facilityBooking.php";
 
 class BookFacilityController
 {
@@ -20,19 +18,9 @@ class BookFacilityController
         $this->db = $database->connect();
     }
 
-    /**
-     * Get bookable facilities by facility TYPE (e.g. 'study room', 'gym').
-     * Matching ignores case, spacing, hyphens and underscores, so
-     * 'study Room', 'studyroom', 'Study-Room' and 'study room' all match
-     * the ENUM value 'study room'.
-     * @param int $universityId
-     * @param string $type
-     * @return array|false
-     */
     public function getBookableFacilitiesByName($universityId, $type)
     {
         try {
-            // Normalise input: lowercase, strip everything except letters/digits
             $normalizedType = preg_replace('/[^a-z0-9]/', '', strtolower($type));
 
             $sql = "SELECT f.id AS facilityId, f.name, f.type, f.location, f.capacity,
@@ -49,19 +37,13 @@ class BookFacilityController
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$universityId, $normalizedType]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
         } catch (Exception $e) {
             error_log("Bookable facilities fetch error: " . $e->getMessage());
-            return false;  // Alt flow
+            return false;
         }
     }
 
-    /**
-     * Get booking form details for a facility
-     * @param int $facilityId
-     * @return array|false
-     */
-    public function getBookingForm($facilityId)
+    public function getBookingForm($bookableFacilityId)
     {
         try {
             $sql = "SELECT bf.id AS bookableFacilityId, f.name, f.type, f.location, f.capacity,
@@ -72,58 +54,39 @@ class BookFacilityController
                       AND bf.isBookable = TRUE
                       AND bf.status = 'available'";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$facilityId]);
+            $stmt->execute([$bookableFacilityId]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
-
         } catch (Exception $e) {
             error_log("Booking form fetch error: " . $e->getMessage());
             return false;
         }
     }
 
-    /**
-     * Check availability of a facility for a date/time
-     * @param int $facilityId
-     * @param string $bookingDate
-     * @param string $startTime
-     * @return bool
-     */
-    public function checkAvailability($facilityId, $bookingDate, $startTime)
+    public function checkAvailability($bookableFacilityId, $bookingDate, $startTime, $endTime)
     {
         try {
             $sql = "SELECT COUNT(*) FROM FacilityBookings
                     WHERE facilityId = ?
                       AND bookingDate = ?
-                      AND startTime = ?
+                      AND startTime < ?
+                      AND endTime > ?
                       AND status IN ('pending', 'confirmed')";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$facilityId, $bookingDate, $startTime]);
+            $stmt->execute([$bookableFacilityId, $bookingDate, $endTime, $startTime]);
             return $stmt->fetchColumn() == 0;
-
         } catch (Exception $e) {
             error_log("Availability check error: " . $e->getMessage());
             return false;
         }
     }
 
-    /**
-     * Confirm a booking
-     * @param int $facilityId
-     * @param int $studentId
-     * @param string $bookingDate
-     * @param string $startTime
-     * @param string $endTime
-     * @param string $purpose
-     * @return bool
-     */
-        public function confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
+    public function confirmBooking($bookableFacilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose)
     {
         try {
-            // $facilityId is now the BookableFacilities.id
             $facilityStmt = $this->db->prepare(
                 "SELECT slotDuration FROM BookableFacilities WHERE id = ? AND isBookable = TRUE LIMIT 1"
             );
-            $facilityStmt->execute([$facilityId]);
+            $facilityStmt->execute([$bookableFacilityId]);
             $facility = $facilityStmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$facility) {
@@ -146,19 +109,17 @@ class BookFacilityController
                 return 'invalid_time';
             }
 
-            if (!$this->checkAvailability($facilityId, $bookingDate, $startTime)) {
+            if (!$this->checkAvailability($bookableFacilityId, $bookingDate, $startTime, $endTime)) {
                 return null;
             }
 
-            // INSERT now uses the correct BookableFacilities.id
             $sql = "INSERT INTO FacilityBookings
                 (facilityId, userId, bookingDate, startTime, endTime, purpose, status, createdAt, updatedAt)
                 VALUES (?, ?, ?, ?, ?, ?, 'confirmed', NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose]);
+            $stmt->execute([$bookableFacilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose]);
 
             return true;
-
         } catch (Exception $e) {
             error_log("Booking confirm error: " . $e->getMessage());
             return false;
@@ -166,10 +127,9 @@ class BookFacilityController
     }
 }
 
-// ===== HANDLE FORM SUBMISSION =====
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
 
-    $facilityId = $_POST['facilityId'];
+    $bookableFacilityId = $_POST['facilityId'];
     $studentId = $_SESSION['user_id'];
     $bookingDate = $_POST['bookingDate'];
     $startTime = $_POST['startTime'];
@@ -177,7 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
     $purpose = trim($_POST['purpose']);
 
     $controller = new BookFacilityController();
-    $result = $controller->confirmBooking($facilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose);
+    $result = $controller->confirmBooking($bookableFacilityId, $studentId, $bookingDate, $startTime, $endTime, $purpose);
 
     if ($result === true) {
         $_SESSION['booking_success'] = "Facility booked successfully.";
@@ -189,7 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['confirm_booking'])) {
         $_SESSION['booking_error'] = "Unable to process booking. Please try again later.";
     }
 
-    header("Location: ../boundary/bookFacilityPage.php?type=" . urlencode($_POST['type'] ?? '') . "&facilityId=" . urlencode($facilityId));
+    header("Location: ../boundary/bookFacilityPage.php?type=" . urlencode($_POST['type'] ?? '') . "&facilityId=" . urlencode($bookableFacilityId));
     exit();
 }
 ?>

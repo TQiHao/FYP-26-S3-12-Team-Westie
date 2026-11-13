@@ -46,12 +46,90 @@ if ($action === 'find_rooms') {
 exit();
 
 
+function resolveDateWindow($academicYear, $semester, $startDate, $endDate)
+{
+    if (!empty($startDate) && !empty($endDate)) {
+        return [$startDate, $endDate];
+    }
+    if (empty($academicYear)) {
+        return [null, null];
+    }
+    if (!preg_match('/(\d{4})\s*\/\s*(\d{4})/', $academicYear, $m)) {
+        return [null, null];
+    }
+    $startYear = (int) $m[1];
+    $endYear = (int) $m[2];
+
+    if (!preg_match('/([a-zA-Z]{3,})\s*(?:-|to|until)\s*([a-zA-Z]{3,})/i', $semester, $m)) {
+        return [null, null];
+    }
+    $months = [
+        'jan' => 1,
+        'feb' => 2,
+        'mar' => 3,
+        'apr' => 4,
+        'may' => 5,
+        'jun' => 6,
+        'jul' => 7,
+        'aug' => 8,
+        'sep' => 9,
+        'oct' => 10,
+        'nov' => 11,
+        'dec' => 12
+    ];
+    $sM = $months[strtolower(substr($m[1], 0, 3))] ?? 0;
+    $eM = $months[strtolower(substr($m[2], 0, 3))] ?? 0;
+    if ($sM === 0 || $eM === 0) {
+        return [null, null];
+    }
+
+    $validMonths = [];
+    if ($sM <= $eM) {
+        for ($i = $sM; $i <= $eM; $i++)
+            $validMonths[] = $i;
+    } else {
+        for ($i = $sM; $i <= 12; $i++)
+            $validMonths[] = $i;
+        for ($i = 1; $i <= $eM; $i++)
+            $validMonths[] = $i;
+    }
+
+    $firstMonth = $validMonths[0];
+    $lastMonth = end($validMonths);
+
+    if ($firstMonth >= 8) {
+        $startY = $startYear;
+        $endY = ($lastMonth >= 8) ? $startYear : $endYear;
+    } else {
+        $startY = $endYear;
+        $endY = $endYear;
+    }
+
+    $startStr = sprintf('%04d-%02d-01', $startY, $firstMonth);
+    $lastDay = (int) date('t', strtotime(sprintf('%04d-%02d-01', $endY, $lastMonth)));
+    $endStr = sprintf('%04d-%02d-%02d', $endY, $lastMonth, $lastDay);
+
+    return [$startStr, $endStr];
+}
+
+function windowsOverlap($newStart, $newEnd, $candStart, $candEnd)
+{
+    if ($newStart === null || $candStart === null) {
+        return true;
+    }
+    return !($candEnd < $newStart || $candStart > $newEnd);
+}
+
 function handleFindRooms($db, $universityId)
 {
     $day = trim($_POST['day'] ?? '');
     $startTime = trim($_POST['startTime'] ?? '');
     $endTime = trim($_POST['endTime'] ?? '');
     $capacity = (int) ($_POST['capacity'] ?? 0);
+    $academicYear = trim($_POST['academicYear'] ?? '');
+    $semester = trim($_POST['semester'] ?? '');
+    $startDate = trim($_POST['startDate'] ?? '');
+    $endDate = trim($_POST['endDate'] ?? '');
 
     if ($day === '' || $startTime === '' || $endTime === '' || $capacity <= 0) {
         echo json_encode(['status' => 'error', 'message' => 'Please fill in day, start time, end time and capacity.']);
@@ -63,10 +141,32 @@ function handleFindRooms($db, $universityId)
         return;
     }
 
-    $rooms = findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $capacity, 5);
+    $rooms = findAvailableRooms(
+        $db,
+        $universityId,
+        $day,
+        $startTime,
+        $endTime,
+        $capacity,
+        $academicYear,
+        $semester,
+        $startDate,
+        $endDate,
+        5
+    );
 
     if (empty($rooms)) {
-        $occupied = findOccupiedRooms($db, $universityId, $day, $startTime, $endTime);
+        $occupied = findOccupiedRooms(
+            $db,
+            $universityId,
+            $day,
+            $startTime,
+            $endTime,
+            $academicYear,
+            $semester,
+            $startDate,
+            $endDate
+        );
         $message = "No free classroom/lecture hall/lab fits $capacity students on " . ucfirst($day) . " $startTime-$endTime.";
         if (!empty($occupied)) {
             $message .= " Occupied at that time: " . implode(', ', array_column($occupied, 'roomCode')) . ".";
@@ -153,30 +253,46 @@ function getUniversityIdByUser($db, $userId)
 }
 
 
-function findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $minCapacity, $limit = 5)
-{
+function findAvailableRooms(
+    $db,
+    $universityId,
+    $day,
+    $startTime,
+    $endTime,
+    $minCapacity,
+    $newAcademicYear = '',
+    $newSemester = '',
+    $newStartDate = '',
+    $newEndDate = '',
+    $limit = 5
+) {
     try {
-        $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
+        list($newStart, $newEnd) = resolveDateWindow($newAcademicYear, $newSemester, $newStartDate, $newEndDate);
+
+        // Fix: Use COALESCE to fall back to f.name if f.roomCode is NULL
+        $sql = "SELECT f.id, COALESCE(NULLIF(f.roomCode, ''), f.name) AS roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
                 FROM Facilities f
                 WHERE f.universityId = ?
                   AND f.type IN ('lecture hall', 'classroom', 'lab')
                   AND f.status = 'active'
-                  AND f.roomCode IS NOT NULL
                   AND f.capacity >= ?
-                  AND NOT EXISTS (
-                      SELECT 1 FROM Classes c
-                      WHERE c.room = f.roomCode
-                        AND c.dayOfWeek = ?
-                        AND c.status = 'active'
-                        AND c.startTime < ?
-                        AND c.endTime > ?
-                  )
-                ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
-                LIMIT " . (int) $limit;
+                ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute([$universityId, $minCapacity, $day, $endTime, $startTime, $minCapacity]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute([$universityId, $minCapacity, $minCapacity]);
+        $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $available = [];
+        foreach ($rooms as $room) {
+            if (roomHasClash($db, $room['roomCode'], $day, $startTime, $endTime, $newStart, $newEnd)) {
+                continue;
+            }
+            $available[] = $room;
+            if (count($available) >= $limit) {
+                break;
+            }
+        }
+        return $available;
     } catch (Exception $e) {
         error_log("Find Available Rooms Error: " . $e->getMessage());
         return [];
@@ -184,12 +300,54 @@ function findAvailableRooms($db, $universityId, $day, $startTime, $endTime, $min
 }
 
 
-function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
+function roomHasClash($db, $roomCode, $day, $startTime, $endTime, $newStart, $newEnd)
 {
     try {
-        $sql = "SELECT DISTINCT f.roomCode, f.name, c.className, c.classCode, c.startTime, c.endTime
+        $sql = "SELECT academicYear, semester, startDate, endDate
+                FROM Classes
+                WHERE room = ? AND dayOfWeek = ? AND status = 'active'
+                  AND startTime < ? AND endTime > ?";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$roomCode, $day, $endTime, $startTime]);
+        $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($candidates as $c) {
+            list($candStart, $candEnd) = resolveDateWindow(
+                $c['academicYear'],
+                $c['semester'],
+                $c['startDate'],
+                $c['endDate']
+            );
+            if (windowsOverlap($newStart, $newEnd, $candStart, $candEnd)) {
+                return true;
+            }
+        }
+        return false;
+    } catch (Exception $e) {
+        return true;
+    }
+}
+
+
+function findOccupiedRooms(
+    $db,
+    $universityId,
+    $day,
+    $startTime,
+    $endTime,
+    $newAcademicYear = '',
+    $newSemester = '',
+    $newStartDate = '',
+    $newEndDate = ''
+) {
+    try {
+        list($newStart, $newEnd) = resolveDateWindow($newAcademicYear, $newSemester, $newStartDate, $newEndDate);
+
+        // Fix: Match either roomCode or name
+        $sql = "SELECT DISTINCT COALESCE(NULLIF(f.roomCode, ''), f.name) AS roomCode, f.name, c.className, c.classCode, c.startTime, c.endTime,
+                       c.academicYear, c.semester, c.startDate, c.endDate
                 FROM Facilities f
-                JOIN Classes c ON c.room = f.roomCode
+                JOIN Classes c ON (c.room = f.roomCode OR c.room = f.name)
                 WHERE f.universityId = ?
                   AND f.type IN ('lecture hall', 'classroom', 'lab')
                   AND c.dayOfWeek = ?
@@ -200,7 +358,25 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
 
         $stmt = $db->prepare($sql);
         $stmt->execute([$universityId, $day, $endTime, $startTime]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $occupied = [];
+        $seen = [];
+        foreach ($candidates as $c) {
+            list($candStart, $candEnd) = resolveDateWindow(
+                $c['academicYear'],
+                $c['semester'],
+                $c['startDate'],
+                $c['endDate']
+            );
+            if (windowsOverlap($newStart, $newEnd, $candStart, $candEnd)) {
+                if (!isset($seen[$c['roomCode']])) {
+                    $occupied[] = $c;
+                    $seen[$c['roomCode']] = true;
+                }
+            }
+        }
+        return $occupied;
     } catch (Exception $e) {
         return [];
     }
@@ -210,16 +386,15 @@ function findOccupiedRooms($db, $universityId, $day, $startTime, $endTime)
 function findAvailableExamVenues($db, $universityId, $examDate, $startTime, $endTime, $minCapacity, $excludeClassId, $limit = 5)
 {
     try {
-        $sql = "SELECT f.id, f.roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
+        $sql = "SELECT f.id, COALESCE(NULLIF(f.roomCode, ''), f.name) AS roomCode, f.name, f.location, f.blockFloor, f.capacity, f.description
                 FROM Facilities f
                 WHERE f.universityId = ?
                   AND f.type IN ('lecture hall', 'classroom')
                   AND f.status = 'active'
-                  AND f.roomCode IS NOT NULL
                   AND f.capacity >= ?
                   AND NOT EXISTS (
                       SELECT 1 FROM Exam e
-                      WHERE e.venue = f.roomCode
+                      WHERE e.venue = COALESCE(NULLIF(f.roomCode, ''), f.name)
                         AND e.examDate = ?
                         AND e.startTime < ?
                         AND e.endTime > ?

@@ -36,7 +36,7 @@ class ManageUniversityController
         return Universities::suspend($universityId, $reason);
     }
 
-        public function reactivateUniversity($universityId)
+    public function reactivateUniversity($universityId)
     {
         if (!Universities::hasValidLicense($universityId)) {
             return "license_inactive";
@@ -59,8 +59,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
 
         if ($result === true) {
             $_SESSION['university_action_success'] = "University suspended successfully.";
-            SystemLog::record('university', 'warning', 'University Suspended',
-                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was suspended. Reason: ' . substr(trim($reason), 0, 200));
+            SystemLog::record(
+                'university',
+                'warning',
+                'University Suspended',
+                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was suspended. Reason: ' . substr(trim($reason), 0, 200)
+            );
         } elseif ($result === "missing_reason") {
             $_SESSION['university_action_error'] = "Please provide a reason for suspending this university.";
         } else {
@@ -73,8 +77,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && isset($_
 
         if ($result === true) {
             $_SESSION['university_action_success'] = "University reactivated successfully.";
-            SystemLog::record('university', 'info', 'University Reactivated',
-                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was reactivated.');
+            SystemLog::record(
+                'university',
+                'info',
+                'University Reactivated',
+                'University UNI-' . str_pad($universityId, 4, '0', STR_PAD_LEFT) . ' was reactivated.'
+            );
         } else {
             $_SESSION['university_action_error'] = "Unable to reactivate this university. Please try again.";
         }

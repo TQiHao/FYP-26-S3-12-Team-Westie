@@ -51,9 +51,10 @@ class TeachingController
             return null;
         }
 
-        $sql = "SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, academicYear, semester
+        // ADDED: c.startDate, c.endDate
+        $sql = "SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, academicYear, semester, startDate, endDate
             FROM (
-                SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, NULL AS academicYear, NULL AS semester
+                SELECT id, userId, title, dayOfWeek, startTime, endTime, location, createdAt, updatedAt, NULL AS academicYear, NULL AS semester, NULL AS startDate, NULL AS endDate
                 FROM TimetableEntries
                 WHERE userId = :staffId
 
@@ -69,7 +70,9 @@ class TeachingController
                        c.createdAt, 
                        c.updatedAt,
                        c.academicYear,
-                       c.semester
+                       c.semester,
+                       c.startDate,
+                       c.endDate
                 FROM Classes c
                 INNER JOIN Modules m ON c.moduleId = m.id
                 WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
@@ -102,11 +105,14 @@ class TeachingController
                     $row['createdAt'],
                     $row['updatedAt']
                 );
-                // Attach academicYear and semester to the object
                 if (!empty($row['academicYear'])) {
                     $entry->academicYear = $row['academicYear'];
                     $entry->semester = $row['semester'];
                 }
+                // Attach startDate and endDate dynamically
+                $entry->startDate = $row['startDate'];
+                $entry->endDate = $row['endDate'];
+
                 $entries[] = $entry;
             }
             return $entries;
@@ -124,7 +130,7 @@ class TeachingController
         }
 
         $sql = "SELECT c.id, c.className, c.room, c.dayOfWeek, c.startTime, c.endTime,
-                       c.academicYear, c.semester,
+                       c.academicYear, c.semester, c.startDate, c.endDate,
                        m.code AS moduleCode, m.name AS moduleName
                 FROM Classes c
                 INNER JOIN Modules m ON c.moduleId = m.id

@@ -34,7 +34,7 @@ class NotificationController
 
             foreach ($nearEvents as $ev) {
                 $title = "Upcoming Event Reminder: " . $ev['title'];
-                $msg = "Rmb to join the event '" . $ev['title'] . "' at " . $ev['location'] . " on " . date('M d, g:i A', strtotime($ev['startDatetime'])) . ".";
+                $msg = "Remember to join the event '" . $ev['title'] . "' at " . $ev['location'] . " on " . date('M d, g:i A', strtotime($ev['startDatetime'])) . ".";
 
                 $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ?";
                 $checkStmt = $this->db->prepare($checkSql);
@@ -48,7 +48,9 @@ class NotificationController
             }
 
             // 2. Class starting within next 5 hours
-            $classSql = "SELECT className, startTime, room, dayOfWeek FROM Classes WHERE staffId = ? AND status = 'active'";
+            $classSql = "SELECT className, startTime, room, dayOfWeek, academicYear, semester 
+                         FROM Classes 
+                         WHERE staffId = ? AND status = 'active'";
             $stmtClass = $this->db->prepare($classSql);
             $stmtClass->execute([$userId]);
             $allClasses = $stmtClass->fetchAll(PDO::FETCH_ASSOC);
@@ -70,8 +72,15 @@ class NotificationController
                 $classDt = new DateTime($classDateStr . ' ' . $cls['startTime']);
 
                 if ($classDt >= $now && $classDt <= $fiveHoursLater) {
+
+                    $termLabel = "";
+                    if (!empty($cls['academicYear']) && !empty($cls['semester'])) {
+                        $semClean = preg_replace('/^Semester\s+/i', '', trim($cls['semester']));
+                        $termLabel = " (AY" . $cls['academicYear'] . ", Semester " . $semClean . ")";
+                    }
+
                     $title = "Lecture Conduct Reminder: " . $cls['className'];
-                    $msg = "Reminder: Conduct lecture '" . $cls['className'] . "' at " . date('g:i A', strtotime($cls['startTime'])) . " in Room " . $cls['room'] . ".";
+                    $msg = "Reminder: Conduct lecture '" . $cls['className'] . "'" . $termLabel . " at " . date('g:i A', strtotime($cls['startTime'])) . " in Room " . $cls['room'] . ".";
 
                     $checkSql = "SELECT COUNT(*) FROM Notifications WHERE userId = ? AND title = ? AND DATE(createdAt) = CURDATE()";
                     $checkStmt = $this->db->prepare($checkSql);
@@ -133,4 +142,17 @@ class NotificationController
             return false;
         }
     }
+
+    public function markAllAsRead($userId)
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE Notifications SET isRead = 1 WHERE userId = ? AND isRead = 0");
+            $stmt->execute([$userId]);
+        } catch (Exception $e) {
+            error_log("Mark as read error: " . $e->getMessage());
+        }
+    }
+
+
 }
+?>

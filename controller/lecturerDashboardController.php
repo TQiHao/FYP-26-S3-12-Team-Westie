@@ -38,26 +38,14 @@ class LecturerDashboardController
     public function getNextClass($userId)
     {
         try {
-            $sql = "SELECT title, dayOfWeek, startTime, endTime, location, academicYear, semester 
-                    FROM (
-                        SELECT title, dayOfWeek, startTime, endTime, location, NULL AS academicYear, NULL AS semester 
-                        FROM TimetableEntries 
-                        WHERE userId = :staffId
-
-                        UNION ALL
-
-                        SELECT m.code AS title, 
-                               c.dayOfWeek, 
-                               c.startTime, 
-                               c.endTime, 
-                               c.room AS location,
-                               c.academicYear,
-                               c.semester
-                        FROM Classes c
-                        INNER JOIN Modules m ON c.moduleId = m.id
-                        WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
-                          AND c.status = 'active'
-                    ) AS CombinedTimetable";
+            // Strictly fetching from Classes to ensure classCode is present
+            $sql = "SELECT c.classCode, m.name AS moduleName, 
+                           c.dayOfWeek, c.startTime, c.endTime, c.room AS location, 
+                           c.academicYear, c.semester
+                    FROM Classes c
+                    INNER JOIN Modules m ON c.moduleId = m.id
+                    WHERE (c.staffId = :staffId OR c.courseCoordinatorId = :staffId)
+                      AND c.status = 'active'";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute(['staffId' => $userId]);
@@ -69,9 +57,7 @@ class LecturerDashboardController
 
             $todayDate = date('Y-m-d');
 
-            // Filter out classes that are not currently active in their semester
             $classes = array_filter($classes, function ($c) use ($todayDate) {
-                // If academicYear is null, it's a personal TimetableEntry, assume always active
                 if (empty($c['academicYear']) || empty($c['semester'])) {
                     return true;
                 }

@@ -27,27 +27,13 @@ class AIChatbotController
         $this->chatSession = new ChatSession($this->db);
     }
 
-    public function getChatHistory($userId)
-    {
-        return $this->chatHistory->getByUserId($userId);
-    }
-
-    public function getChatById($chatId, $userId)
-    {
-        return $this->chatHistory->getById($chatId, $userId);
-    }
-
     public function getChatSessions($userId)
     {
         try {
-            $sql = "SELECT 
-                        sessionId,
-                        MIN(id) AS firstChatId,
-                        MAX(createdAt) AS lastActivity
+            $sql = "SELECT sessionId, MIN(id) AS firstChatId, MAX(createdAt) AS lastActivity
                     FROM ChatHistory
                     WHERE userId = ? AND sessionId IS NOT NULL
-                    GROUP BY sessionId
-                    ORDER BY lastActivity DESC";
+                    GROUP BY sessionId ORDER BY lastActivity DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
             $sessions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -56,17 +42,19 @@ class AIChatbotController
                 $q = $this->db->prepare("SELECT question FROM ChatHistory WHERE id = ?");
                 $q->execute([$s['firstChatId']]);
                 $first = $q->fetch(PDO::FETCH_ASSOC);
-                $s['title'] = $first ? $first['question'] : 'Untitled';
+                $s['title'] = $first ? $this->decryptText($first['question']) : 'Untitled';
 
                 $q2 = $this->db->prepare("SELECT id, question FROM ChatHistory WHERE sessionId = ? ORDER BY id ASC");
                 $q2->execute([$s['sessionId']]);
-                $s['questions'] = $q2->fetchAll(PDO::FETCH_ASSOC);
-            }
-            unset($s);
+                $questions = $q2->fetchAll(PDO::FETCH_ASSOC);
 
+                foreach ($questions as &$question) {
+                    $question['question'] = $this->decryptText($question['question']);
+                }
+                $s['questions'] = $questions;
+            }
             return $sessions;
         } catch (Exception $e) {
-            error_log("getChatSessions error: " . $e->getMessage());
             return [];
         }
     }
@@ -74,22 +62,18 @@ class AIChatbotController
     public function getChatsBySession($sessionId, $userId)
     {
         try {
-            $stmt = $this->db->prepare(
-                "SELECT id, question, answer, source, createdAt 
-                 FROM ChatHistory 
-                 WHERE sessionId = ? AND userId = ? 
-                 ORDER BY id ASC"
-            );
+            $stmt = $this->db->prepare("SELECT id, question, answer, source, createdAt FROM ChatHistory WHERE sessionId = ? AND userId = ? ORDER BY id ASC");
             $stmt->execute([$sessionId, $userId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($rows as &$row) {
+                $row['question'] = $this->decryptText($row['question']);
+                $row['answer'] = $this->decryptText($row['answer']);
+            }
+            return $rows;
         } catch (Exception $e) {
             return [];
         }
-    }
-
-    public function clearChatHistory($userId)
-    {
-        return $this->chatHistory->clearByUserId($userId);
     }
 
     public function clearChatSession($sessionId, $userId)
@@ -97,13 +81,10 @@ class AIChatbotController
         try {
             $stmt = $this->db->prepare("DELETE FROM ChatHistory WHERE sessionId = ? AND userId = ?");
             $stmt->execute([$sessionId, $userId]);
-
             $stmt2 = $this->db->prepare("DELETE FROM AIChatbotSession WHERE id = ? AND userId = ?");
             $stmt2->execute([$sessionId, $userId]);
-
             return true;
         } catch (Exception $e) {
-            error_log("clearChatSession error: " . $e->getMessage());
             return false;
         }
     }
@@ -139,12 +120,12 @@ class AIChatbotController
         if ($this->isSchoolRelated($question)) {
             $phiAnswer = $this->askPhi3($question);
             if ($phiAnswer !== null) {
-                $this->saveChat($userId, $question, $phiAnswer, 'phi3');
-                return ['answer' => $phiAnswer, 'source' => 'phi3'];
+                $this->saveChat($userId, $question, $phiAnswer, 'Local AI');
+                return ['answer' => $phiAnswer, 'source' => 'Local AI'];
             }
 
             return [
-                'answer' => "I couldn't reach the AI service right now. Please try again later.",
+                'answer' => "I couldn't reach the local AI service right now. Please try again later.",
                 'source' => 'fallback'
             ];
         }
@@ -158,26 +139,22 @@ class AIChatbotController
     private function getOffTopicMessage()
     {
         $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
-
         switch ($role) {
             case 'course_coordinator':
             case 'course coordinator':
-                return "I can only help with class management questions. Try asking about creating or managing classes, exam schedules, classroom suggestions, or student enrolment.";
-
+                return "I can only help with class management questions.";
             case 'university_admin':
             case 'university admin':
-                return "I can only help with university administration questions. Try asking about university information, facilities, campus events, or user management.";
-
+                return "I can only help with university administration questions.";
             case 'student':
             default:
-                return "I can only help with school-related questions. Try asking about your courses, exams, timetable, facility booking, campus events, or notifications.";
+                return "I can only help with school-related questions.";
         }
     }
 
     private function isSchoolRelated($question)
     {
         $q = strtolower($question);
-
         $keywords = [
             'class',
             'course',
@@ -267,12 +244,30 @@ class AIChatbotController
             'scholarship',
             'payment',
             'receipt',
+            'hi',
+            'hello',
+            'hey',
+            'greetings',
+            'cyber',
+            'cybersecurity',
+            'security',
+            'computer',
+            'network',
+            'database',
+            'software',
+            'hardware',
+            'tech',
+            'technology',
+            'algorithm',
+            'programming',
+            'code',
+            'coding',
+            'it',
+            'information'
         ];
-
         foreach ($keywords as $kw) {
-            if (strpos($q, $kw) !== false) {
+            if (strpos($q, $kw) !== false)
                 return true;
-            }
         }
         return false;
     }
@@ -281,450 +276,218 @@ class AIChatbotController
     {
         $q = strtolower($question);
 
-        if (preg_match('/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|day)|howdy|sup)\b/i', $q)) {
+        if (preg_match('/^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening|day)|howdy|sup)\b/i', $q))
             return 'greeting';
-        }
-
-        if (preg_match('/\b(school|university|uni|college)\b.*\b(name|location|address|email|info|information|details)\b/i', $q) || preg_match('/\b(name|location|address|email|info|information|details)\b.*\b(of|for|about)\b.*\b(school|university|uni|college)\b/i', $q)) {
-            return 'university_info';
-        }
-
-        if (preg_match('/\b(create|add|new|manage|make)\b.*\bclass(es)?\b/', $q))
-            return 'create_class';
-
-        if (preg_match('/\b(book|reserve|booking|reservation)\b.*\b(room|study room|classroom|facility)\b/', $q))
-            return 'book_room';
-
-        if (preg_match('/\b(timetable|schedule|my class(es)?|today\'?s class(es)?)\b/', $q))
-            return 'timetable';
-
-        if (preg_match('/\b(enrolled|enrolment|my courses?|my modules?|registered courses?)\b/', $q))
-            return 'courses';
-
-        if (preg_match('/\b(exams?|exam schedule|test schedule|upcoming (exam|test)s?)\b/', $q))
-            return 'exams';
-
-        if (preg_match('/\b(notifications?|alerts?|reminders?|unread|inbox)\b/', $q))
-            return 'notifications';
-
-        if (preg_match('/\b(events?|campus events?|upcoming events?|activities)\b/', $q))
-            return 'events';
-
-        if (preg_match('/\b(feedback|complain(t)?|suggest(ion)?|review|rate)\b/', $q))
-            return 'feedback';
-
-        if (preg_match('/\b(profile|account|my info(rmation)?|settings)\b/', $q))
-            return 'profile';
-
-        if (preg_match('/\b(study\s*groups?|groups?|join group|create group)\b/', $q))
-            return 'study_groups';
-
-        if (preg_match('/\b(where|location|navigate|find|floor plan|directions|how (do i|to) get)\b/', $q))
-            return 'navigation';
-
-        if (preg_match('/\b(add|create|manage|update|edit|upload)\b.*\b(bookable facilities|facilities|facility)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
-            return 'admin_facilities';
-
-        if (preg_match('/\b(university information|university info|university details)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
-            return 'admin_university_info';
-
-        if (preg_match('/\b(manage|add|create|update|upload|view)\b.*\b(faq|faqs|faq database)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
-            return 'admin_faq';
-
-        if (preg_match('/\b(create|add|manage|edit|update)\b.*\b(events?|campus events?)\b/', $q) && in_array(strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? ''), ['university_admin', 'university admin']))
-            return 'admin_events';
-
         if (preg_match('/\b(logout|log out|sign out|exit)\b/', $q))
             return 'logout';
-
-        if (preg_match('/\b(guides?|tutorials?|manuals?|features?|capabilities|getting started|what can (you|i) do|show (me )?(the )?features?|list (the )?features?|how (do i|can i|to) use|how to use|use the (system|page|chatbot|website|app)|use this (system|page|chatbot|website|app))\b/i', $q))
-            return 'features_guide';
+        if (preg_match('/\b(feedback|rate|rating|comment|stars?)\b/', $q))
+            return 'feedback';
+        if (preg_match('/\b(renew|license)\b/', $q))
+            return 'renew_license';
+        if (preg_match('/\b(manage|upload)\b.*\b(university info|document|information)\b/', $q))
+            return 'manage_info';
+        if (preg_match('/\bmanage\b.*\bfacilit(y|ies)\b/', $q))
+            return 'manage_facilities';
+        if (preg_match('/\bmanage\b.*\bevents?\b/', $q))
+            return 'manage_events';
+        if (preg_match('/\bmanage\b.*\bfaq\b|\bfaq\b/', $q))
+            return 'manage_faq';
+        if (preg_match('/\b(how many|active|count)\b.*\bclass(es)?\b/', $q))
+            return 'active_classes_count';
+        if (preg_match('/\b(create|add|make|manage)\b.*\bclass(es)?\b/', $q))
+            return 'manage_classes';
+        if (preg_match('/\b(book|reserve)\b.*\b(study room|room|facilit(y|ies)|gym)\b/', $q))
+            return 'book_facility';
+        if (preg_match('/\b(my|upcoming)\b.*\bevents?\b/', $q))
+            return 'events';
+        if (preg_match('/\b(my|check)\b.*\bnotif\w*\b|\balerts?\b/', $q))
+            return 'notifications';
+        if (preg_match('/\b(my|manage)\b.*\b(profile|account)\b/', $q))
+            return 'profile';
+        if (preg_match('/\b(timetable|schedule)\b|\bmy class(es)?\b|\btoday\'?s class(es)?\b/', $q))
+            return 'timetable';
+        if (preg_match('/\b(enrolled|enrolment)\b|\bmy courses?\b|\bmy modules?\b/', $q))
+            return 'courses';
+        if (preg_match('/\b(exams?|exam schedule|test schedule)\b|\bupcoming (exam|test)s?\b/', $q))
+            return 'exams';
+        if (preg_match('/\bstudy\s*groups?\b|\bjoin group\b/', $q))
+            return 'study_groups';
+        if (preg_match('/\b(where|location|navigate|find|floor plan|directions)\b/', $q))
+            return 'navigation';
 
         return null;
     }
 
     private function handleIntent($intent, $userId, $universityId, $question)
     {
+        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
+
+        if (in_array($intent, ['book_facility', 'events', 'notifications', 'profile', 'courses', 'exams', 'study_groups', 'timetable']) && $role !== 'student') {
+            return ['answer' => "This feature is designed for students. Please use your dashboard for role-specific features.", 'source' => 'faq'];
+        }
+
+        if (in_array($intent, ['renew_license', 'manage_info', 'manage_events', 'manage_facilities', 'manage_faq']) && $role !== 'university_admin' && $role !== 'university admin') {
+            return ['answer' => "This feature is only available for University Admins.", 'source' => 'faq'];
+        }
+
+        if (in_array($intent, ['manage_classes', 'active_classes_count']) && $role !== 'course_coordinator' && $role !== 'course coordinator') {
+            return ['answer' => "This feature is only available for Course Coordinators.", 'source' => 'faq'];
+        }
+
         switch ($intent) {
             case 'greeting':
-                return $this->handleGreeting();
-            case 'university_info':
-                return $this->handleUniversityInfo();
-            case 'create_class':
-                return $this->handleCreateClass($userId, $question);
-            case 'book_room':
-                return $this->handleBookRoom($universityId);
+                $greeting = "Hello " . ($_SESSION['user_name'] ?? 'there') . "! I'm your UniBee AI assistant. ";
+                if ($role === 'student') {
+                    $greeting .= "How can I help you with your studies today?";
+                } elseif ($role === 'lecturer') {
+                    $greeting .= "How can I help you with your teaching tasks today?";
+                } elseif ($role === 'course_coordinator' || $role === 'course coordinator') {
+                    $greeting .= "How can I help you with your class management today?";
+                } elseif ($role === 'university_admin' || $role === 'university admin') {
+                    $greeting .= "How can I help you with university administration today?";
+                } else {
+                    $greeting .= "How can I help you today?";
+                }
+                return ['answer' => $greeting, 'source' => 'faq'];
+
+            case 'book_facility':
+                return ['answer' => "You can book a study room or gym slot from the Facility Booking page.", 'source' => 'faq', 'action' => ['label' => 'Go to Facility Booking', 'url' => 'viewFacilitiesPage.php']];
+            case 'events':
+                return ['answer' => "You can view your upcoming events here.", 'source' => 'faq', 'action' => ['label' => 'View Campus Events', 'url' => 'viewEventsPage.php']];
+            case 'notifications':
+                return ['answer' => "You can check your notifications here.", 'source' => 'faq', 'action' => ['label' => 'View Notifications', 'url' => 'notificationPage.php']];
+            case 'profile':
+                return ['answer' => "You can manage your profile here.", 'source' => 'faq', 'action' => ['label' => 'Manage Profile', 'url' => 'manageProfilePage.php']];
+
+            case 'feedback':
+                $rating = 0;
+                $msg = '';
+
+                if (preg_match('/(\d+)\s*(?:star|stars|rating)/i', $question, $m)) {
+                    $r = (int) $m[1];
+                    if ($r >= 1 && $r <= 5)
+                        $rating = $r;
+                }
+
+                if (preg_match('/(?:says\s+that|saying|message\s*(?:is|:)|comment\s*(?:is|:)|feedback\s*(?:is|:)|:\s*)(.+)/i', $question, $m)) {
+                    $msg = trim($m[1]);
+                } else {
+                    $clean = preg_replace('/(\d+)\s*(?:star|stars|rating)/i', '', $question);
+                    $clean = preg_replace('/i\s+want\s+to\s+submit\s+feedback/i', '', $clean);
+                    $clean = preg_replace('/(?:says\s+that|saying|message|comment|feedback)/i', '', $clean);
+                    $clean = preg_replace('/[,\s]+/', ' ', $clean);
+                    $msg = trim($clean, " ,.:;-");
+                }
+
+                $url = 'submitFeedbackPage.php';
+                $params = [];
+                if ($rating > 0)
+                    $params[] = "rating=$rating";
+                if (!empty($msg))
+                    $params[] = "message=" . urlencode($msg);
+                if (!empty($params))
+                    $url .= '?' . implode('&', $params);
+                return ['answer' => "I've opened the feedback form for you. Please review and submit it.", 'source' => 'faq', 'action' => ['label' => 'Go to Feedback Form', 'url' => $url]];
+
+            case 'renew_license':
+                return ['answer' => "You can renew the university license here.", 'source' => 'faq', 'action' => ['label' => 'Renew License', 'url' => 'renewLicensePage.php']];
+            case 'manage_info':
+                return ['answer' => "You can manage university information and upload documents here.", 'source' => 'faq', 'action' => ['label' => 'Manage University Info', 'url' => 'manageUniversityInfoPage.php']];
+            case 'manage_events':
+                return ['answer' => "You can manage university events here.", 'source' => 'faq', 'action' => ['label' => 'Manage Events', 'url' => 'manageEventsPage.php']];
+            case 'manage_facilities':
+                return ['answer' => "You can manage bookable facilities here.", 'source' => 'faq', 'action' => ['label' => 'Manage Bookable Facilities', 'url' => 'manageBookableFacilitiesPage.php']];
+            case 'manage_faq':
+                return ['answer' => "You can manage the FAQ database here.", 'source' => 'faq', 'action' => ['label' => 'Manage FAQ', 'url' => 'manageFaqPage.php']];
+            case 'manage_classes':
+                $prefill = [];
+
+                if (preg_match('/\b([A-Za-z]{2,4}\d{3}(?:-[A-Za-z]\d)?)\b/', $question, $m)) {
+                    $prefill['classCode'] = strtoupper($m[1]);
+                    $prefill['className'] = strtoupper($m[1]);
+                }
+
+                if (preg_match('/\b(mon|tue|wed|thu|fri|sat|sun)(day)?\b/i', $question, $m)) {
+                    $prefill['dayOfWeek'] = strtolower(substr($m[1], 0, 3));
+                }
+
+                if (preg_match('/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:to|-|until)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i', $question, $m)) {
+                    $startHour = (int) $m[1];
+                    $startMin = $m[2] ? $m[2] : '00';
+                    $startAmPm = strtolower($m[3]);
+
+                    $endHour = (int) $m[4];
+                    $endMin = $m[5] ? $m[5] : '00';
+                    $endAmPm = strtolower($m[6]);
+
+                    if ($startAmPm === 'pm' && $startHour < 12)
+                        $startHour += 12;
+                    if ($startAmPm === 'am' && $startHour == 12)
+                        $startHour = 0;
+                    if ($endAmPm === 'pm' && $endHour < 12)
+                        $endHour += 12;
+                    if ($endAmPm === 'am' && $endHour == 12)
+                        $endHour = 0;
+
+                    $prefill['startTime'] = sprintf('%02d:%s', $startHour, $startMin);
+                    $prefill['endTime'] = sprintf('%02d:%s', $endHour, $endMin);
+                }
+
+                if (preg_match('/\b(\d+)\s*student/i', $question, $m) || preg_match('/capacity\s*(?:of|is)?\s*(\d+)/i', $question, $m)) {
+                    $prefill['capacity'] = (int) $m[1];
+                }
+
+                if (preg_match('/\bsemester\s*(\d)\b/i', $question, $m)) {
+                    $prefill['semester'] = $m[1];
+                }
+
+                $url = 'manageClassPage.php';
+                $msg = "You can create and manage classes from the Manage Classes page.";
+                $actionLabel = 'Go to Manage Class'; // Default Button Label
+
+                if (!empty($prefill)) {
+                    $encodedData = urlencode(base64_encode(json_encode($prefill)));
+                    $url .= '?prefill=' . $encodedData;
+                    $msg = "I have extracted the details and pre-filled the class form for you. Click the button below to review, select a room, and save the class.";
+                    $actionLabel = 'Open Pre-filled Class Form'; // Only change to this if data was found
+                }
+
+                return ['answer' => $msg, 'source' => 'faq', 'action' => ['label' => $actionLabel, 'url' => $url]];
+
+            case 'active_classes_count':
+                try {
+                    $stmt = $this->db->prepare("SELECT COUNT(*) FROM Classes WHERE status = 'active'");
+                    $stmt->execute();
+                    $count = $stmt->fetchColumn();
+                    return ['answer' => "There are currently {$count} active classes in the system.", 'source' => 'db'];
+                } catch (Exception $e) {
+                    return ['answer' => "Unable to fetch active class count right now.", 'source' => 'fallback'];
+                }
             case 'timetable':
                 return $this->handleTimetable($userId);
             case 'courses':
-                return $this->handleCourses($userId);
+                return ['answer' => "You can view all your enrolled courses under Academics → Enrolled Courses.", 'source' => 'faq', 'action' => ['label' => 'View Enrolled Courses', 'url' => 'academicsPage.php?tab=courses']];
             case 'exams':
-                return $this->handleExams($userId);
-            case 'notifications':
-                return $this->handleNotifications($userId);
-            case 'events':
-                return $this->handleEvents($universityId);
-            case 'feedback':
-                return $this->handleFeedback();
-            case 'profile':
-                return $this->handleProfile();
+                return ['answer' => "Your upcoming exams are listed under Academics → Exam Schedule.", 'source' => 'faq', 'action' => ['label' => 'View Exam Schedule', 'url' => 'academicsPage.php?tab=exams']];
             case 'study_groups':
-                return $this->handleStudyGroups($userId);
+                return ['answer' => "You can create, join, or manage your study groups under Student Interaction.", 'source' => 'faq', 'action' => ['label' => 'Go to Study Groups', 'url' => 'academicsPage.php?tab=interaction']];
             case 'navigation':
-                return $this->handleNavigation();
+                return ['answer' => "You can view campus facilities and their locations on the Facility Location Tracking page.", 'source' => 'faq', 'action' => ['label' => 'Open Campus Navigation', 'url' => 'facilityLocationTrackingPage.php']];
             case 'logout':
-                return $this->handleLogout();
-            case 'features_guide':
-                return $this->handleFeaturesGuide();
-            case 'admin_facilities':
-                return $this->handleAdminPage('Manage bookable facilities.', 'Open Facility Management', 'manageBookableFacilitiesPage.php');
-            case 'admin_university_info':
-                return $this->handleAdminPage('Manage your university information.', 'Manage University Information', 'manageUniversityInformationPage.php');
-            case 'admin_faq':
-                return $this->handleAdminPage('Create or manage frequently asked questions.', 'Manage FAQ Database', 'manageFAQDatabasePage.php');
-            case 'admin_events':
-                return $this->handleAdminPage('Create or manage university campus events.', 'Manage Campus Events', 'manageUniversityEventPage.php');
+                return ['answer' => "Click the button below to log out of UniBee.", 'source' => 'faq', 'action' => ['label' => 'Log Out', 'url' => '../controller/logOutController.php']];
         }
         return null;
-    }
-
-    private function handleGreeting()
-    {
-        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
-        $name = $_SESSION['user_name'] ?? 'there';
-        $greeting = "Hello $name! ";
-
-        if ($role === 'course_coordinator' || $role === 'course coordinator') {
-            $greeting .= "I'm your UniBee AI assistant. How can I help you manage your classes today?";
-        } elseif ($role === 'lecturer') {
-            $greeting .= "I'm your UniBee AI assistant. How can I help you with your teaching schedule or campus events today?";
-        } elseif ($role === 'university_admin' || $role === 'university admin') {
-            $greeting .= "I'm your UniBee AI assistant. How can I help you manage the university today?";
-        } else {
-            $greeting .= "I'm your UniBee AI assistant. How can I help you with your studies, facilities, or campus events today?";
-        }
-
-        return [
-            'answer' => $greeting,
-            'source' => 'faq'
-        ];
-    }
-
-    private function handleUniversityInfo()
-    {
-        $universityId = $_SESSION['university_id'] ?? null;
-        if (!$universityId) {
-            return [
-                'answer' => "I couldn't find your university information.",
-                'source' => 'database'
-            ];
-        }
-
-        try {
-            $stmt = $this->db->prepare("SELECT name, institutionType, email, country, postalCode FROM Universities WHERE id = ?");
-            $stmt->execute([$universityId]);
-            $uni = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($uni) {
-                $answer = "Here is the information for " . $uni['name'] . ":\n\n";
-                $answer .= "• Name: " . $uni['name'] . "\n";
-                $answer .= "• Institution Type: " . ($uni['institutionType'] ?: 'N/A') . "\n";
-                $answer .= "• Country: " . ($uni['country'] ?: 'N/A') . "\n";
-                $answer .= "• Postal Code: " . ($uni['postalCode'] ?: 'N/A') . "\n";
-                $answer .= "• Contact Email: " . ($uni['email'] ?: 'N/A') . "\n";
-
-                return [
-                    'answer' => $answer,
-                    'source' => 'database'
-                ];
-            }
-        } catch (Exception $e) {
-            error_log("handleUniversityInfo error: " . $e->getMessage());
-        }
-
-        return [
-            'answer' => "I'm sorry, I couldn't retrieve your university details at the moment.",
-            'source' => 'database'
-        ];
-    }
-
-    private function handleFeaturesGuide()
-    {
-        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
-
-        if ($role === 'course_coordinator' || $role === 'course coordinator') {
-            return [
-                'answer' => "Here's what I can help you with as a Course Coordinator:\n\n" . "• Manage Classes — create, edit, suspend, or search classes\n" . "• Suggest a Classroom — find free rooms for a given day and time\n" . "• Enrol Students — add one by one or import from a CSV file\n" . "• Exam Scheduling — set exam date, time, and venue\n" . "• Assign Lecturers — assign or change a lecturer for a class\n\n" . "Try asking things like:\n" . "• \"Create a class CS201-L5 on Monday 9am to 12pm for 40 students\"\n" . "• \"Show my classes\"\n" . "• \"How do I enrol a student?\"",
-                'source' => 'faq'
-            ];
-        }
-
-        if ($role === 'lecturer') {
-            return [
-                'answer' => "Here's what I can help you with as a Lecturer:\n\n" . "• Personal Timetable — view your weekly teaching schedule\n" . "• Assigned Modules — see the modules you teach\n" . "• Campus Events — browse and register for events\n" . "• Notifications — check your latest updates\n\n" . "Try asking things like:\n" . "• \"Show my timetable\"\n" . "• \"What modules am I teaching?\"\n" . "• \"Show upcoming events\"",
-                'source' => 'faq'
-            ];
-        }
-
-        if ($role === 'university_admin' || $role === 'university admin') {
-            return [
-                'answer' => "Here's what I can help you with as a University Admin:\n\n" . "• Manage University Info — faculty, programmes, modules, facilities, users\n" . "• Campus Events — create and manage events\n" . "• FAQ Database — manage frequently asked questions\n" . "• Feedback — view feedback from users\n" . "• License — renew or check your university license\n\n" . "Try asking things like:\n" . "• \"How do I upload the student list?\"\n" . "• \"Show upcoming events\"\n" . "• \"How do I renew my license?\"",
-                'source' => 'faq'
-            ];
-        }
-
-        if ($role === 'system_admin' || $role === 'system admin') {
-            return [
-                'answer' => "Here's what I can help you with as a System Admin:\n\n" . "• Manage Universities — approve registrations, suspend, or reactivate\n" . "• Landing Page — update public content\n" . "• AI Model — deploy or roll back model versions\n" . "• System Operations — view logs, backup, or restore\n\n" . "Try asking things like:\n" . "• \"Show pending university registrations\"\n" . "• \"View system logs\"\n" . "• \"How do I backup the database?\"",
-                'source' => 'faq'
-            ];
-        }
-
-        return [
-            'answer' => "Here's what I can help you with as a Student:\n\n" . "• Personal Timetable — view your weekly schedule\n" . "• Enrolled Courses — see your registered modules\n" . "• Exam Schedule — check upcoming exams\n" . "• Facility Booking — book study rooms or gym slots\n" . "• Campus Events — browse and register for events\n" . "• Study Groups — create or join study groups\n" . "• Notifications — check your latest updates\n\n" . "Try asking things like:\n" . "• \"Show my timetable\"\n" . "• \"When is my next exam?\"\n" . "• \"Book a study room\"",
-            'source' => 'faq'
-        ];
-    }
-
-    private function handleCreateClass($userId, $question)
-    {
-        $role = strtolower($_SESSION['user_role'] ?? $_SESSION['role'] ?? '');
-
-        if ($role !== 'course_coordinator' && $role !== 'course coordinator') {
-            return [
-                'answer' => "Only course coordinators can create or manage classes. If you need help with your enrolled courses, try asking \"show my courses\".",
-                'source' => 'faq',
-                'action' => [
-                    'label' => 'View My Courses',
-                    'url' => 'academicsPage.php?tab=courses'
-                ]
-            ];
-        }
-
-        $prefillData = $this->parseClassPrefill($question);
-        $answer = "I've opened the Manage Classes page for you. ";
-
-        if (!empty($prefillData)) {
-            // Suggest a room based on the parsed data
-            $universityId = $_SESSION['university_id'] ?? 0;
-            $suggestedRoom = $this->suggestRoomForPrefill($prefillData, $universityId);
-
-            if ($suggestedRoom) {
-                $prefillData['room'] = $suggestedRoom;
-                $answer .= "I also suggested the most suitable venue: " . $suggestedRoom . ". ";
-            }
-
-            $encoded = base64_encode(json_encode($prefillData));
-            $url = 'manageClassPage.php?prefill=' . urlencode($encoded);
-
-            $answer .= "I pre-filled " . count($prefillData) . " field(s) I understood — please review and adjust before saving.";
-        } else {
-            $url = 'manageClassPage.php';
-            $answer .= "Click the button below to go there.";
-        }
-
-        return [
-            'answer' => $answer,
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Go to Manage Classes',
-                'url' => $url
-            ]
-        ];
-    }
-
-    private function suggestRoomForPrefill($data, $universityId)
-    {
-        if (empty($data['dayOfWeek']) || empty($data['startTime']) || empty($data['endTime']) || empty($data['capacity'])) {
-            return null;
-        }
-
-        try {
-            $sql = "SELECT f.roomCode 
-                    FROM Facilities f
-                    WHERE f.universityId = ?
-                      AND f.type IN ('lecture hall', 'classroom', 'lab')
-                      AND f.status = 'active'
-                      AND f.roomCode IS NOT NULL
-                      AND f.capacity >= ?
-                      AND NOT EXISTS (
-                          SELECT 1 FROM Classes c
-                          WHERE c.room = f.roomCode
-                            AND c.dayOfWeek = ?
-                            AND c.status = 'active'
-                            AND c.startTime < ?
-                            AND c.endTime > ?
-                      )
-                    ORDER BY ABS(f.capacity - ?) ASC, f.capacity ASC
-                    LIMIT 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                $universityId,
-                $data['capacity'],
-                $data['dayOfWeek'],
-                $data['endTime'],
-                $data['startTime'],
-                $data['capacity']
-            ]);
-            $room = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $room ? $room['roomCode'] : null;
-        } catch (Exception $e) {
-            error_log("suggestRoomForPrefill error: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    private function parseClassPrefill($question)
-    {
-        $q = $question;
-        $data = [];
-
-        if (preg_match('/module\s*(?:name)?\s*(?:is|:)\s*([^,]+?)(?=\s*,|\s+class|\s+it\'?s|\s+suggest|\s+start|\s+end|\s+capacity|\s+academic|\s+assigned|\s+venue|$)/i', $q, $m)) {
-            $data['moduleName'] = trim($m[1]);
-        }
-
-        // Smarter Class Code detection (catches "CS201-L5" even without "class code is")
-        if (preg_match('/(?:class\s*code\s*(?:is|:)|class)\s+([a-z]{2,4}[0-9]{2,4}(?:-[a-z0-9]+)?)/i', $q, $m)) {
-            $data['classCode'] = trim($m[1]);
-        } elseif (preg_match('/class\s*code\s*(?:is|:)\s*([^,]+?)(?=\s*,|\s+class|\s+it\'?s|\s+suggest|\s+start|\s+end|\s+capacity|\s+academic|\s+assigned|\s+venue|$)/i', $q, $m)) {
-            $data['classCode'] = trim($m[1]);
-        }
-
-        if (preg_match('/class\s*name\s*(?:is|:)\s*([^,]+?)(?=\s*,|\s+class|\s+it\'?s|\s+suggest|\s+start|\s+end|\s+capacity|\s+academic|\s+assigned|\s+venue|$)/i', $q, $m)) {
-            $data['className'] = trim($m[1]);
-        }
-
-        if (preg_match('/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/i', $q, $m)) {
-            $dayMap = [
-                'monday' => 'mon',
-                'mon' => 'mon',
-                'tuesday' => 'tue',
-                'tue' => 'tue',
-                'wednesday' => 'wed',
-                'wed' => 'wed',
-                'thursday' => 'thu',
-                'thu' => 'thu',
-                'friday' => 'fri',
-                'fri' => 'fri',
-                'saturday' => 'sat',
-                'sat' => 'sat',
-                'sunday' => 'sun',
-                'sun' => 'sun'
-            ];
-            $key = strtolower($m[1]);
-            if (isset($dayMap[$key])) {
-                $data['dayOfWeek'] = $dayMap[$key];
-            }
-        }
-
-        // Smarter Time detection (catches "9am to 12pm" without "start time is")
-        if (preg_match('/(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:to|-)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
-            $data['startTime'] = $this->normalizeTime($m[1]);
-            $data['endTime'] = $this->normalizeTime($m[2]);
-        } else {
-            if (preg_match('/start\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
-                $data['startTime'] = $this->normalizeTime($m[1]);
-            }
-            if (preg_match('/end\s*time\s*(?:is|:)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/i', $q, $m)) {
-                $data['endTime'] = $this->normalizeTime($m[1]);
-            }
-        }
-
-        // Smarter Capacity detection (catches "for 40 students")
-        if (preg_match('/(?:capacity\s*(?:is|:)?|for)\s*(\d+)\s*(?:students)?/i', $q, $m)) {
-            $data['capacity'] = (int) $m[1];
-        } elseif (preg_match('/capacity\s*(?:is|:)?\s*(\d+)/i', $q, $m)) {
-            $data['capacity'] = (int) $m[1];
-        }
-
-        if (preg_match('/academic\s*(?:year|yr)\s*(?:is|:)?\s*([\d]{4}\s*\/\s*[\d]{4})/i', $q, $m)) {
-            $data['academicYear'] = str_replace(' ', '', $m[1]);
-        }
-
-        if (preg_match('/assigned\s*lecturer\s*(?:is|:)?\s*([^,]+?)(?=\s*,|$)/i', $q, $m)) {
-            $data['lecturerName'] = trim($m[1]);
-        }
-
-        if (preg_match('/venue\s*(?:is|:)\s*([^,]+?)(?=\s*,|$)/i', $q, $m)) {
-            $data['room'] = trim($m[1]);
-        }
-
-        return $data;
-    }
-
-    private function normalizeTime($t)
-    {
-        $t = strtolower(trim($t));
-        $ampm = null;
-        if (strpos($t, 'am') !== false) {
-            $ampm = 'am';
-            $t = str_replace('am', '', $t);
-        }
-        if (strpos($t, 'pm') !== false) {
-            $ampm = 'pm';
-            $t = str_replace('pm', '', $t);
-        }
-        $t = trim($t);
-
-        if (preg_match('/^(\d{1,2})(?::(\d{2}))?$/', $t, $m)) {
-            $h = (int) $m[1];
-            $min = $m[2] ?? '00';
-            if ($ampm === 'pm' && $h < 12)
-                $h += 12;
-            if ($ampm === 'am' && $h === 12)
-                $h = 0;
-            if ($ampm === null && $h >= 1 && $h <= 7)
-                $h += 12;
-            return str_pad($h, 2, '0', STR_PAD_LEFT) . ':' . $min;
-        }
-        return $t;
-    }
-
-    private function handleBookRoom($universityId)
-    {
-        try {
-            $sql = "SELECT f.id, f.name, f.location, f.capacity
-                    FROM Facilities f
-                    INNER JOIN BookableFacilities bf ON f.id = bf.facilityId
-                    WHERE f.universityId = ?
-                      AND f.type = 'study room'
-                      AND f.status = 'active'
-                      AND bf.isBookable = TRUE
-                      AND bf.status = 'available'
-                    ORDER BY f.name ASC
-                    LIMIT 5";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId]);
-            $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $rooms = [];
-        }
-
-        $answer = "You can book a study room from the Facility Booking page.";
-        if (!empty($rooms)) {
-            $answer .= " Here are some rooms available now:";
-        } else {
-            $answer .= " No rooms are currently available, but you can still browse the booking page.";
-        }
-
-        return [
-            'answer' => $answer,
-            'source' => 'faq',
-            'rooms' => $rooms,
-            'action' => [
-                'label' => 'Book a Study Room',
-                'url' => 'bookFacilityPage.php'
-            ]
-        ];
     }
 
     private function handleTimetable($userId)
     {
         try {
-            $sql = "SELECT title, dayOfWeek, startTime, endTime, location
-                    FROM TimetableEntries
-                    WHERE userId = ?
-                    ORDER BY FIELD(dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'), startTime
+            $sql = "SELECT CONCAT(m.code, ' - ', m.name) AS title, c.dayOfWeek, c.startTime, c.endTime, c.room AS location
+                    FROM StudentEnrolments se
+                    INNER JOIN Classes c ON c.id = se.classId
+                    INNER JOIN Modules m ON m.id = c.moduleId
+                    WHERE se.studentId = ? AND se.status = 'enrolled' AND c.status = 'active'
+                    ORDER BY FIELD(c.dayOfWeek,'mon','tue','wed','thu','fri','sat','sun'), c.startTime ASC
                     LIMIT 6";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
@@ -734,205 +497,10 @@ class AIChatbotController
         }
 
         if (empty($entries)) {
-            return [
-                'answer' => "You don't have any classes in your personal timetable.",
-                'source' => 'faq',
-                'action' => [
-                    'label' => 'View Full Timetable',
-                    'url' => 'academicsPage.php?tab=timetable'
-                ]
-            ];
+            return ['answer' => "You don't have any classes in your personal timetable.", 'source' => 'faq', 'action' => ['label' => 'View Full Timetable', 'url' => 'academicsPage.php?tab=timetable']];
         }
 
-        return [
-            'answer' => "Here's a preview of your timetable:",
-            'source' => 'faq',
-            'timetable' => $entries,
-            'action' => [
-                'label' => 'View Full Timetable',
-                'url' => 'academicsPage.php?tab=timetable'
-            ]
-        ];
-    }
-
-    private function handleCourses($userId)
-    {
-        return [
-            'answer' => "You can view all your enrolled courses under Academics → Enrolled Courses.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'View Enrolled Courses',
-                'url' => 'academicsPage.php?tab=courses'
-            ]
-        ];
-    }
-
-    private function handleExams($userId)
-    {
-        return [
-            'answer' => "Your upcoming exams are listed under Academics → Exam Schedule.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'View Exam Schedule',
-                'url' => 'academicsPage.php?tab=exams'
-            ]
-        ];
-    }
-
-    private function handleNotifications($userId)
-    {
-        try {
-            $sql = "SELECT title, message, createdAt
-                    FROM Notifications
-                    WHERE userId = ? AND isRead = 0
-                    ORDER BY createdAt DESC
-                    LIMIT 5";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$userId]);
-            $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $notifications = [];
-        }
-
-        if (empty($notifications)) {
-            return [
-                'answer' => "You have no unread notifications.",
-                'source' => 'faq',
-                'action' => [
-                    'label' => 'View All Notifications',
-                    'url' => 'notificationPage.php'
-                ]
-            ];
-        }
-
-        return [
-            'answer' => "You have " . count($notifications) . " recent notifications:",
-            'source' => 'faq',
-            'notifications' => $notifications,
-            'action' => [
-                'label' => 'View All Notifications',
-                'url' => 'notificationPage.php'
-            ]
-        ];
-    }
-
-    private function handleEvents($universityId)
-    {
-        try {
-            $sql = "SELECT e.id, e.title, e.startDatetime,
-                           f.location AS location
-                    FROM Events e
-                    INNER JOIN BookableFacilities bf ON e.facilityId = bf.id
-                    INNER JOIN Facilities f ON bf.facilityId = f.id
-                    WHERE e.universityId = ?
-                      AND e.status = 'active'
-                      AND e.startDatetime >= NOW()
-                    ORDER BY e.startDatetime ASC
-                    LIMIT 3";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$universityId]);
-            $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("handleEvents error: " . $e->getMessage());
-            $events = [];
-        }
-
-        $answer = empty($events)
-            ? "There are no upcoming events right now."
-            : "Here are the next upcoming events:";
-
-        return [
-            'answer' => $answer,
-            'source' => 'faq',
-            'events' => $events,
-            'action' => [
-                'label' => 'View Campus Events',
-                'url' => 'viewEventsPage.php'
-            ]
-        ];
-    }
-
-    private function handleFeedback()
-    {
-        return [
-            'answer' => "You can submit your feedback from the Feedback page. It only takes a minute!",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Submit Feedback',
-                'url' => 'submitFeedbackPage.php'
-            ]
-        ];
-    }
-
-    private function handleProfile()
-    {
-        return [
-            'answer' => "You can view and update your profile from the Manage Profile page.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Manage Profile',
-                'url' => 'manageProfilePage.php'
-            ]
-        ];
-    }
-
-    private function handleStudyGroups($userId)
-    {
-        return [
-            'answer' => "You can create, join, or manage your study groups under Student Interaction.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Go to Study Groups',
-                'url' => 'academicsPage.php?tab=interaction'
-            ]
-        ];
-    }
-
-    private function handleNavigation()
-    {
-        return [
-            'answer' => "You can view campus facilities and their locations on the Facility Booking page.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Open Campus Navigation',
-                'url' => 'viewFacilitiesPage.php'
-            ]
-        ];
-    }
-
-    private function handleAdminPage($answer, $label, $url)
-    {
-        $role = strtolower(trim(
-            $_SESSION['user_role'] ?? $_SESSION['role'] ?? ''
-        ));
-
-        if (!in_array($role, ['university_admin', 'university admin'])) {
-            return [
-                'answer' => 'This page is only available to University Admins.',
-                'source' => 'faq'
-            ];
-        }
-
-        return [
-            'answer' => $answer,
-            'source' => 'faq',
-            'action' => [
-                'label' => $label,
-                'url' => $url
-            ]
-        ];
-    }
-
-    private function handleLogout()
-    {
-        return [
-            'answer' => "Click the button below to log out of UniBee.",
-            'source' => 'faq',
-            'action' => [
-                'label' => 'Log Out',
-                'url' => '../controller/logOutController.php'
-            ]
-        ];
+        return ['answer' => "Here's a preview of your timetable:", 'source' => 'faq', 'timetable' => $entries, 'action' => ['label' => 'View Full Timetable', 'url' => 'academicsPage.php?tab=timetable']];
     }
 
     private function saveChat($userId, $question, $answer, $source)
@@ -943,19 +511,52 @@ class AIChatbotController
             $_SESSION['chat_session_id'] = $sessionId;
         }
         $this->chatSession->incrementCount($sessionId);
-        return $this->chatHistory->save($userId, $sessionId, $question, $answer, $source);
+
+        $encryptedQuestion = $this->encryptText($question);
+        $encryptedAnswer = $this->encryptText($answer);
+
+        return $this->chatHistory->save($userId, $sessionId, $encryptedQuestion, $encryptedAnswer, $source);
+    }
+
+    private function encryptText($text)
+    {
+        if (empty($text))
+            return $text;
+        $key = "UniBeeSecretKey2026";
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $encrypted = openssl_encrypt($text, 'aes-256-cbc', $key, 0, $iv);
+        return base64_encode($encrypted . '::' . $iv);
+    }
+
+    private function decryptText($text)
+    {
+        if (empty($text))
+            return $text;
+        $key = "UniBeeSecretKey2026";
+        $parts = explode('::', base64_decode($text));
+        if (count($parts) < 2)
+            return $text;
+        return openssl_decrypt($parts[0], 'aes-256-cbc', $key, 0, $parts[1]);
     }
 
     private function askPhi3($question)
     {
-        $url = 'http://127.0.0.1:5000/ask';
+        $baseUrl = 'https://bbh0327l-unibee-ai.hf.space';
+        $apiName = '/respond';
+        $eventId = null;
 
-        $ch = curl_init($url);
+        $postUrl = $baseUrl . '/gradio_api/call' . $apiName;
+        $postData = json_encode(["data" => [$question]]);
+
+        $ch = curl_init($postUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['question' => $question]));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -963,40 +564,52 @@ class AIChatbotController
         curl_close($ch);
 
         if ($httpCode !== 200 || !$response) {
-            error_log("Phi-3 ERROR! Code: $httpCode | cURL: $curlError | Response: " . $response);
-            return null;
+            return "DEBUG (POST): HTTP Code: " . $httpCode . " | cURL Error: " . $curlError . " | Response: " . $response;
         }
 
-        $data = json_decode($response, true);
-        $raw = $data['answer'] ?? null;
+        $result = json_decode($response, true);
+        $eventId = $result['event_id'] ?? null;
 
-        if ($raw === null) {
-            return null;
+        if (!$eventId) {
+            return "DEBUG (POST): Could not find 'event_id' in response. Response was: " . $response;
         }
 
-        return $this->cleanAiResponse($raw);
-    }
+        $getUrl = $baseUrl . '/gradio_api/call' . $apiName . '/' . $eventId;
 
-    private function cleanAiResponse($text)
-    {
-        $text = strip_tags($text);
-        $text = preg_replace('/^```[\w]*\s*$/m', '', $text);
-        $text = preg_replace('/^#{1,6}\s+/m', '', $text);
-        $text = preg_replace('/\*\*(.+?)\*\*/', '$1', $text);
-        $text = preg_replace('/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/', '$1', $text);
-        $text = preg_replace('/__(.+?)__/', '$1', $text);
-        $text = preg_replace('/`([^`]+)`/', '$1', $text);
-        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+        $ch = curl_init($getUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Accept: text/event-stream"
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-        return trim($text);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || !$response) {
+            return "DEBUG (GET): HTTP Code: " . $httpCode . " | cURL Error: " . $curlError . " | Response: " . $response;
+        }
+
+        $lines = explode("\n", $response);
+        foreach ($lines as $line) {
+            if (strpos($line, 'data: ') === 0) {
+                $jsonStr = substr($line, 6);
+                $dataArr = json_decode($jsonStr, true);
+
+                if (is_array($dataArr) && isset($dataArr[0])) {
+                    return trim($dataArr[0]);
+                }
+            }
+        }
+
+        return "DEBUG (GET): Could not parse the response. Raw response: " . $response;
     }
 }
 
-if (
-    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
-) {
-
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
     header('Content-Type: application/json');
     $controller = new AIChatbotController();
     $userId = $_SESSION['user_id'] ?? null;
@@ -1010,52 +623,24 @@ if (
             $result = $controller->askQuestion($userId, $universityId, $question);
             echo json_encode(['ok' => true, 'data' => $result]);
             exit;
-
-        case 'history':
-            echo json_encode(['ok' => true, 'data' => $controller->getChatHistory($userId)]);
-            exit;
-
-        case 'view_chat':
-            $chatId = (int) ($_POST['chatId'] ?? 0);
-            echo json_encode(['ok' => true, 'data' => $controller->getChatById($chatId, $userId)]);
-            exit;
-
         case 'sessions':
             echo json_encode(['ok' => true, 'data' => $controller->getChatSessions($userId)]);
             exit;
-
         case 'view_session':
             $sid = (int) ($_POST['sessionId'] ?? 0);
             $_SESSION['chat_session_id'] = $sid;
             echo json_encode(['ok' => true, 'data' => $controller->getChatsBySession($sid, $userId)]);
             exit;
-
-        case 'clear':
-            $result = $controller->clearChatHistory($userId);
-            $_SESSION['chat_session_id'] = null;
-            echo json_encode(['ok' => $result]);
-            exit;
-
         case 'clear_session':
             $sid = (int) ($_POST['sessionId'] ?? 0);
-            if ($sid <= 0) {
-                echo json_encode(['ok' => false, 'error' => 'No session specified']);
-                exit;
-            }
             $result = $controller->clearChatSession($sid, $userId);
-            if (($_SESSION['chat_session_id'] ?? null) == $sid) {
+            if (($_SESSION['chat_session_id'] ?? null) == $sid)
                 $_SESSION['chat_session_id'] = null;
-            }
             echo json_encode(['ok' => $result]);
             exit;
-
         case 'new_session':
             $_SESSION['chat_session_id'] = null;
             echo json_encode(['ok' => true]);
-            exit;
-
-        default:
-            echo json_encode(['ok' => false, 'error' => 'Unknown action']);
             exit;
     }
 }
