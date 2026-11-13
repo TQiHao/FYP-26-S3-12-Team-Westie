@@ -11,6 +11,80 @@ class ClassEntity
         $this->db = $database->connect();
     }
 
+    private function resolveDateWindow($academicYear, $semester, $startDate, $endDate)
+    {
+        if (!empty($startDate) && !empty($endDate)) {
+            return [$startDate, $endDate];
+        }
+        if (empty($academicYear)) {
+            return [null, null];
+        }
+        if (!preg_match('/(\d{4})\s*\/\s*(\d{4})/', $academicYear, $m)) {
+            return [null, null];
+        }
+        $startYear = (int) $m[1];
+        $endYear = (int) $m[2];
+
+        if (!preg_match('/([a-zA-Z]{3,})\s*(?:-|to|until)\s*([a-zA-Z]{3,})/i', $semester, $m)) {
+            return [null, null];
+        }
+        $months = [
+            'jan' => 1,
+            'feb' => 2,
+            'mar' => 3,
+            'apr' => 4,
+            'may' => 5,
+            'jun' => 6,
+            'jul' => 7,
+            'aug' => 8,
+            'sep' => 9,
+            'oct' => 10,
+            'nov' => 11,
+            'dec' => 12
+        ];
+        $sM = $months[strtolower(substr($m[1], 0, 3))] ?? 0;
+        $eM = $months[strtolower(substr($m[2], 0, 3))] ?? 0;
+        if ($sM === 0 || $eM === 0) {
+            return [null, null];
+        }
+
+        $validMonths = [];
+        if ($sM <= $eM) {
+            for ($i = $sM; $i <= $eM; $i++)
+                $validMonths[] = $i;
+        } else {
+            for ($i = $sM; $i <= 12; $i++)
+                $validMonths[] = $i;
+            for ($i = 1; $i <= $eM; $i++)
+                $validMonths[] = $i;
+        }
+
+        $firstMonth = $validMonths[0];
+        $lastMonth = end($validMonths);
+
+        if ($firstMonth >= 8) {
+            $startY = $startYear;
+            $endY = ($lastMonth >= 8) ? $startYear : $endYear;
+        } else {
+            $startY = $endYear;
+            $endY = $endYear;
+        }
+
+        $startStr = sprintf('%04d-%02d-01', $startY, $firstMonth);
+        $lastDay = (int) date('t', strtotime(sprintf('%04d-%02d-01', $endY, $lastMonth)));
+        $endStr = sprintf('%04d-%02d-%02d', $endY, $lastMonth, $lastDay);
+
+        return [$startStr, $endStr];
+    }
+
+    private function windowsOverlap($newStart, $newEnd, $candStart, $candEnd)
+    {
+        if ($newStart === null || $candStart === null) {
+            return true;
+        }
+        return !($candEnd < $newStart || $candStart > $newEnd);
+    }
+
     public function getClasses($searchQuery = '', $facultyId = '', $departmentId = '', $statusFilter = '')
     {
         try {
@@ -171,8 +245,19 @@ class ClassEntity
         return ['fileName' => $fileName, 'fullPath' => $fullPath];
     }
 
-    public function checkClassConflict($moduleId, $classCode, $dayOfWeek, $room, $startTime, $endTime, $excludeClassId = null)
-    {
+    public function checkClassConflict(
+        $moduleId,
+        $classCode,
+        $dayOfWeek,
+        $room,
+        $startTime,
+        $endTime,
+        $academicYear = '',
+        $semester = '',
+        $startDate = '',
+        $endDate = '',
+        $excludeClassId = null
+    ) {
         $sqlDup = "SELECT id FROM Classes WHERE moduleId = ? AND classCode = ?";
         $paramsDup = [$moduleId, $classCode];
         if ($excludeClassId) {
@@ -185,7 +270,12 @@ class ClassEntity
             return "DUPLICATE_CODE";
         }
 
-        $sqlClash = "SELECT id FROM Classes WHERE room = ? AND dayOfWeek = ? AND status = 'active' AND (startTime < ? AND endTime > ?)";
+        list($newStart, $newEnd) = $this->resolveDateWindow($academicYear, $semester, $startDate, $endDate);
+
+        $sqlClash = "SELECT id, academicYear, semester, startDate, endDate
+                     FROM Classes
+                     WHERE room = ? AND dayOfWeek = ? AND status = 'active'
+                       AND startTime < ? AND endTime > ?";
         $paramsClash = [$room, $dayOfWeek, $endTime, $startTime];
         if ($excludeClassId) {
             $sqlClash .= " AND id != ?";
@@ -193,19 +283,42 @@ class ClassEntity
         }
         $stmtClash = $this->db->prepare($sqlClash);
         $stmtClash->execute($paramsClash);
-        if ($stmtClash->fetch()) {
-            return "SCHEDULE_CLASH";
+        $candidates = $stmtClash->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($candidates as $c) {
+            list($candStart, $candEnd) = $this->resolveDateWindow(
+                $c['academicYear'],
+                $c['semester'],
+                $c['startDate'],
+                $c['endDate']
+            );
+            if ($this->windowsOverlap($newStart, $newEnd, $candStart, $candEnd)) {
+                return "SCHEDULE_CLASH";
+            }
         }
 
         return "OK";
     }
 
-    public function findLecturerClash($staffId, $dayOfWeek, $startTime, $endTime, $excludeClassId = null)
-    {
-        if (empty($staffId))
+    public function findLecturerClash(
+        $staffId,
+        $dayOfWeek,
+        $startTime,
+        $endTime,
+        $academicYear = '',
+        $semester = '',
+        $startDate = '',
+        $endDate = '',
+        $excludeClassId = null
+    ) {
+        if (empty($staffId)) {
             return null;
+        }
         try {
-            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime, c.room
+            list($newStart, $newEnd) = $this->resolveDateWindow($academicYear, $semester, $startDate, $endDate);
+
+            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime, c.room,
+                           c.academicYear, c.semester, c.startDate, c.endDate
                     FROM Classes c
                     WHERE c.staffId = ?
                       AND c.dayOfWeek = ?
@@ -217,10 +330,22 @@ class ClassEntity
                 $sql .= " AND c.id != ?";
                 $params[] = $excludeClassId;
             }
-            $sql .= " LIMIT 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($candidates as $c) {
+                list($candStart, $candEnd) = $this->resolveDateWindow(
+                    $c['academicYear'],
+                    $c['semester'],
+                    $c['startDate'],
+                    $c['endDate']
+                );
+                if ($this->windowsOverlap($newStart, $newEnd, $candStart, $candEnd)) {
+                    return $c;
+                }
+            }
+            return null;
         } catch (Exception $e) {
             return null;
         }
@@ -229,13 +354,23 @@ class ClassEntity
     public function findStudentClash($studentId, $targetClassId)
     {
         try {
-            $stmt = $this->db->prepare("SELECT dayOfWeek, startTime, endTime FROM Classes WHERE id = ?");
+            $stmt = $this->db->prepare("SELECT dayOfWeek, startTime, endTime, academicYear, semester, startDate, endDate
+                                        FROM Classes WHERE id = ?");
             $stmt->execute([$targetClassId]);
             $target = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$target)
+            if (!$target) {
                 return null;
+            }
 
-            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime
+            list($newStart, $newEnd) = $this->resolveDateWindow(
+                $target['academicYear'],
+                $target['semester'],
+                $target['startDate'],
+                $target['endDate']
+            );
+
+            $sql = "SELECT c.id, c.classCode, c.className, c.dayOfWeek, c.startTime, c.endTime,
+                           c.academicYear, c.semester, c.startDate, c.endDate
                     FROM StudentEnrolments se
                     JOIN Classes c ON c.id = se.classId
                     WHERE se.studentId = ?
@@ -244,8 +379,7 @@ class ClassEntity
                       AND c.dayOfWeek = ?
                       AND c.startTime < ?
                       AND c.endTime > ?
-                      AND c.id != ?
-                    LIMIT 1";
+                      AND c.id != ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $studentId,
@@ -254,7 +388,20 @@ class ClassEntity
                 $target['startTime'],
                 $targetClassId,
             ]);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $candidates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($candidates as $c) {
+                list($candStart, $candEnd) = $this->resolveDateWindow(
+                    $c['academicYear'],
+                    $c['semester'],
+                    $c['startDate'],
+                    $c['endDate']
+                );
+                if ($this->windowsOverlap($newStart, $newEnd, $candStart, $candEnd)) {
+                    return $c;
+                }
+            }
+            return null;
         } catch (Exception $e) {
             return null;
         }
@@ -263,21 +410,45 @@ class ClassEntity
     public function createClass($data, $coordinatorId)
     {
         try {
-            $conflict = $this->checkClassConflict($data['moduleId'], $data['classCode'], $data['dayOfWeek'], $data['room'], $data['startTime'], $data['endTime']);
-            if ($conflict === "DUPLICATE_CODE")
+            $conflict = $this->checkClassConflict(
+                $data['moduleId'],
+                $data['classCode'],
+                $data['dayOfWeek'],
+                $data['room'],
+                $data['startTime'],
+                $data['endTime'],
+                $data['academicYear'] ?? '',
+                $data['semester'] ?? '',
+                $data['startDate'] ?? '',
+                $data['endDate'] ?? ''
+            );
+            if ($conflict === "DUPLICATE_CODE") {
                 return ['status' => 'DUPLICATE_CODE', 'newId' => 0];
-            if ($conflict === "SCHEDULE_CLASH")
+            }
+            if ($conflict === "SCHEDULE_CLASH") {
                 return ['status' => 'SCHEDULE_CLASH', 'newId' => 0];
+            }
 
             if (!empty($data['staffId'])) {
-                $lecClash = $this->findLecturerClash($data['staffId'], $data['dayOfWeek'], $data['startTime'], $data['endTime']);
+                $lecClash = $this->findLecturerClash(
+                    $data['staffId'],
+                    $data['dayOfWeek'],
+                    $data['startTime'],
+                    $data['endTime'],
+                    $data['academicYear'] ?? '',
+                    $data['semester'] ?? '',
+                    $data['startDate'] ?? '',
+                    $data['endDate'] ?? ''
+                );
                 if ($lecClash) {
                     return ['status' => 'LECTURER_CLASH', 'newId' => 0, 'clash' => $lecClash];
                 }
             }
 
-            $sql = "INSERT INTO Classes (moduleId, courseCoordinatorId, staffId, className, classCode, dayOfWeek, startTime, endTime, room, capacity, academicYear, semester, status, createdAt, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())";
+            $sql = "INSERT INTO Classes (moduleId, courseCoordinatorId, staffId, className, classCode,
+                        dayOfWeek, startTime, endTime, room, capacity, academicYear, semester,
+                        startDate, endDate, status, createdAt, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $data['moduleId'],
@@ -291,7 +462,9 @@ class ClassEntity
                 $data['room'],
                 $data['capacity'],
                 $data['academicYear'] ?? '2026/2027',
-                $data['semester'] ?? '1'
+                $data['semester'] ?? '1',
+                !empty($data['startDate']) ? $data['startDate'] : NULL,
+                !empty($data['endDate']) ? $data['endDate'] : NULL,
             ]);
 
             $newClassId = (int) $this->db->lastInsertId();
@@ -310,21 +483,47 @@ class ClassEntity
     public function updateClass($classId, $data, $currentUserId)
     {
         try {
-            $conflict = $this->checkClassConflict($data['moduleId'], $data['classCode'], $data['dayOfWeek'], $data['room'], $data['startTime'], $data['endTime'], $classId);
-            if ($conflict === "DUPLICATE_CODE")
+            $conflict = $this->checkClassConflict(
+                $data['moduleId'],
+                $data['classCode'],
+                $data['dayOfWeek'],
+                $data['room'],
+                $data['startTime'],
+                $data['endTime'],
+                $data['academicYear'] ?? '',
+                $data['semester'] ?? '',
+                $data['startDate'] ?? '',
+                $data['endDate'] ?? '',
+                $classId
+            );
+            if ($conflict === "DUPLICATE_CODE") {
                 return ['status' => 'DUPLICATE_CODE'];
-            if ($conflict === "SCHEDULE_CLASH")
+            }
+            if ($conflict === "SCHEDULE_CLASH") {
                 return ['status' => 'SCHEDULE_CLASH'];
+            }
 
             if (!empty($data['staffId'])) {
-                $lecClash = $this->findLecturerClash($data['staffId'], $data['dayOfWeek'], $data['startTime'], $data['endTime'], $classId);
+                $lecClash = $this->findLecturerClash(
+                    $data['staffId'],
+                    $data['dayOfWeek'],
+                    $data['startTime'],
+                    $data['endTime'],
+                    $data['academicYear'] ?? '',
+                    $data['semester'] ?? '',
+                    $data['startDate'] ?? '',
+                    $data['endDate'] ?? '',
+                    $classId
+                );
                 if ($lecClash) {
                     return ['status' => 'LECTURER_CLASH', 'clash' => $lecClash];
                 }
             }
 
             $sql = "UPDATE Classes 
-                    SET moduleId = ?, staffId = ?, className = ?, classCode = ?, dayOfWeek = ?, startTime = ?, endTime = ?, room = ?, capacity = ?, academicYear = ?, semester = ?, updatedAt = NOW()
+                    SET moduleId = ?, staffId = ?, className = ?, classCode = ?, dayOfWeek = ?,
+                        startTime = ?, endTime = ?, room = ?, capacity = ?, academicYear = ?,
+                        semester = ?, startDate = ?, endDate = ?, updatedAt = NOW()
                     WHERE id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -339,7 +538,9 @@ class ClassEntity
                 $data['capacity'],
                 $data['academicYear'] ?? '2026/2027',
                 $data['semester'] ?? '1',
-                $classId
+                !empty($data['startDate']) ? $data['startDate'] : NULL,
+                !empty($data['endDate']) ? $data['endDate'] : NULL,
+                $classId,
             ]);
 
             $this->saveExamPlans($classId, $data, $currentUserId);
