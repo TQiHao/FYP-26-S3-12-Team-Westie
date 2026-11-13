@@ -5,6 +5,8 @@ require_once "../entity/backupRecords.php";
 require_once "../entity/databaseDump.php";
 require_once "../entity/systemLog.php";
 
+date_default_timezone_set('Asia/Singapore');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

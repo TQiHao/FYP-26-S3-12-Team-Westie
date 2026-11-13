@@ -57,10 +57,11 @@ class BackupRecords
         $db = self::connect();
 
         $stmt = $db->prepare(
-            "INSERT INTO BackupRecords (fileName, filePath, backupType, status, createdBy)
-             VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO BackupRecords (fileName, filePath, backupType, status, createdBy, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?)"
         );
-        $stmt->execute([$fileName, 'backups/' . $fileName, $type, $status, self::existingAdminId($db, $adminId)]);
+        $stmt->execute([$fileName, 'backups/' . $fileName, $type, $status,
+                        self::existingAdminId($db, $adminId), date('Y-m-d H:i:s')]);
 
         return (int) $db->lastInsertId();
     }
@@ -70,8 +71,8 @@ class BackupRecords
     {
         $db = self::connect();
 
-        $stmt = $db->prepare("UPDATE BackupRecords SET restoredBy = ?, restoredAt = NOW() WHERE id = ?");
-        return $stmt->execute([self::existingAdminId($db, $adminId), $backupId]);
+        $stmt = $db->prepare("UPDATE BackupRecords SET restoredBy = ?, restoredAt = ? WHERE id = ?");
+        $stmt->execute([$adminId, date('Y-m-d H:i:s'), $backupId]);
     }
 
     /** The folder where the database server is installed (used to find mysqldump), or null */
