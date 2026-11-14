@@ -392,13 +392,13 @@ class AIChatbotController
             case 'renew_license':
                 return ['answer' => "You can renew the university license here.", 'source' => 'faq', 'action' => ['label' => 'Renew License', 'url' => 'renewLicensePage.php']];
             case 'manage_info':
-                return ['answer' => "You can manage university information and upload documents here.", 'source' => 'faq', 'action' => ['label' => 'Manage University Info', 'url' => 'manageUniversityInfoPage.php']];
+                return ['answer' => "You can manage university information and upload documents here.", 'source' => 'faq', 'action' => ['label' => 'Manage University Info', 'url' => 'manageUniversityInformationPage.php']];
             case 'manage_events':
-                return ['answer' => "You can manage university events here.", 'source' => 'faq', 'action' => ['label' => 'Manage Events', 'url' => 'manageEventsPage.php']];
+                return ['answer' => "You can manage university events here.", 'source' => 'faq', 'action' => ['label' => 'Manage Events', 'url' => 'manageUniversityEventPage.php']];
             case 'manage_facilities':
                 return ['answer' => "You can manage bookable facilities here.", 'source' => 'faq', 'action' => ['label' => 'Manage Bookable Facilities', 'url' => 'manageBookableFacilitiesPage.php']];
             case 'manage_faq':
-                return ['answer' => "You can manage the FAQ database here.", 'source' => 'faq', 'action' => ['label' => 'Manage FAQ', 'url' => 'manageFaqPage.php']];
+                return ['answer' => "You can manage the FAQ database here.", 'source' => 'faq', 'action' => ['label' => 'Manage FAQ', 'url' => 'manageFAQDatabasePage.php']];
             case 'manage_classes':
                 $prefill = [];
 
