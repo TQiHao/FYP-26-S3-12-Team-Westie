@@ -82,7 +82,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'stu
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
 
-                    <a href="../controller/logoutController.php">Log Out</a>
+                    <a href="../controller/logOutController.php">Log Out</a>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@ $backDashboard = ($userRole === 'lecturer') ? 'lecturerDashboardPage.php' : 'stu
             <div class="profile-header">
                 <a href="<?php echo $backDashboard; ?>" class="btn-back">&#8592; Back</a>
                 <h2 class="section-label">My Profile</h2>
-                <a href="UpdateProfilePage.php" class="btn-update">Update</a>
+                <a href="updateProfilePage.php" class="btn-update">Update</a>
             </div>
 
             <div class="profile-view">

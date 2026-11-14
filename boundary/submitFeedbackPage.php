@@ -200,7 +200,7 @@ $prefillMessage = isset($_GET['message']) ? htmlspecialchars(trim($_GET['message
                         <a href="teachingPage.php">Teaching</a>
                         <a href="viewEventsPage.php">University Campus Events</a>
                     <?php elseif ($user_role === 'course_coordinator' || $user_role === 'course coordinator'): ?>
-                        <a href="manageClassesPage.php">Manage Classes</a>
+                        <a href="manageClassPage.php">Manage Classes</a>
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                     <?php elseif ($user_role === 'university_admin' || $user_role === 'university admin'): ?>
                         <a href="renewLicensePage.php">Renew License</a>
@@ -209,7 +209,7 @@ $prefillMessage = isset($_GET['message']) ? htmlspecialchars(trim($_GET['message
                         <a href="manageProfilePage.php">Manage Profile</a>
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                         <a href="academicsPage.php">Academics</a>
-                        <a href="facilitiesBookingPage.php">Facility Booking</a>
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
                     <a href="submitFeedbackPage.php">Submit Feedback</a>

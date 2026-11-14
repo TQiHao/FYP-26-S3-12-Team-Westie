@@ -25,7 +25,7 @@ $eventId =
 if ($universityId === null || $eventId <= 0) {
 
     header(
-        "Location: ViewUniversityEventPage.php"
+        "Location: viewUniversityEventPage.php"
     );
 
     exit();
@@ -46,7 +46,7 @@ $event =
 if ($event === false) {
 
     header(
-        "Location: ViewUniversityEventPage.php"
+        "Location: viewUniversityEventPage.php"
     );
 
     exit();
@@ -634,7 +634,7 @@ $status =
                     Dashboard
                 </a>
 
-                <a href="manageUniversityEventsPage.php">
+                <a href="manageUniversityEventPage.php">
                     Manage University Events
                 </a>
 

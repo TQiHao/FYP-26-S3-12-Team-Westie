@@ -82,7 +82,7 @@ if (isset($_GET['facilityId'])) {
     <nav class="facilities-nav">
         <a href="viewFacilitiesPage.php" class="facilities-tab">View Available Facilities</a>
         <a href="facilityLocationTrackingPage.php" class="facilities-tab">Facility Location Tracking</a>
-        <a href="bookFacilityPagePage.php" class="facilities-tab">Book Facilities</a>
+        <a href="bookFacilityPage.php" class="facilities-tab">Book Facilities</a>
         <a href="viewMyBookingPage.php" class="facilities-tab">View My Booking</a>
     </nav>
 

@@ -127,7 +127,7 @@ $notifications = $controller->getNotification($userId);
                     <?php else: ?>
                         <a href="aiChatbotPage.php">AI Chatbot</a>
                         <a href="academicsPage.php">Academics</a>
-                        <a href="facilitiesBookingPage.php">Facility Booking</a>
+                        <a href="viewFacilitiesPage.php">Facility Booking</a>
                         <a href="viewEventsPage.php">University Campus Event</a>
                     <?php endif; ?>
                     <a href="../controller/logOutController.php">Log Out</a>

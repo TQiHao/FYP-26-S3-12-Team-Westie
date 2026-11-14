@@ -36,11 +36,11 @@ function getDetailPage($type) {
     
     if (isset($map[$typeKey])) {
         // Points to BookFacilitiesPage.php with the category pre-selected
-        return 'BookFacilityPage.php?type=' . $map[$typeKey];
+        return 'bookFacilityPage.php?type=' . $map[$typeKey];
     }
     
     // For Lecture Halls / Labs (non-bookable by students), fall back to the view page
-    return 'ViewFacilitiesPage.php'; 
+    return 'viewFacilitiesPage.php'; 
 }
 ?>
 
