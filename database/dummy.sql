@@ -1,6 +1,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE if0_43226272_unibee;
+USE if0_43469206_unibee;
 
 -- ============================================
 -- 1. UNIVERSITIES & FACULTIES
@@ -179,8 +179,8 @@ ON DUPLICATE KEY UPDATE fullName = VALUES(fullName);
 -- 9. SYSTEM ADMIN
 -- ============================================
 INSERT INTO SystemAdmins (email, passwordHash, fullName, status)
-VALUES
-('systemadmin@unibee.com', '$2y$10$v35y3AhNTMSDRXMbBBD0oOHqRJNYZq8dgWDqrB.YqQpme9NFzM6s.', 'James Low', 'active');
+SELECT 'systemadmin@unibee.com', '$2y$10$v35y3AhNTMSDRXMbBBD0oOHqRJNYZq8dgWDqrB.YqQpme9NFzM6s.', 'James Low', 'active'
+WHERE NOT EXISTS (SELECT 1 FROM SystemAdmins WHERE email = 'systemadmin@unibee.com');
 
 -- ============================================
 -- 9b. SYSTEM ADMIN PROFILE
