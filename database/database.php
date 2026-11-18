@@ -2,9 +2,9 @@
 
 class Database
 {
-    private $host = 'sql310.infinityfree.com';
-    private $dbname = 'if0_43226272_unibee';
-    private $username = 'if0_43226272';
+    private $host = 'sql204.infinityfree.com';
+    private $dbname = 'if0_43469206_unibee';
+    private $username = 'if0_43469206';
     private $password = 'unibee1234';
     private $pdo;
 
