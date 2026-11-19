@@ -2,10 +2,10 @@
 
 class Database
 {
-    private $host = 'sql204.infinityfree.com';
-    private $dbname = 'if0_43469206_unibee';
-    private $username = 'if0_43469206';
-    private $password = 'unibee1234';
+    private $host = 'sql212.infinityfree.com';
+    private $dbname = 'if0_43479137_unibee';
+    private $username = 'if0_43479137';
+    private $password = 'InjO8Pzh9lL';
     private $pdo;
 
     public function connect()

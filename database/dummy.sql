@@ -1,6 +1,6 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE if0_43469206_unibee;
+USE if0_43479137_unibee;
 
 -- ============================================
 -- 1. UNIVERSITIES & FACULTIES
